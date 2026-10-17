@@ -3,7 +3,7 @@ import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { FORECAST_DAYS } from "../config";
 import { balanceOn, lowestBalance, upcomingBills, type CalendarModel } from "../engine/model";
-import { BALANCE_LABELS, balanceLevel } from "../engine/balanceThresholds";
+import { BALANCE_LABELS, balanceLevel, majorBillImpact } from "../engine/balanceThresholds";
 import { plural } from "../format";
 import { panelClass } from "./ui";
 
@@ -21,9 +21,12 @@ export function StatsRow({ model, viewName, criticalBalanceCents }: { model: Cal
   const today = balanceOn(model, model.asOfDate) ?? model.startingCents;
   const bills = upcomingBills(model);
   const lowest = lowestBalance(model);
-  const outlook = balanceLevel(lowest.cents, criticalBalanceCents);
+  const balanceOutlook = balanceLevel(lowest.cents, criticalBalanceCents);
+  const majorBill = majorBillImpact(model.entries, model.asOfDate, criticalBalanceCents, (date) => balanceOn(model, date));
+  const outlook = Math.max(balanceOutlook, majorBill?.level ?? 0) as ReturnType<typeof balanceLevel>;
   const alert = outlook >= 4;
   const lowNote = `${BALANCE_LABELS[outlook]} · across the next ${FORECAST_DAYS} days`;
+  const billWarning = majorBill ? `${majorBill.level >= 4 ? "CRITICAL" : "CAUTION"}: ${majorBill.entry.label} due ${formatDate(majorBill.entry.date, "short")} will leave ${formatUSD(majorBill.balanceCents)}. ` : "";
 
   return (
     <section aria-label="Forecast summary" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -36,7 +39,7 @@ export function StatsRow({ model, viewName, criticalBalanceCents }: { model: Cal
       <Stat
         label="Lowest projected balance"
         value={formatUSD(lowest.cents)}
-        note={`${lowNote} · lowest on ${formatDate(lowest.date, "short")}`}
+        note={`${billWarning}${lowNote} · lowest on ${formatDate(lowest.date, "short")}`}
         alert={alert}
       />
     </section>
