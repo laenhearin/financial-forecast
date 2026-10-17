@@ -56,7 +56,7 @@ export function SuggestionPanel({ analysis, hasDismissed, onView, onDismiss, onR
               {top.takesOver.length > 0 && <p className="mt-0.5 text-caption text-secondary">Takes over: {takesOverText(top)}</p>}
               {top.requiresMembership && <p className="mt-0.5 text-caption text-secondary">Requires {top.requiresMembership}</p>}
             </div>
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:self-center">
+            <div className="flex w-full flex-wrap items-center gap-2">
               <button type="button" className={primaryButtonClass} onClick={() => onView(card.id)}>View card</button>
               <button type="button" className={buttonClass} onClick={() => { onDismiss(card.id); }}>Not interested</button>
               {more.length > 0 && (
