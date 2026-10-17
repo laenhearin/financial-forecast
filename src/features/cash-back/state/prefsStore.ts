@@ -1,5 +1,6 @@
 import { findCard } from "../cards/library";
 import { DEFAULT_WINDOW_DAYS, STORAGE_KEY } from "../config";
+import { ACTIVE_PROFILE_STORAGE_KEY } from "../../big-purchase/config";
 import type { WindowDays } from "../types";
 
 export interface CashBackPrefs {
@@ -47,15 +48,31 @@ export function sameSelection(a: readonly string[], b: readonly string[]): boole
 
 // ---------- Browser store (local storage behind useSyncExternalStore) ----------
 
-let cached: CashBackPrefs | null = null;
+let cached: { key: string; value: CashBackPrefs } | null = null;
 const listeners = new Set<() => void>();
 
-function readStorage(): CashBackPrefs {
+function storageKey(): string {
   try {
-    return parsePrefs(window.localStorage.getItem(STORAGE_KEY));
+    const slug = window.localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY) ?? "college";
+    return `${STORAGE_KEY}.${slug}`;
+  } catch {
+    return `${STORAGE_KEY}.college`;
+  }
+}
+
+function readStorage(key: string): CashBackPrefs {
+  try {
+    return parsePrefs(window.localStorage.getItem(key));
   } catch {
     return defaultPrefs();
   }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("cloudcash-profile-change", () => {
+    cached = null;
+    listeners.forEach(listener => listener());
+  });
 }
 
 export const prefsStore = {
@@ -64,16 +81,18 @@ export const prefsStore = {
     return () => listeners.delete(listener);
   },
   getSnapshot(): CashBackPrefs {
-    cached ??= readStorage();
-    return cached;
+    const key = storageKey();
+    if (!cached || cached.key !== key) cached = { key, value: readStorage(key) };
+    return cached.value;
   },
   getServerSnapshot(): CashBackPrefs | null {
     return null;
   },
   set(next: CashBackPrefs) {
-    cached = next;
+    const key = storageKey();
+    cached = { key, value: next };
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      window.localStorage.setItem(key, JSON.stringify(next));
     } catch {
       // Storage can be unavailable (private mode, quota); the in-memory state still works.
     }

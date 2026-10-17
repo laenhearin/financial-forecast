@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ScenarioLoadError } from "@/data/dataSource";
-import { demoDataSource } from "@/data/demoDataSource";
+import { loadActiveDemo } from "@/lib/active-demo";
 import type { Scenario } from "@/features/big-purchase/types";
 import { CalendarApp } from "@/features/calendar/components/CalendarApp";
 import { CalendarLoadError } from "@/features/calendar/components/CalendarLoadError";
@@ -13,7 +13,7 @@ type LoadResult = { ok: true; scenario: Scenario } | { ok: false; message: strin
 /** Loads on the server so a future live data source stays server-only. */
 async function loadScenario(): Promise<LoadResult> {
   try {
-    return { ok: true, scenario: await demoDataSource.getScenario() };
+    return { ok: true, scenario: (await loadActiveDemo()).scenario };
   } catch (error) {
     return {
       ok: false,
@@ -26,5 +26,5 @@ async function loadScenario(): Promise<LoadResult> {
 export default async function CalendarPage() {
   const result = await loadScenario();
   if (!result.ok) return <CalendarLoadError message={result.message} details={result.details} />;
-  return <CalendarApp scenario={result.scenario} sourceLabel={demoDataSource.sourceLabel} isFixture={demoDataSource.isFixture} />;
+  return <CalendarApp scenario={result.scenario} sourceLabel="Synthetic Nessie data + local demo assumptions" isFixture />;
 }
