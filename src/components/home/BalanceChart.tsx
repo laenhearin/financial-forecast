@@ -38,8 +38,8 @@ export function BalanceChart({ availableBalanceCents, projection, markers, isSam
         <span className="text-figure font-medium text-primary">{formatUSD(availableBalanceCents)}</span>
         <span className="text-caption text-secondary">available, next {layout.lastDay} days</span>
         {isSampleData && <span className="self-center rounded-full border border-app px-2 text-micro text-secondary">Sample data</span>}
-        <Link href={ROUTES.calendar} className="ml-auto text-caption font-medium text-accent hover:underline">
-          Open calendar
+        <Link href={ROUTES.calendar} className="jump-link ml-auto">
+          Weather calendar <span aria-hidden>→</span>
         </Link>
       </div>
 

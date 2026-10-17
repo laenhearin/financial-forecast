@@ -41,9 +41,9 @@ export function AnswerCard({ state, onClose }: { state: AnswerState; onClose: ()
           <p className="mt-2 text-lead text-primary">{state.answer.text}</p>
           <Link
             href={{ pathname: ROUTES.purchaseAdvisor, query: { q: state.question } }}
-            className="mt-3 inline-block text-caption font-medium text-accent hover:underline"
+            className="jump-link mt-3"
           >
-            Open in Purchase advisor
+            Open in Purchase advisor <span aria-hidden>→</span>
           </Link>
         </>
       )}

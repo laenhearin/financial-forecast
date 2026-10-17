@@ -28,7 +28,6 @@ export interface HomeData {
   /** True while the page shows fixtures; the page labels them as sample data. */
   isSampleData: boolean;
   userName: string;
-  todayWeather: Weather;
   nextStormLabel: string | null;
   availableBalanceCents: number;
   /** One point per day, day 0 (today) to day 30. */

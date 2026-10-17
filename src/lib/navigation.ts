@@ -20,11 +20,11 @@ export interface NavItem {
 /** Sidebar links, in display order. Adding a page means one entry here plus its route folder. */
 export const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: ROUTES.home, icon: Home },
-  { label: "Calendar", href: ROUTES.calendar, icon: CalendarDays },
+  { label: "Weather calendar", href: ROUTES.calendar, icon: CalendarDays },
   { label: "Purchase advisor", href: ROUTES.purchaseAdvisor, icon: ShoppingCart },
-  { label: "Big purchase", href: ROUTES.bigPurchase, icon: Target },
+  { label: "Purchase Forecasting", href: ROUTES.bigPurchase, icon: Target },
   { label: "Storm solver", href: ROUTES.stormSolver, icon: Umbrella },
-  { label: "Cash back", href: ROUTES.cashBack, icon: CreditCard },
+  { label: "Change of Weather", href: ROUTES.cashBack, icon: CreditCard },
 ];
 
 /** "/" matches only itself; other items also match their sub-pages ("/big-purchase/new"). */

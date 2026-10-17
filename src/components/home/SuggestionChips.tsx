@@ -15,7 +15,7 @@ export function SuggestionChips({ className }: { className?: string }) {
         <li key={href}>
           <Link
             href={href}
-            className="ui-transition inline-flex rounded-full border border-app bg-card px-4 py-2 text-caption text-secondary hover:border-accent-line hover:text-primary"
+            className="jump-link rounded-full"
           >
             {label}
           </Link>

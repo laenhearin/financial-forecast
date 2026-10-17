@@ -35,7 +35,6 @@ const PROJECTION_KEYFRAMES: ProjectionPoint[] = [
 export const homeData: HomeData = {
   isSampleData: true,
   userName: USER_NAME,
-  todayWeather: "sunny",
   nextStormLabel: "Thursday",
   availableBalanceCents: 234000,
   projection: interpolateDaily(PROJECTION_KEYFRAMES),
@@ -66,7 +65,7 @@ export const homeData: HomeData = {
       id: "cash-back",
       icon: "credit-card",
       tone: "sun",
-      title: "Cash back",
+      title: "Change of Weather",
       subtitle: "$18 missed this month",
       actionLabel: "See cards",
       href: ROUTES.cashBack,

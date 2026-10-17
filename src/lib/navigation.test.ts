@@ -29,11 +29,11 @@ describe("sidebar active state", () => {
   it("lists the six pages in order", () => {
     expect(NAV_ITEMS.map((i) => [i.label, i.href])).toEqual([
       ["Home", "/"],
-      ["Calendar", "/calendar"],
+      ["Weather calendar", "/calendar"],
       ["Purchase advisor", "/purchase-advisor"],
-      ["Big purchase", "/big-purchase"],
+      ["Purchase Forecasting", "/big-purchase"],
       ["Storm solver", "/storm-solver"],
-      ["Cash back", "/cash-back"],
+      ["Change of Weather", "/cash-back"],
     ]);
   });
 });

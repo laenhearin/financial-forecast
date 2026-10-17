@@ -4,7 +4,7 @@ import { bpRootClass } from "@/features/big-purchase/fonts";
 import "@/styles/theme.css";
 
 export const metadata: Metadata = {
-  title: "Cash Back Maximizer · Financial Forecast",
+  title: "Change of Weather",
   description: "Which card to use for each category, and how much cash back you missed.",
 };
 

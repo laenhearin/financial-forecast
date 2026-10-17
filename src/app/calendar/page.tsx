@@ -6,7 +6,7 @@ import { CalendarApp } from "@/features/calendar/components/CalendarApp";
 import { CalendarLoadError } from "@/features/calendar/components/CalendarLoadError";
 import "@/features/calendar/calendar.css";
 
-export const metadata: Metadata = { title: "Calendar · Financial Forecast" };
+export const metadata: Metadata = { title: "Weather Calendar" };
 
 type LoadResult = { ok: true; scenario: Scenario } | { ok: false; message: string; details: string[] };
 

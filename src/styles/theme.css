@@ -6,30 +6,30 @@
 @layer base {
 .bp-root {
   /* Color */
-  --bp-bg: #f6f7fb;
-  --bp-surface: #ffffff;
-  --bp-ink: #2a2f45;
-  --bp-muted: #7a809c;
-  --bp-line: #e6e9f4;
-  --bp-primary: #8b9cf7;
-  --bp-primary-ink: #4455c7;
-  --bp-mint: #a8e6cf;
-  --bp-sky: #bfe3ff;
-  --bp-butter: #fff3b8;
-  --bp-peach: #ffd7ba;
-  --bp-rose: #ffc2d1;
-  --bp-lilac: #d9c8ff;
-  --bp-warn-ink: #8a5a00;
-  --bp-danger-ink: #a8304d;
-  --bp-hero-gradient: linear-gradient(135deg, #d9c8ff66 0%, #bfe3ff55 55%, #a8e6cf44 100%);
-  --bp-shimmer: linear-gradient(90deg, #e6e9f4 0%, #f6f7fb 50%, #e6e9f4 100%);
+  --bp-bg: var(--bg);
+  --bp-surface: var(--card);
+  --bp-ink: var(--tx);
+  --bp-muted: var(--tx2);
+  --bp-line: var(--bd);
+  --bp-primary: var(--ac);
+  --bp-primary-ink: var(--ac);
+  --bp-mint: var(--rain);
+  --bp-sky: var(--ac);
+  --bp-butter: var(--sun);
+  --bp-peach: #F4B942;
+  --bp-rose: var(--neg);
+  --bp-lilac: var(--sb);
+  --bp-warn-ink: #8A6415;
+  --bp-danger-ink: var(--neg);
+  --bp-hero-gradient: linear-gradient(135deg, color-mix(in srgb, var(--sun) 36%, transparent) 0%, color-mix(in srgb, var(--rain) 44%, transparent) 52%, color-mix(in srgb, var(--ac) 24%, transparent) 100%);
+  --bp-shimmer: linear-gradient(90deg, var(--bd) 0%, var(--bg) 50%, var(--bd) 100%);
 
   /* Shape */
   --bp-radius-card: 20px;
   --bp-radius-control: 12px;
   --bp-control-height: 44px;
-  --bp-shadow-card: 0 8px 30px rgba(120, 130, 180, 0.12);
-  --bp-shadow-pill: 0 2px 10px rgba(120, 130, 180, 0.25);
+  --bp-shadow-card: 0 8px 30px color-mix(in srgb, var(--tx) 12%, transparent);
+  --bp-shadow-pill: 0 2px 10px color-mix(in srgb, var(--tx) 25%, transparent);
 
   /* Type */
   --bp-font: var(--bp-font-jakarta), var(--bp-font-inter), ui-sans-serif, system-ui, sans-serif;

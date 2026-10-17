@@ -118,39 +118,51 @@
 }
 
 /*
- * App shell themes. next-themes sets data-theme on <html>; Clear sky is the default.
+ * App shell themes. next-themes sets data-theme on <html>; Clear Skies is the default.
  * Components never use these hex values directly; they use the semantic Tailwind names below.
- * Feature roots such as .bp-root (Big purchase, Cash back) define their own palette.
+ * Feature roots such as .bp-root use these shared semantic colors.
  */
 :root,
 [data-theme="clear-sky"] {
-  --bg: #F7FAFD;
-  --sb: #EBF2FA;
+  --bg: #F7FBFF;
+  --sb: #EAF6FD;
   --card: #FFFFFF;
-  --tx: #12263F;
-  --tx2: #5B6F86;
-  --bd: #D8E3EF;
-  --ac: #2E7BE6;
-  --sun: #F5B63A;
-  --rain: #5B6FD6;
+  --tx: #203858;
+  --tx2: #687F9D;
+  --bd: #D5E7F3;
+  --ac: #5DA9E9;
+  --sun: #FFD966;
+  --sun-ink: #9A7117;
+  --rain: #BFE6FF;
   /* Money coming in, and balances below zero. */
   --pos: #1F7A50;
   --neg: #C0392B;
+  --chart-1: #5DA9E9;
+  --chart-2: #BFE6FF;
+  --chart-3: #FFD966;
+  --chart-4: #F4B942;
+  --chart-5: #687F9D;
   color-scheme: light;
 }
 
-[data-theme="midnight"] {
-  --bg: #0F1623;
-  --sb: #141C2D;
-  --card: #1A2438;
-  --tx: #EAF0FA;
-  --tx2: #8FA0BA;
-  --bd: #27334B;
-  --ac: #6AA9FF;
-  --sun: #F5B63A;
-  --rain: #4FC3F7;
-  --pos: #5ED3A0;
-  --neg: #FF8A80;
+[data-theme="heavy-rain"] {
+  --bg: #1F2937;
+  --sb: #263445;
+  --card: #334155;
+  --tx: #F1F5F9;
+  --tx2: #CBD5E1;
+  --bd: #475569;
+  --ac: #3B82F6;
+  --sun: #172554;
+  --sun-ink: #CBD5E1;
+  --rain: #2DD4BF;
+  --pos: #8CF2ED;
+  --neg: #F19A8C;
+  --chart-1: #3B82F6;
+  --chart-2: #2DD4BF;
+  --chart-3: #94A3B8;
+  --chart-4: #64748B;
+  --chart-5: #CBD5E1;
   color-scheme: dark;
 }
 
@@ -162,6 +174,24 @@
   --border: var(--bd);
   --sidebar: var(--sb);
   --sidebar-width: 15rem;
+  --primary: var(--ac);
+  --primary-foreground: #203858;
+  --secondary: color-mix(in srgb, var(--sun) 24%, var(--card));
+  --secondary-foreground: var(--tx);
+  --muted: color-mix(in srgb, var(--bd) 50%, var(--card));
+  --muted-foreground: var(--tx2);
+  --accent: color-mix(in srgb, var(--sun) 26%, var(--card));
+  --accent-foreground: var(--tx);
+  --popover: var(--card);
+  --popover-foreground: var(--tx);
+  --input: var(--bd);
+  --ring: var(--ac);
+  --sidebar-foreground: var(--tx);
+  --sidebar-primary: var(--ac);
+  --sidebar-primary-foreground: #203858;
+  --sidebar-accent: color-mix(in srgb, var(--rain) 30%, var(--sb));
+  --sidebar-accent-foreground: var(--tx);
+  --sidebar-border: var(--bd);
 }
 
 @media (width >= 48rem) and (width < 64rem) {
@@ -179,10 +209,10 @@
   --background-color-app: var(--bg);
   --background-color-logo: var(--ac);
   --background-color-nav-hover: color-mix(in srgb, var(--ac) 8%, transparent);
-  --background-color-nav-active: color-mix(in srgb, var(--ac) 14%, transparent);
-  --background-color-accent-soft: color-mix(in srgb, var(--ac) 16%, transparent);
+  --background-color-nav-active: color-mix(in srgb, var(--sun) 30%, transparent);
+  --background-color-accent-soft: color-mix(in srgb, var(--sun) 22%, transparent);
   --background-color-rain-soft: color-mix(in srgb, var(--rain) 16%, transparent);
-  --background-color-sun-soft: color-mix(in srgb, var(--sun) 22%, transparent);
+  --background-color-sun-soft: color-mix(in srgb, var(--sun) 34%, transparent);
   --background-color-skeleton: var(--bd);
   --background-color-scrim: color-mix(in srgb, var(--bg) 70%, transparent);
   --text-color-primary: var(--tx);
@@ -200,7 +230,7 @@
   --fill-accent: var(--ac);
   --background-color-pos-soft: color-mix(in srgb, var(--pos) 14%, transparent);
   --background-color-neg-soft: color-mix(in srgb, var(--neg) 14%, transparent);
-  --color-sun: var(--sun);
+  --color-sun: var(--sun-ink);
   --color-rain: var(--rain);
   --color-pos: var(--pos);
   --color-neg: var(--neg);
@@ -232,6 +262,61 @@
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
+  }
+}
+
+@layer components {
+  .home-weather {
+    --weather-glow: #FFD966;
+    --weather-wash: #BFE6FF;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse 82% 42% at 88% 0%, color-mix(in srgb, var(--weather-glow) 26%, transparent), transparent 100%),
+      linear-gradient(145deg, color-mix(in srgb, var(--weather-wash) 18%, var(--bg)), var(--bg) 66%);
+    transition: background-color 500ms ease, background-image 500ms ease;
+  }
+
+  .home-weather[data-weather="cloudy"] {
+    --weather-glow: #94A3B8;
+    --weather-wash: #BFE6FF;
+  }
+
+  .home-weather[data-weather="rainy"] {
+    --weather-glow: #5DA9E9;
+    --weather-wash: #5DA9E9;
+  }
+
+  .home-weather[data-weather="downpour"] {
+    --weather-glow: #172554;
+    --weather-wash: #3B82F6;
+    background-image:
+      radial-gradient(ellipse 82% 42% at 88% 0%, color-mix(in srgb, var(--weather-glow) 38%, transparent), transparent 100%),
+      linear-gradient(145deg, color-mix(in srgb, var(--weather-wash) 22%, var(--bg)), var(--bg) 66%);
+  }
+}
+
+@utility jump-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--ac) 38%, var(--bd));
+  border-radius: var(--radius-chip);
+  background: color-mix(in srgb, var(--ac) 12%, var(--card));
+  padding: 0.5rem 0.75rem;
+  color: var(--ac);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out;
+
+  &:hover {
+    border-color: var(--ac);
+    background: color-mix(in srgb, var(--ac) 20%, var(--card));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ac);
+    outline-offset: 2px;
   }
 }
 

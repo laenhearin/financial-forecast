@@ -23,7 +23,7 @@ export function CashBackApp() {
     <div className="mx-auto max-w-[1280px] px-6 pb-16">
       <header className="flex flex-wrap items-center justify-between gap-4 py-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Cash Back Maximizer</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Change of Weather</h1>
           {data && model.isFixture && (
             <p className={`mt-1 flex items-center gap-1.5 text-sm ${mutedTextClass}`}>
               <Database aria-hidden className="size-4" />

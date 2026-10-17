@@ -77,7 +77,7 @@ export function CalendarApp({ scenario, sourceLabel, isFixture }: CalendarAppPro
   return (
     <div className="mx-auto w-full max-w-300 px-5 py-12 md:px-10">
       <header className="mb-7">
-        <h1 className="text-display font-medium text-primary">Calendar</h1>
+        <h1 className="text-display font-medium text-primary">Weather Calendar</h1>
         {isFixture && (
           <p className="mt-1.5 flex items-start gap-1.5 text-caption text-secondary">
             <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />

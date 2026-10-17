@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-export const metadata: Metadata = { title: "Financial Forecast", description: "Your money, a little clearer." };
+export const metadata: Metadata = {
+  title: { default: "CloudCash", template: "%s · CloudCash" },
+  description: "Your money, a little clearer.",
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
+};
 
 /** The shared shell: every page renders inside <main>, next to the one Sidebar. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {

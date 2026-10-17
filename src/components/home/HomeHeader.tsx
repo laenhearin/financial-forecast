@@ -2,28 +2,28 @@ import { Cloud, CloudLightning, CloudRain, Sun, type LucideIcon } from "lucide-r
 import { cn } from "@/lib/utils";
 import type { Weather } from "./types";
 
-const TODAY: Record<Weather, { icon: LucideIcon; label: string }> = {
-  sunny: { icon: Sun, label: "Sunny today" },
-  cloudy: { icon: Cloud, label: "Cloudy today" },
-  rainy: { icon: CloudRain, label: "Rain today" },
-  downpour: { icon: CloudLightning, label: "Downpour today" },
+const CONDITIONS: Record<Weather, { icon: LucideIcon; label: string }> = {
+  sunny: { icon: Sun, label: "Great balance outlook" },
+  cloudy: { icon: Cloud, label: "Steady balance outlook" },
+  rainy: { icon: CloudRain, label: "Low balance outlook" },
+  downpour: { icon: CloudLightning, label: "Critical balance outlook" },
 };
 
 interface HomeHeaderProps {
-  todayWeather: Weather;
+  weather: Weather;
   /** Day of the next tight spot, such as "Thursday"; null hides the second half of the status line. */
   nextStormLabel: string | null;
   className?: string;
 }
 
-export function HomeHeader({ todayWeather, nextStormLabel, className }: HomeHeaderProps) {
-  const { icon: TodayIcon, label } = TODAY[todayWeather];
+export function HomeHeader({ weather, nextStormLabel, className }: HomeHeaderProps) {
+  const { icon: TodayIcon, label } = CONDITIONS[weather];
   return (
     <div className={cn("text-center", className)}>
       <h1 className="mx-auto max-w-120 text-display font-medium text-balance text-primary">What do you want to know about your money?</h1>
       <p className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-body text-secondary">
         <span className="inline-flex items-center gap-1.5">
-          <TodayIcon aria-hidden className={cn("size-4", todayWeather === "sunny" ? "text-sun" : "text-rain")} strokeWidth={1.75} />
+          <TodayIcon aria-hidden className={cn("size-4", weather === "sunny" ? "text-sun" : weather === "downpour" ? "text-neg" : "text-rain")} strokeWidth={1.75} />
           {label}
         </span>
         {nextStormLabel && (

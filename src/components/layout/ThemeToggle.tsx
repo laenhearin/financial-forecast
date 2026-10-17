@@ -13,18 +13,19 @@ function useHasMounted() {
   return useSyncExternalStore(subscribeNever, () => true, () => false);
 }
 
-/** Switches between Clear sky and Midnight. Shows Moon in Clear sky and Sun in Midnight. */
+/** Switches between Clear Skies and Heavy Rain. */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useHasMounted();
-  const isMidnight = resolvedTheme === THEMES.midnight;
-  const Icon = isMidnight ? Sun : Moon;
+  const isHeavyRain = resolvedTheme === THEMES.heavyRain;
+  const Icon = isHeavyRain ? Sun : Moon;
 
   return (
     <button
       type="button"
-      aria-label="Switch theme"
-      onClick={() => setTheme(isMidnight ? THEMES.clearSky : THEMES.midnight)}
+      aria-label={isHeavyRain ? "Switch to Clear Skies theme" : "Switch to Heavy Rain theme"}
+      title={isHeavyRain ? "Switch to Clear Skies" : "Switch to Heavy Rain"}
+      onClick={() => setTheme(isHeavyRain ? THEMES.clearSky : THEMES.heavyRain)}
       className={cn(
         "ui-transition inline-flex size-8 shrink-0 items-center justify-center rounded-item text-secondary hover:bg-nav-hover hover:text-primary",
         className,
