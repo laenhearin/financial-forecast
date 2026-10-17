@@ -1,5 +1,7 @@
 # Nessie API team guide
 
+**2026-10-17 update:** See [the seeded-data guide](NESSIE-DEMO-DATA.md) for the five synthetic profiles now stored in Nessie, 20 historical transactions, 10 recurring bills, terminal commands, and code examples. Empty transaction counts described in earlier verification notes refer to the pre-seed state. The new server-only fixture adapter has not replaced the pages' existing data sources.
+
 For the Financial Forecast team. Verified against the supplied PDF exports, the current official documentation, the installed Next.js documentation, and limited live GET requests on **October 17, 2026**. For everyday commands, use [the quick reference](API-quick-reference.md).
 
 This guide separates **documented API behavior**, **observed live behavior**, and **our proposed app design**. The integration plan below is not implemented by adding this guide. No secrets or raw account records belong in these files.

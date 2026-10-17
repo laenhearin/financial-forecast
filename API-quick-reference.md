@@ -1,5 +1,7 @@
 # Nessie API quick reference
 
+**2026-10-17 update:** Five synthetic customer profiles, 20 historical transactions, and 10 recurring bills are now seeded. For terminal `curl` commands, IDs, reproducible seed scripts, and the read-only UI adapter, see [the seeded-data guide](NESSIE-DEMO-DATA.md). Earlier empty-data observations below describe the pre-seed state. The app pages are not automatically switched to this new dataset.
+
 Checked October 17, 2026. Start here; use [API-guide.md](API-guide.md) for explanations, schemas, team workflow, and page integration.
 
 ## Connection essentials
