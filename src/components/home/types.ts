@@ -25,6 +25,8 @@ export interface CardData {
 }
 
 export interface HomeData {
+  /** Calendar date for day zero of the projection. */
+  asOfDate: string;
   /** True while the page shows fixtures; the page labels them as sample data. */
   isSampleData: boolean;
   userName: string;

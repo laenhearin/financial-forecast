@@ -6,7 +6,7 @@ import { SuggestionChips } from "@/components/home/SuggestionChips";
 import { homeData } from "@/lib/mock/homeData";
 import { riskLevel } from "@/features/calendar/engine/model";
 
-/** Home: header, ask box, chips, balance graph, cards. Data comes from one module so the forecast engine can replace it. */
+/** Forecast-first home dashboard, backed by the existing sample data. */
 export default function HomePage() {
   const projectedLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
   const risk = riskLevel(projectedLow.balanceCents, homeData.availableBalanceCents);
@@ -14,22 +14,24 @@ export default function HomePage() {
 
   return (
     <div data-weather={weather} className="home-weather min-h-screen">
-      <div className="mx-auto grid w-full max-w-350 gap-10 px-5 pt-10 pb-10 md:px-10 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.9fr)] lg:gap-12 lg:pt-14">
-        <main className="min-w-0">
-          <HomeHeader weather={weather} nextStormLabel={homeData.nextStormLabel} />
-          <AskBox className="mt-7" />
-          <SuggestionChips className="mt-6" />
+      <div className="mx-auto grid w-full max-w-400 gap-x-6 gap-y-4 px-4 py-4 md:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(17rem,1fr)]">
+        <HomeHeader className="lg:col-start-1" weather={weather} nextStormLabel={homeData.nextStormLabel} userName={homeData.userName} />
+        <div className="flex min-w-0 flex-col lg:col-start-1 lg:row-start-2">
           <BalanceChart
-            className="mt-16 rounded-panel border border-app bg-card p-5 md:p-7"
+            asOfDate={homeData.asOfDate}
+            className="home-forecast flex-1 rounded-3xl border border-app p-4 md:p-5"
             availableBalanceCents={homeData.availableBalanceCents}
             projection={homeData.projection}
             markers={homeData.markers}
             isSampleData={homeData.isSampleData}
           />
-          <FeaturePreviews placement="below" />
-        </main>
-        <aside className="min-w-0 lg:pt-24">
-          <FeaturePreviews placement="side" />
+          <section aria-label="Ask about your money" className="mt-3 rounded-3xl border border-app bg-card p-3">
+            <AskBox />
+            <SuggestionChips className="mt-3" />
+          </section>
+        </div>
+        <aside className="min-w-0 lg:col-start-2 lg:row-start-2">
+          <FeaturePreviews />
         </aside>
       </div>
     </div>
