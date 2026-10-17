@@ -14,3 +14,4 @@ export const DEADLINE_MIN_OFFSET_DAYS = 7;
 export const INPUT_DEBOUNCE_MS = 150;
 export const ADVICE_SHIMMER_MS = 350;
 export const STORAGE_KEY = "bigPurchase.v1";
+export const ACTIVE_PROFILE_STORAGE_KEY = "cloudcash-active-demo-profile";

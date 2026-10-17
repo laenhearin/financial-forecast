@@ -1,3 +1,4 @@
+import { ACTIVE_PROFILE_STORAGE_KEY } from "../../big-purchase/config";
 import { findCard } from "../cards/catalog";
 import { STORAGE_KEY } from "../config";
 import { DEMO_OWNED_CARD_IDS } from "../data/demoProfile";
@@ -5,7 +6,7 @@ import { isValidChoice } from "../engine/rewards";
 import type { OwnershipFilter, SortMode } from "../engine/table";
 import type { CategoryId } from "../types";
 
-/** Every Cash Back preference, saved under one versioned local storage key. */
+/** Every Cash Back preference, saved under one versioned local storage key per demo profile (cashback:v1.<slug>). */
 export interface CashBackPrefs {
   /** Defaults to the demo customer's cards. */
   ownedCardIds: string[];
@@ -69,15 +70,31 @@ export function parsePrefs(raw: string | null): CashBackPrefs {
 
 // ---------- Browser store (local storage behind useSyncExternalStore) ----------
 
-let cached: CashBackPrefs | null = null;
+let cached: { key: string; value: CashBackPrefs } | null = null;
 const listeners = new Set<() => void>();
 
-function readStorage(): CashBackPrefs {
+function storageKey(): string {
   try {
-    return parsePrefs(window.localStorage.getItem(STORAGE_KEY));
+    const slug = window.localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY) ?? "college";
+    return `${STORAGE_KEY}.${slug}`;
+  } catch {
+    return `${STORAGE_KEY}.college`;
+  }
+}
+
+function readStorage(key: string): CashBackPrefs {
+  try {
+    return parsePrefs(window.localStorage.getItem(key));
   } catch {
     return defaultPrefs();
   }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("cloudcash-profile-change", () => {
+    cached = null;
+    listeners.forEach(listener => listener());
+  });
 }
 
 export const prefsStore = {
@@ -85,20 +102,23 @@ export const prefsStore = {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  /** Client only. Reads local storage once, then serves the cached value. */
+  /** Client only. Reads local storage once per demo profile, then serves the cached value. */
   getSnapshot(): CashBackPrefs {
-    cached ??= readStorage();
-    return cached;
+    const key = storageKey();
+    if (!cached || cached.key !== key) cached = { key, value: readStorage(key) };
+    return cached.value;
   },
   /** null on the server and during hydration, so nothing renders from local storage too early. */
   getServerSnapshot(): CashBackPrefs | null {
     return null;
   },
-  /** Saves on every change; there is no save button. */
+  /** Saves on every change; there is no save button. One saved set per demo profile. */
   update(change: (current: CashBackPrefs) => CashBackPrefs) {
-    cached = change(prefsStore.getSnapshot());
+    const key = storageKey();
+    const next = change(prefsStore.getSnapshot());
+    cached = { key, value: next };
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+      window.localStorage.setItem(key, JSON.stringify(next));
     } catch {
       // Storage can be unavailable (private mode, quota); the in-memory state still works.
     }

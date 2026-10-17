@@ -22,7 +22,8 @@ function one(rows: NessieRecord[], field: string, value: string): NessieRecord {
  * Read-only adapter for ff-demo-v1 ONLY. Always label it as a fixture.
  * API provides balances, bills and transaction amounts/dates. The plan provides
  * synthetic card assignments, future income/spending assumptions, and hypothetical goals.
- * No UI source is switched automatically. Call from a server route/component only.
+ * The selected demo-profile cookie drives the server routes and pages that call this adapter.
+ * Call from a server route/component only.
  */
 export async function loadNessieDemo(slug = "college") {
   const profile = plan.profiles.find(row => row.slug === slug);
@@ -99,4 +100,9 @@ export async function loadNessieDemo(slug = "college") {
       "Balances are snapshots as of 2026-10-17; the seed did not cause balances to change on transaction creation.",
     ],
   };
+}
+
+/** Safe profile metadata for the client-side demo user picker. */
+export function listNessieDemoProfiles() {
+  return plan.profiles.map(({ slug, label }) => ({ slug, label }));
 }

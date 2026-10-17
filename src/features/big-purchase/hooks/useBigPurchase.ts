@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { ScenarioLoadError, type DataSource } from "@/data/dataSource";
-import { demoDataSource } from "@/data/demoDataSource";
 import { generateAdvice } from "../advice/generateAdvice";
 import { getNarrator } from "../ai/narrator";
 import { ADVICE_SHIMMER_MS, INPUT_DEBOUNCE_MS } from "../config";
@@ -10,13 +8,12 @@ import { computeForecast, type ForecastGoal } from "../engine/forecast";
 import { createGoal, goalStore, isGoalValid, resetGoal, setGoalStatus, updateGoal, withGoal, type GoalPatch } from "../state/goalStore";
 import type { AdviceResult, Cents, Forecast, ForecastResult, Goal, GoalStatus, ISODate, Scenario } from "../types";
 
-// Choose the data source here. nessieDataSource is a stub until the server route exists.
-const dataSource: DataSource = demoDataSource;
+const SOURCE_LABEL = "Synthetic Nessie data + local demo assumptions";
 
 type ScenarioState =
   | { status: "loading" }
   | { status: "error"; message: string; details: string[] }
-  | { status: "ready"; scenario: Scenario };
+  | { status: "ready"; scenario: Scenario; demoGoal: Goal };
 
 type AdviceState =
   | { status: "closed" }
@@ -31,18 +28,26 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
   const [scenarioState, setScenarioState] = useState<ScenarioState>({ status: "loading" });
   useEffect(() => {
     let live = true;
-    dataSource.getScenario().then(
-      scenario => { if (live) setScenarioState({ status: "ready", scenario }); },
-      (error: unknown) => {
+    const load = () => {
+      setScenarioState({ status: "loading" });
+      fetch("/api/demo-data", { cache: "no-store" }).then(async (response) => {
+      const body = await response.json() as { scenario?: Scenario; goal?: Goal; message?: string };
+        if (!response.ok || !body.scenario || !body.goal) throw new Error(body.message ?? "The selected demo profile could not be loaded.");
+        return { scenario: body.scenario, demoGoal: body.goal };
+      }).then(({ scenario, demoGoal }) => {
+        if (live) setScenarioState({ status: "ready", scenario, demoGoal });
+      }).catch((error: unknown) => {
         if (!live) return;
         setScenarioState({
           status: "error",
           message: error instanceof Error ? error.message : "The scenario could not be loaded.",
-          details: error instanceof ScenarioLoadError ? error.details : [],
+          details: [],
         });
-      },
-    );
-    return () => { live = false; };
+      });
+    };
+    load();
+    window.addEventListener("cloudcash-profile-change", load);
+    return () => { live = false; window.removeEventListener("cloudcash-profile-change", load); };
   }, []);
 
   const scenario = scenarioState.status === "ready" ? scenarioState.scenario : null;
@@ -50,7 +55,7 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
   const today = scenario?.asOfDate ?? null;
 
   const stored = useSyncExternalStore(goalStore.subscribe, goalStore.getSnapshot, goalStore.getServerSnapshot);
-  const goal: Goal | null = stored?.goals[0] ?? null;
+  const goal: Goal | null = stored?.goals[0] ?? (scenarioState.status === "ready" ? scenarioState.demoGoal : null);
   const hydrated = stored !== null;
 
   useEffect(() => {
@@ -149,8 +154,8 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
 
   return {
     scenarioState,
-    sourceLabel: dataSource.sourceLabel,
-    isFixture: dataSource.isFixture,
+    sourceLabel: SOURCE_LABEL,
+    isFixture: true,
     hydrated,
     goal,
     valid,

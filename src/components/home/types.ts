@@ -1,6 +1,6 @@
 /**
- * Data contract for the Home page. lib/mock/homeData.ts fills it today; the forecast engine
- * replaces that one file later without component changes. Money is integer cents.
+ * Data contract for the Home page. Values are mapped from the selected server-side demo profile.
+ * Money is integer cents.
  */
 export type Weather = "sunny" | "cloudy" | "rainy" | "downpour";
 

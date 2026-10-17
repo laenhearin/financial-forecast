@@ -1,6 +1,6 @@
 import { isISODate } from "../../../lib/dates";
 import { isCents } from "../../../lib/money";
-import { DEFAULT_BUFFER_MIN_CENTS, DEFAULT_BUFFER_PERCENT, GOAL_NAME_MAX_LENGTH, MAX_COST_CENTS, STORAGE_KEY } from "../config";
+import { ACTIVE_PROFILE_STORAGE_KEY, DEFAULT_BUFFER_MIN_CENTS, DEFAULT_BUFFER_PERCENT, GOAL_NAME_MAX_LENGTH, MAX_COST_CENTS, STORAGE_KEY } from "../config";
 import type { Cents, Goal, GoalStatus, ISODate, StoredState } from "../types";
 
 // ---------- Goal rules (pure, tested) ----------
@@ -125,15 +125,31 @@ function isStoredGoal(value: unknown): value is Goal {
 
 // ---------- Browser store (local storage behind useSyncExternalStore) ----------
 
-let cached: StoredState | null = null;
+let cached: { key: string; value: StoredState } | null = null;
 const listeners = new Set<() => void>();
 
-function readStorage(): StoredState {
+function storageKey(): string {
   try {
-    return parseStoredState(window.localStorage.getItem(STORAGE_KEY));
+    const slug = window.localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY) ?? "college";
+    return `${STORAGE_KEY}.${slug}`;
+  } catch {
+    return `${STORAGE_KEY}.college`;
+  }
+}
+
+function readStorage(key: string): StoredState {
+  try {
+    return parseStoredState(window.localStorage.getItem(key));
   } catch {
     return emptyState();
   }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("cloudcash-profile-change", () => {
+    cached = null;
+    listeners.forEach(listener => listener());
+  });
 }
 
 export const goalStore = {
@@ -142,16 +158,18 @@ export const goalStore = {
     return () => listeners.delete(listener);
   },
   getSnapshot(): StoredState {
-    cached ??= readStorage();
-    return cached;
+    const key = storageKey();
+    if (!cached || cached.key !== key) cached = { key, value: readStorage(key) };
+    return cached.value;
   },
   getServerSnapshot(): StoredState | null {
     return null;
   },
   set(next: StoredState) {
-    cached = next;
+    const key = storageKey();
+    cached = { key, value: next };
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      window.localStorage.setItem(key, JSON.stringify(next));
     } catch {
       // Storage can be unavailable (private mode, quota); the in-memory state still works.
     }

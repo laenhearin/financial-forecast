@@ -5,9 +5,11 @@ import { useMemo, useSyncExternalStore } from "react";
 import { ArrowRight, ArrowUpRight, CalendarDays, CreditCard, ShoppingCart, Target, Umbrella, type LucideIcon } from "lucide-react";
 import { formatUSD } from "@/lib/money";
 import { ROUTES } from "@/lib/navigation";
-import { homeData } from "@/lib/mock/homeData";
 import { cn } from "@/lib/utils";
+import type { HomeData } from "./types";
 import { goalStore } from "@/features/big-purchase/state/goalStore";
+import type { Goal } from "@/features/big-purchase/types";
+import type { CashBackData } from "@/features/cash-back/data/source";
 import { homeMessage } from "@/features/cash-back/engine/homeMessage";
 import { useCashBack } from "@/features/cash-back/hooks/useCashBack";
 
@@ -66,23 +68,24 @@ const TONES = {
   slate: "bg-secondary text-secondary",
 } as const;
 
-export function FeaturePreviews({ placement }: { placement: "side" | "below" }) {
+export function FeaturePreviews({ placement, homeData, demoGoal }: { placement: "side" | "below"; homeData: HomeData; cashBackData: CashBackData; demoGoal: Goal }) {
   const storedGoal = useSyncExternalStore(goalStore.subscribe, goalStore.getSnapshot, goalStore.getServerSnapshot);
   // Same functions as the Cash Back page; null until local storage has been read on the client.
+  // The seeded profile's purchases (cashBackData) are too sparse to price cards, so the tile uses the demo spending profile.
   const { analysis: cashBackAnalysis } = useCashBack();
   const cashBack = useMemo(() => (cashBackAnalysis ? homeMessage(cashBackAnalysis) : null), [cashBackAnalysis]);
 
   const projectionLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
-  const goal = storedGoal?.goals[0] ?? null;
+  const goal = storedGoal?.goals[0] ?? demoGoal;
   const progressByTitle: Record<string, { label: string; detail: string; percent?: number; figure?: string; href?: string; loading?: boolean; gold?: boolean }> = {
     "Weather Calendar": {
       label: `${homeData.projection.at(-1)?.day ?? 30}-day balance outlook`,
       detail: `${homeData.markers.length} upcoming events · low ${formatUSD(projectionLow.balanceCents)}`,
     },
     "Purchase Forecasting": {
-      label: goal ? `${goal.name || "Untitled goal"} · ${formatUSD(goal.costCents)}` : "No saved goal yet",
-      detail: goal ? `${goal.status === "active" ? "Active" : "Draft"} · ${goal.contributionCents === null ? "Suggested contribution" : `${formatUSD(goal.contributionCents)} per paycheck`}` : "Open Purchase Forecasting to start a goal.",
-      percent: goal ? (Number(Boolean(goal.name.trim())) + Number(goal.costCents > 0)) * 50 : 0,
+      label: `${goal.name || "Untitled goal"} · ${formatUSD(goal.costCents)}`,
+      detail: `${goal.status === "active" ? "Active" : "Draft"} · ${goal.contributionCents === null ? "Suggested contribution" : `${formatUSD(goal.contributionCents)} per paycheck`}`,
+      percent: (Number(Boolean(goal.name.trim())) + Number(goal.costCents > 0)) * 50,
     },
     "Change of Weather": {
       label: cashBack?.title ?? "",
