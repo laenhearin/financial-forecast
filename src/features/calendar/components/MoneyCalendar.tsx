@@ -4,7 +4,8 @@ import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { MAX_CHIPS_PER_DAY } from "../config";
 import { monthGrid, shiftMonth, WEEKDAY_NAMES } from "../engine/grid";
-import { balanceOn, RISK_LABELS, riskLevel, type CalendarModel, type RiskLevel } from "../engine/model";
+import { balanceOn, type CalendarModel, type RiskLevel } from "../engine/model";
+import { BALANCE_LABELS, balanceLevel } from "../engine/balanceThresholds";
 import { formatMonthYear, formatWeekday, plural } from "../format";
 import type { CalendarEntry, ISODate } from "../types";
 import { noteClass, panelClass, panelTitleClass, secondaryButtonClass, subtitleClass } from "./ui";
@@ -49,19 +50,20 @@ interface DayCellProps {
   date: ISODate;
   month: ISODate;
   selected: boolean;
+  criticalBalanceCents: number;
   onSelect: (date: ISODate) => void;
 }
 
-function DayCell({ model, date, month, selected, onSelect }: DayCellProps) {
+function DayCell({ model, date, month, selected, criticalBalanceCents, onSelect }: DayCellProps) {
   const entries = model.entriesByDate.get(date) ?? [];
   const balance = balanceOn(model, date);
-  const risk = riskLevel(balance, model.startingCents);
+  const risk = balanceLevel(balance, criticalBalanceCents);
   const isToday = date === model.asOfDate;
   const incoming = entries.filter((e) => e.kind === "income");
   const label = [
     `${formatWeekday(date)}, ${formatDate(date, "long")}`,
     isToday ? "Today" : null,
-    balance !== null ? `Projected ${formatUSD(balance)}, ${RISK_LABELS[risk].toLowerCase()}` : null,
+    balance !== null ? `Projected ${formatUSD(balance)}, ${BALANCE_LABELS[risk].toLowerCase()}` : null,
     plural(entries.length, "item"),
   ]
     .filter(Boolean)
@@ -121,7 +123,7 @@ function Legend() {
         {levels.map((level) => (
           <span key={level} className="inline-flex items-center gap-1.5">
             <i aria-hidden className={cn("relative isolate inline-block size-3.5 overflow-hidden rounded-chip border border-app", RISK_BG[level])} />
-            {level >= 4 ? `⛈️ ${RISK_LABELS[level]}` : RISK_LABELS[level]}
+            {level >= 4 ? `⛈️ ${BALANCE_LABELS[level]}` : BALANCE_LABELS[level]}
           </span>
         ))}
       </p>
@@ -138,12 +140,13 @@ interface MoneyCalendarProps {
   month: ISODate;
   selected: ISODate;
   viewName: string | null;
+  criticalBalanceCents: number;
   onMonthChange: (month: ISODate) => void;
   onSelect: (date: ISODate) => void;
   onToday: () => void;
 }
 
-export function MoneyCalendar({ model, month, selected, viewName, onMonthChange, onSelect, onToday }: MoneyCalendarProps) {
+export function MoneyCalendar({ model, month, selected, viewName, criticalBalanceCents, onMonthChange, onSelect, onToday }: MoneyCalendarProps) {
   return (
     <section aria-labelledby="money-calendar-title" className={panelClass}>
       <div className="mb-4.5 flex flex-wrap items-center justify-between gap-3">
@@ -178,7 +181,7 @@ export function MoneyCalendar({ model, month, selected, viewName, onMonthChange,
       </div>
       <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
         {monthGrid(month).map((date) => (
-          <DayCell key={date} model={model} date={date} month={month} selected={date === selected} onSelect={onSelect} />
+          <DayCell key={date} model={model} date={date} month={month} selected={date === selected} criticalBalanceCents={criticalBalanceCents} onSelect={onSelect} />
         ))}
       </div>
 

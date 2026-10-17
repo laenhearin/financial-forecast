@@ -25,7 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Purchase advisor", href: ROUTES.purchaseAdvisor, icon: ShoppingCart },
   { label: "Purchase Forecasting", href: ROUTES.bigPurchase, icon: Target },
   { label: "Storm solver", href: ROUTES.stormSolver, icon: Umbrella },
-  { label: "Change of Weather", href: ROUTES.cashBack, icon: CreditCard },
+  { label: "Swipe and Shine", href: ROUTES.cashBack, icon: CreditCard },
 ];
 
 /** "/" matches only itself; other items also match their sub-pages ("/big-purchase/new"). */

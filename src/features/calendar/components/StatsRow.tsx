@@ -2,7 +2,8 @@ import { formatDate } from "@/lib/dates";
 import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { FORECAST_DAYS } from "../config";
-import { atOrBelowShare, balanceOn, lowestBalance, upcomingBills, type CalendarModel } from "../engine/model";
+import { balanceOn, lowestBalance, upcomingBills, type CalendarModel } from "../engine/model";
+import { BALANCE_LABELS, balanceLevel } from "../engine/balanceThresholds";
 import { plural } from "../format";
 import { panelClass } from "./ui";
 
@@ -16,17 +17,13 @@ function Stat({ label, value, note, alert = false }: { label: string; value: str
   );
 }
 
-export function StatsRow({ model, viewName }: { model: CalendarModel; viewName: string | null }) {
+export function StatsRow({ model, viewName, criticalBalanceCents }: { model: CalendarModel; viewName: string | null; criticalBalanceCents: number }) {
   const today = balanceOn(model, model.asOfDate) ?? model.startingCents;
   const bills = upcomingBills(model);
   const lowest = lowestBalance(model);
-  const belowZero = lowest.cents < 0;
-  const veryLow = !belowZero && atOrBelowShare(lowest.cents, model.startingCents, 25);
-  const lowNote = belowZero
-    ? "Warning: projected balance goes below $0"
-    : veryLow
-      ? "Warning: balance gets dangerously low"
-      : `Across the next ${FORECAST_DAYS} days`;
+  const outlook = balanceLevel(lowest.cents, criticalBalanceCents);
+  const alert = outlook >= 4;
+  const lowNote = `${BALANCE_LABELS[outlook]} · across the next ${FORECAST_DAYS} days`;
 
   return (
     <section aria-label="Forecast summary" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -40,7 +37,7 @@ export function StatsRow({ model, viewName }: { model: CalendarModel; viewName: 
         label="Lowest projected balance"
         value={formatUSD(lowest.cents)}
         note={`${lowNote} · lowest on ${formatDate(lowest.date, "short")}`}
-        alert={belowZero || veryLow}
+        alert={alert}
       />
     </section>
   );

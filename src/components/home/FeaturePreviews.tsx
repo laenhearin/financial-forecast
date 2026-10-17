@@ -38,7 +38,7 @@ const FEATURES: Feature[] = [
     tone: "yellow",
   },
   {
-    title: "Change of Weather",
+    title: "Swipe and Shine",
     description: "Review rewards and find cards that fit your spending to maximize your cash back.",
     href: ROUTES.cashBack,
     icon: CreditCard,
@@ -47,16 +47,15 @@ const FEATURES: Feature[] = [
   {
     title: "Storm solver",
     description: "Review upcoming tight spots and ways to prepare.",
-    href: ROUTES.calendar,
+    href: ROUTES.stormSolver,
     icon: Umbrella,
     tone: "slate",
   },
   {
     title: "Purchase advisor",
-    description: "Get help weighing a purchase against your budget.",
+    description: "Preview how a purchase changes your projected balances, then add it to your calendar.",
     href: ROUTES.purchaseAdvisor,
     icon: ShoppingCart,
-    tag: "Coming soon",
     tone: "blue",
   },
 ];
@@ -93,7 +92,7 @@ export function FeaturePreviews({ placement, homeData, cashBackData, demoGoal }:
       detail: `${goal.status === "active" ? "Active" : "Draft"} · ${goal.contributionCents === null ? "Suggested contribution" : `${formatUSD(goal.contributionCents)} per paycheck`}`,
       percent: (Number(Boolean(goal.name.trim())) + Number(goal.costCents > 0)) * 50,
     },
-    "Change of Weather": {
+    "Swipe and Shine": {
       label: `${formatUSD(cashBackProgress.rewards.actualCents)} rewards earned`,
       detail: `${cashBackProgress.purchaseCount} purchases · ${formatUSD(cashBackProgress.rewards.missedCents)} potential rewards missed`,
       percent: cashBackProgress.rewards.bestCents > 0 ? Math.round((cashBackProgress.rewards.actualCents / cashBackProgress.rewards.bestCents) * 100) : 0,
@@ -103,8 +102,8 @@ export function FeaturePreviews({ placement, homeData, cashBackData, demoGoal }:
       detail: `${formatUSD(projectionLow.balanceCents)} projected low on day ${projectionLow.day}`,
     },
     "Purchase advisor": {
-      label: "Coming soon",
-      detail: "Progress will appear here when the feature is available.",
+      label: "Ready to plan a purchase",
+      detail: "Preview its effect over the coming weeks.",
     },
   };
 

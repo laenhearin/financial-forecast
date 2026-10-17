@@ -2,9 +2,10 @@ import { AskBox } from "@/components/home/AskBox";
 import { BalanceChart } from "@/components/home/BalanceChart";
 import { FeaturePreviews } from "@/components/home/FeaturePreviews";
 import { HomeHeader } from "@/components/home/HomeHeader";
+import { HomeWeatherShell } from "@/components/home/HomeWeatherShell";
 import { SuggestionChips } from "@/components/home/SuggestionChips";
 import { projectBase } from "@/features/big-purchase/engine/base";
-import { riskLevel } from "@/features/calendar/engine/model";
+import { defaultCriticalBalanceCents } from "@/features/calendar/engine/balanceThresholds";
 import { scenarioEntries } from "@/features/calendar/engine/entries";
 import type { HomeData } from "@/components/home/types";
 import { loadActiveDemo } from "@/lib/active-demo";
@@ -21,6 +22,7 @@ export default async function HomePage() {
   let homeData: HomeData;
   let cashBackData: CashBackData;
   let demoGoal: Goal;
+  let defaultCriticalCents: number;
   try {
     const demo = await loadActiveDemo();
     const base = projectBase(demo.scenario);
@@ -43,20 +45,19 @@ export default async function HomePage() {
     };
     cashBackData = demo.cashBack;
     demoGoal = demo.goal;
+    defaultCriticalCents = defaultCriticalBalanceCents(demo.scenario);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The selected demo profile could not be loaded.";
     return <div className="mx-auto max-w-180 px-5 py-16 text-body text-neg">CloudCash could not load this demo profile: {message}</div>;
   }
 
   const projectedLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
-  const risk = riskLevel(projectedLow.balanceCents, homeData.availableBalanceCents);
-  const weather = risk >= 4 ? "downpour" : risk >= 2 ? "rainy" : risk === 1 ? "cloudy" : "sunny";
 
   return (
-    <div data-weather={weather} className="home-weather min-h-screen">
+    <HomeWeatherShell balanceCents={projectedLow.balanceCents} defaultCriticalBalanceCents={defaultCriticalCents}>
       <div className="mx-auto grid w-full max-w-350 gap-10 px-5 pt-10 pb-10 md:px-10 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.9fr)] lg:gap-12 lg:pt-14">
         <main className="min-w-0">
-          <HomeHeader weather={weather} nextStormLabel={homeData.nextStormLabel} />
+          <HomeHeader balanceCents={projectedLow.balanceCents} defaultCriticalBalanceCents={defaultCriticalCents} nextStormLabel={homeData.nextStormLabel} />
           <AskBox className="mt-7" />
           <SuggestionChips className="mt-6" />
           <BalanceChart
@@ -72,6 +73,6 @@ export default async function HomePage() {
           <FeaturePreviews placement="side" homeData={homeData} cashBackData={cashBackData} demoGoal={demoGoal} />
         </aside>
       </div>
-    </div>
+    </HomeWeatherShell>
   );
 }

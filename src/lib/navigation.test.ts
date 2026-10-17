@@ -33,7 +33,7 @@ describe("sidebar active state", () => {
       ["Purchase advisor", "/purchase-advisor"],
       ["Purchase Forecasting", "/big-purchase"],
       ["Storm solver", "/storm-solver"],
-      ["Change of Weather", "/cash-back"],
+      ["Swipe and Shine", "/cash-back"],
     ]);
   });
 });

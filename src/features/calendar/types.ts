@@ -26,7 +26,7 @@ export interface CalendarEntry {
   detail?: string;
 }
 
-/** A purchase added on this page. Kept in memory only; a reload clears it. */
+/** A user-added purchase saved locally for the active demo profile. */
 export interface UserPurchase {
   id: string;
   label: string;

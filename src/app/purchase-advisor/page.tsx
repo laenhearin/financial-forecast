@@ -1,8 +1,20 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+import { ScenarioLoadError } from "@/data/dataSource";
+import { loadActiveDemo } from "@/lib/active-demo";
+import { CalendarLoadError } from "@/features/calendar/components/CalendarLoadError";
+import { PurchaseAdvisorApp } from "@/features/calendar/components/PurchaseAdvisorApp";
 
 export const metadata: Metadata = { title: "Purchase Advisor" };
 
-export default function PurchaseAdvisorPage() {
-  return <ComingSoon title="Purchase advisor" />;
+export default async function PurchaseAdvisorPage() {
+  try {
+    const demo = await loadActiveDemo();
+    return <PurchaseAdvisorApp scenario={demo.scenario} sourceLabel="Synthetic Nessie data + local demo assumptions" isFixture />;
+  } catch (error) {
+    return <CalendarLoadError
+      title="Purchase Advisor"
+      message={error instanceof Error ? error.message : "Unknown error."}
+      details={error instanceof ScenarioLoadError ? error.details : []}
+    />;
+  }
 }

@@ -4,7 +4,7 @@ import { bpRootClass } from "@/features/big-purchase/fonts";
 import "@/styles/theme.css";
 
 export const metadata: Metadata = {
-  title: "Change of Weather",
+  title: "Swipe and Shine",
   description: "Which card to use for each category, and how much cash back you missed.",
 };
 

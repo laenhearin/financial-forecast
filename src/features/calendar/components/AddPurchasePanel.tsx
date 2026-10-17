@@ -86,7 +86,7 @@ export function AddPurchasePanel({ accounts, date, onDateChange, view, onViewCha
           + Add purchase
         </button>
       </form>
-      <p className={noteClass}>Purchases go to the account chosen in this form, whichever calendar view is showing. They reset when you reload.</p>
+      <p className={noteClass}>Purchases go to the account chosen in this form, whichever calendar view is showing. They are saved in this browser for the selected demo profile.</p>
 
       <div className="mt-5 border-t border-app pt-4.5">
         <label htmlFor="account-view" className="mb-2 block text-caption font-semibold text-primary">
@@ -102,7 +102,7 @@ export function AddPurchasePanel({ accounts, date, onDateChange, view, onViewCha
         </select>
         <p className="mt-2 text-caption font-medium text-primary">{viewName ? `Viewing ${viewName}` : "Viewing all accounts"}</p>
         <p className="mt-2 text-micro text-secondary">
-          Choose an account to see its own calendar, transactions, projected balance and weekly spending graph. Storm Solver uses this selection too.
+          Choose an account to see its own calendar, transactions, projected balance and weekly spending graph.
         </p>
       </div>
     </section>
