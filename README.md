@@ -42,8 +42,12 @@ The GitHub repository is [laenhearin/financial-forecast](https://github.com/laen
 1. In GitHub Desktop, add this folder as an existing local repository; review files and commit.
 2. Publish to GitHub and invite teammates. Teammates clone, then follow Start locally.
 3. Import that repository into Vercel with the Next.js preset and Node.js 24.
-4. Add the three variables from .env.example in Vercel project settings; keep values server-only.
+4. Add the variables from .env.example (Nessie and Gemini) in Vercel project settings → Environment Variables, for Production and Preview; keep values server-only.
 5. Deploy and check both the home page and /api/dashboard. Credentials alone do not implement live integration.
+
+## AI layer
+
+The ask box, Purchase Advisor explanation, Big Purchase summary, and Cash Back merchant categories use Gemini through server-only routes. The forecast engine computes every number; the model only words them, and every surface falls back to labeled template text when AI is off, unconfigured, rate limited, or fails. Without `GEMINI_API_KEY` the app still works on templates. Setup, fallback behavior, `npm run ai:smoke`, `npm run ai:burst`, and free-tier caveats are in [docs/AI_LAYER.md](docs/AI_LAYER.md).
 
 ## Current scope
 
