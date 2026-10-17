@@ -1,6 +1,6 @@
 import { isISODate } from "../../../lib/dates";
 import { isCents } from "../../../lib/money";
-import { ACTIVE_PROFILE_STORAGE_KEY, DEFAULT_BUFFER_MIN_CENTS, DEFAULT_BUFFER_PERCENT, GOAL_NAME_MAX_LENGTH, MAX_COST_CENTS, STORAGE_KEY } from "../config";
+import { DEFAULT_BUFFER_MIN_CENTS, DEFAULT_BUFFER_PERCENT, GOAL_NAME_MAX_LENGTH, MAX_COST_CENTS, STORAGE_KEY } from "../config";
 import type { Cents, Goal, GoalStatus, ISODate, StoredState } from "../types";
 
 // ---------- Goal rules (pure, tested) ----------
@@ -128,13 +128,9 @@ function isStoredGoal(value: unknown): value is Goal {
 let cached: { key: string; value: StoredState } | null = null;
 const listeners = new Set<() => void>();
 
-function storageKey(): string {
-  try {
-    const slug = window.localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY) ?? "college";
-    return `${STORAGE_KEY}.${slug}`;
-  } catch {
-    return `${STORAGE_KEY}.college`;
-  }
+/** One saved set per Nessie customer id, as resolved by the server. */
+function storageKey(customerId: string): string {
+  return `${STORAGE_KEY}.${customerId}`;
 }
 
 function readStorage(key: string): StoredState {
@@ -145,28 +141,21 @@ function readStorage(key: string): StoredState {
   }
 }
 
-if (typeof window !== "undefined") {
-  window.addEventListener("cloudcash-profile-change", () => {
-    cached = null;
-    listeners.forEach(listener => listener());
-  });
-}
-
 export const goalStore = {
   subscribe(listener: () => void) {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  getSnapshot(): StoredState {
-    const key = storageKey();
+  getSnapshot(customerId: string): StoredState {
+    const key = storageKey(customerId);
     if (!cached || cached.key !== key) cached = { key, value: readStorage(key) };
     return cached.value;
   },
   getServerSnapshot(): StoredState | null {
     return null;
   },
-  set(next: StoredState) {
-    const key = storageKey();
+  set(customerId: string, next: StoredState) {
+    const key = storageKey(customerId);
     cached = { key, value: next };
     try {
       window.localStorage.setItem(key, JSON.stringify(next));

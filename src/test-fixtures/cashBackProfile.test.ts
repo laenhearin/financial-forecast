@@ -1,25 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { CARD_CATALOG } from "../cards/catalog";
-import { analyzeWallet } from "../engine/analyze";
-import { homeMessage } from "../engine/homeMessage";
-import { buildTable } from "../engine/table";
-import { DEMO_OWNED_CARD_IDS } from "./demoProfile";
-import { loadDemoProfile, validateCashBackData } from "./source";
+import { CARD_CATALOG } from "../features/cash-back/cards/catalog";
+import { validateCashBackData } from "../features/cash-back/data/source";
+import { analyzeWallet } from "../features/cash-back/engine/analyze";
+import { homeMessage } from "../features/cash-back/engine/homeMessage";
+import { buildTable } from "../features/cash-back/engine/table";
+import { DEMO_OWNED_CARD_IDS, loadTestCashBackProfile } from "./cashBackProfile";
 
-// Locks the demo story. If an edit to demoProfile.ts or the catalog breaks one of these, retune the data.
-const profile = loadDemoProfile();
+// Locks the reward engine's results on a fixed fixture. If an edit to cashBackProfile.ts or the catalog breaks one, retune the data.
+const profile = loadTestCashBackProfile();
 const run = (ownedCardIds: readonly string[] = profile.ownedCardIds, dismissedSuggestions: string[] = []) =>
   analyzeWallet({ ownedCardIds, spendProfile: profile.spendProfile, today: profile.asOfDate, dismissedSuggestions });
 const analysis = run();
 
-describe("demo lock: cash back", () => {
-  it("starts Alex Rivera with Savor, Quicksilver, Discover it, and Blue Cash Everyday on Oct 17, 2026", () => {
-    expect(profile).toMatchObject({ customerName: "Alex Rivera", asOfDate: "2026-10-17", isFixture: true, sourceLabel: "Demo data" });
+describe("fixture lock: cash back", () => {
+  it("starts the fixture customer with Savor, Quicksilver, Discover it, and Blue Cash Everyday on Oct 17, 2026", () => {
+    expect(profile).toMatchObject({ customerName: "Fixture Customer", asOfDate: "2026-10-17", sourceLabel: "Test fixture" });
     expect(analysis.owned.map(card => card.id).sort()).toEqual([...DEMO_OWNED_CARD_IDS].sort());
     expect(analysis.owned.every(card => card.annualFeeCents === 0)).toBe(true);
   });
 
-  it("earns about $598 a year with the demo cards", () => {
+  it("earns about $598 a year with the fixture cards", () => {
     expect(analysis.projection.totalCents).toBe(59_820);
   });
 

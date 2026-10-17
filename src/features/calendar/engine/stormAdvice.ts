@@ -53,7 +53,7 @@ export function stormAdvice(model: CalendarModel, accountNames: Record<string, s
       tone: PRIORITY_TONE[priority],
       text:
         dueIn === 0
-          ? "This bill is due today in the demo data. Confirm the real due date and payment status, and pay on time if possible."
+          ? "This bill is due today in the Nessie data. Confirm the real due date and payment status, and pay on time if possible."
           : `${PRIORITY_TEXT[priority]} It is scheduled in ${plural(dueIn, "day")} (${short(bill.date)}).`,
       meta: `${formatUSD(bill.amountCents)} · ${accountNames[bill.accountId] ?? "Account"} · next due ${short(bill.date)}`,
     });
@@ -97,7 +97,7 @@ export function stormAdvice(model: CalendarModel, accountNames: Record<string, s
       tag: "Watch balance",
       tone: "high",
       text: `The forecast first shows at least one selected account below your ${formatUSD(bufferCents)} buffer on ${short(firstLow.date)}. Affected account(s): ${names}. Review discretionary purchases, confirm pending income, and check whether bill providers allow a due-date change that still keeps you on time.`,
-      meta: "This is a forecast based on demo balances and listed transactions. It does not account for unentered transactions, holds, fees, or provider processing delays.",
+      meta: "This is a forecast based on Nessie sandbox balances and bills, with estimated income and spending. It does not account for unentered transactions, holds, fees, or provider processing delays.",
     });
   } else {
     items.push({
@@ -105,7 +105,7 @@ export function stormAdvice(model: CalendarModel, accountNames: Record<string, s
       title: "Your cash buffer",
       tag: "Looks okay",
       tone: "ok",
-      text: `No selected account is projected to fall below ${formatUSD(bufferCents)} in the current ${FORECAST_DAYS}-day demo forecast. Keep monitoring balances and leave room for unexpected expenses.`,
+      text: `No selected account is projected to fall below ${formatUSD(bufferCents)} in the current ${FORECAST_DAYS}-day forecast. Keep monitoring balances and leave room for unexpected expenses.`,
       meta: "A positive forecast is not a guarantee that funds will be available.",
     });
   }

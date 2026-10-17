@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import { ActiveCustomerProvider } from "@/components/layout/ActiveCustomer";
 import { ScenarioLoadError } from "@/data/dataSource";
-import { loadActiveDemo } from "@/lib/active-demo";
+import { loadActiveProfile } from "@/lib/active-customer";
 import { CalendarLoadError } from "@/features/calendar/components/CalendarLoadError";
 import { PurchaseAdvisorApp } from "@/features/calendar/components/PurchaseAdvisorApp";
 
 export const metadata: Metadata = { title: "Purchase Advisor" };
 
 export default async function PurchaseAdvisorPage() {
-  let demo: Awaited<ReturnType<typeof loadActiveDemo>>;
+  let profile: Awaited<ReturnType<typeof loadActiveProfile>>;
   try {
-    demo = await loadActiveDemo();
+    profile = await loadActiveProfile();
   } catch (error) {
     return <CalendarLoadError
       title="Purchase Advisor"
@@ -17,5 +18,9 @@ export default async function PurchaseAdvisorPage() {
       details={error instanceof ScenarioLoadError ? error.details : []}
     />;
   }
-  return <PurchaseAdvisorApp scenario={demo.scenario} sourceLabel="Synthetic Nessie data + local demo assumptions" isFixture />;
+  return (
+    <ActiveCustomerProvider customer={profile.customer}>
+      <PurchaseAdvisorApp key={profile.scenario.id} scenario={profile.scenario} />
+    </ActiveCustomerProvider>
+  );
 }

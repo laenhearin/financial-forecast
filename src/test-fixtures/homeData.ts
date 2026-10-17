@@ -1,6 +1,6 @@
-import type { HomeData, ProjectionPoint } from "../../components/home/types";
-import { USER_NAME } from "../config";
-import { ROUTES } from "../navigation";
+// TEST FIXTURES ONLY: a hand-shaped home page for chart geometry tests. The app builds HomeData from Nessie.
+import type { HomeData, ProjectionPoint } from "../components/home/types";
+import { ROUTES } from "../lib/navigation";
 
 /** Fills every whole day between keyframes by straight-line interpolation, rounded to whole cents. */
 export function interpolateDaily(keyframes: readonly ProjectionPoint[]): ProjectionPoint[] {
@@ -34,8 +34,7 @@ const PROJECTION_KEYFRAMES: ProjectionPoint[] = [
 
 export const homeData: HomeData = {
   asOfDate: "2026-10-17",
-  isSampleData: true,
-  userName: USER_NAME,
+  userName: "Fixture Customer",
   nextStormLabel: "Thursday",
   availableBalanceCents: 234000,
   projection: interpolateDaily(PROJECTION_KEYFRAMES),

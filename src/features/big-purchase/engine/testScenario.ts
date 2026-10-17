@@ -1,6 +1,6 @@
 import type { Bill, IncomeSource, Scenario, SpendingCategory } from "../types";
 
-/** Small hand-built scenarios for engine tests. Tests do not use the demo file except the demo-lock test. */
+/** Small hand-built scenarios for engine tests. Tests do not use src/test-fixtures/scenarios.ts except its own lock test. */
 export function makeScenario(overrides: Partial<Scenario> & { balanceCents?: number } = {}): Scenario {
   const { balanceCents = 100_000, ...rest } = overrides;
   return {

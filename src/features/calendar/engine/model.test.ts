@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { loadDemoScenario } from "../../../data/demoDataSource";
+import { loadTestScenario } from "../../../test-fixtures/scenarios";
 import { projectBase } from "../../big-purchase/engine/base";
 import type { UserPurchase } from "../types";
 import { balanceOn, buildCalendarModel, dayAlert, lowestBalance, riskLevel, upcomingBills } from "./model";
 
-const scenario = loadDemoScenario("tightMonth");
+const scenario = loadTestScenario("tightMonth");
 const purchase = (date: string, amountCents: number, accountId = "checking"): UserPurchase => ({
   id: `p-${date}-${amountCents}`,
   label: "Test",

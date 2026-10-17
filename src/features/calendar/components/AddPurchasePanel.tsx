@@ -92,7 +92,7 @@ export function AddPurchasePanel({ accounts, date, onDateChange, view, onViewCha
           + Add purchase
         </button>
       </form>
-      <p className={noteClass}>Purchases go to the account chosen in this form, whichever calendar view is showing. They are saved in this browser for the selected demo profile.</p>
+      <p className={noteClass}>Purchases go to the account chosen in this form, whichever calendar view is showing. They are saved in this browser for this Nessie customer.</p>
 
       <div className="mt-5 border-t border-app pt-4.5">
         <label htmlFor="account-view" className="mb-2 block text-caption font-semibold text-primary">

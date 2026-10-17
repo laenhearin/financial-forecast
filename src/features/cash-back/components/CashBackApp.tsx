@@ -2,11 +2,11 @@
 
 import { useRef, useState } from "react";
 import { Database } from "lucide-react";
-import { formatDate } from "@/lib/dates";
 import { DebtSummary } from "@/components/home/DebtSummary";
+import { cashBackSpendNote, nessieSourceNote } from "@/lib/data-source";
 import type { Scenario } from "../../big-purchase/types";
-import type { CashBackProfile } from "../data/source";
 import { findCard } from "../cards/catalog";
+import type { CashBackProfile } from "../data/source";
 import { useCashBack } from "../hooks/useCashBack";
 import { CardDrawer } from "./CardDrawer";
 import { CardTable } from "./CardTable";
@@ -18,8 +18,8 @@ import { SuggestionPanel } from "./SuggestionPanel";
  * Summary strip, the user's card lineup beside one suggestion, and a card table that scrolls inside
  * its own box (about ten rows tall).
  */
-export function CashBackApp({ initialCardId, profile, profileSlug, scenario }: { initialCardId: string | null; profile: CashBackProfile; profileSlug: string; scenario: Scenario }) {
-  const { prefs, analysis, actions } = useCashBack(profile, profileSlug);
+export function CashBackApp({ profile: nessieProfile, scenario, initialCardId }: { profile: CashBackProfile; scenario: Scenario; initialCardId: string | null }) {
+  const { profile, prefs, analysis, actions } = useCashBack(nessieProfile);
   const [drawerCardId, setDrawerCardId] = useState<string | null>(initialCardId && findCard(initialCardId) ? initialCardId : null);
   const suggestionRef = useRef<HTMLElement>(null);
 
@@ -36,12 +36,10 @@ export function CashBackApp({ initialCardId, profile, profileSlug, scenario }: {
       <header className="shrink-0">
         <h1 className="text-display font-medium text-primary">Swipe and Shine</h1>
         <p className="mt-0.5 text-body text-secondary">Use the right card for every purchase.</p>
-        {profile.isFixture && (
-          <p className="mt-1 flex items-center gap-1.5 text-micro text-secondary">
-            <Database aria-hidden className="size-3.5" strokeWidth={1.75} />
-            {profile.sourceLabel}: {profile.customerName}&apos;s typical monthly spending, as of {formatDate(profile.asOfDate, "full")}. Not live bank data.
-          </p>
-        )}
+        <p className="mt-1 flex items-start gap-1.5 text-micro text-secondary">
+          <Database aria-hidden className="mt-px size-3.5 shrink-0" strokeWidth={1.75} />
+          {nessieSourceNote(profile.customerName, profile.asOfDate)} {cashBackSpendNote(scenario)}
+        </p>
       </header>
       <DebtSummary scenario={scenario} />
 

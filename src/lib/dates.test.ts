@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, addMonths, clampedDate, dayOfWeek, daysBetween, daysInMonth, formatDate, isISODate, ordinal, toDayNumber, fromDayNumber } from "./dates";
+import { addDays, addMonths, calendarDateInTimeZone, clampedDate, dayOfWeek, daysBetween, daysInMonth, formatDate, isISODate, ordinal, toDayNumber, fromDayNumber } from "./dates";
 
 describe("UTC date helpers", () => {
   it("validates real calendar dates only", () => {
@@ -43,5 +43,15 @@ describe("UTC date helpers", () => {
 
   it("writes ordinals", () => {
     expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 31].map(ordinal)).toEqual(["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "31st"]);
+  });
+
+  it("reads the calendar date in New York, not the server's zone", () => {
+    // 23:30 EDT on Oct 17 is already Oct 18 in UTC.
+    expect(calendarDateInTimeZone(new Date("2026-10-18T03:30:00Z"))).toBe("2026-10-17");
+    expect(calendarDateInTimeZone(new Date("2026-10-18T04:00:00Z"))).toBe("2026-10-18");
+    // After the November DST change New York is UTC-5.
+    expect(calendarDateInTimeZone(new Date("2026-11-02T04:30:00Z"))).toBe("2026-11-01");
+    expect(calendarDateInTimeZone(new Date("2026-11-02T04:30:00Z"), "UTC")).toBe("2026-11-02");
+    expect(() => calendarDateInTimeZone(new Date(Number.NaN))).toThrow();
   });
 });

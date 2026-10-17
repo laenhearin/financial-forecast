@@ -10,7 +10,6 @@ describe("selected profile home forecast", () => {
       bills: [monthlyBill("rent", 12000, 1)],
     }));
     expect(home.userName).toBe("Selected profile");
-    expect(home.isSampleData).toBe(true);
     expect(home.availableBalanceCents).toBe(50000);
     expect(home.projection).toHaveLength(31);
     const first = forecastDays(home.projection, home.availableBalanceCents)[1];

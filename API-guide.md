@@ -1,6 +1,6 @@
 # Nessie API team guide
 
-**2026-10-17 update:** Eight synthetic profiles, 32 historical transactions, 17 recurring bills, and one loan are now seeded. The Profile dropdown selects the API-backed data used across the home, calendar, forecast, rewards, and advisor pages. See [the seeded-data guide](NESSIE-DEMO-DATA.md) for commands and the three low-balance/debt scenarios. Earlier empty-data observations and connection plans below describe the pre-integration state.
+**2026-10-17 update:** Eight synthetic profiles, 32 historical transactions, 17 recurring bills, and one loan are now seeded. See [the seeded-data guide](NESSIE-DEMO-DATA.md) for commands and the three low-balance/debt scenarios. Earlier empty-data observations and connection plans below describe the pre-integration state. **Later on 2026-10-17:** the pages read Nessie through `src/lib/active-customer.ts` and `src/lib/nessie-profile.ts` for the customer chosen on Profile; see the README's "Where the data comes from". Sections below that describe placeholders or `/api/demo-data` are historical.
 
 For the Financial Forecast team. Verified against the supplied PDF exports, the current official documentation, the installed Next.js documentation, and limited live GET requests on **October 17, 2026**. For everyday commands, use [the quick reference](API-quick-reference.md).
 

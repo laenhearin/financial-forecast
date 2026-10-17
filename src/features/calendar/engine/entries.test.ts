@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { loadDemoScenario } from "../../../data/demoDataSource";
+import { loadTestScenario } from "../../../test-fixtures/scenarios";
 import { dayOfWeek } from "../../../lib/dates";
 import { weeklySpendingCents } from "../../big-purchase/engine/events";
 import { billPriority, forecastEndDate, primaryAccountId, scenarioEntries } from "./entries";
 
-const scenario = loadDemoScenario("tightMonth");
+const scenario = loadTestScenario("tightMonth");
 const entries = scenarioEntries(scenario);
 
 describe("billPriority", () => {

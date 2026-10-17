@@ -121,7 +121,7 @@ async function loadOrNull(deps: HandlerDeps, purchases: readonly SavedPurchaseIn
   try {
     return await deps.loadContext(purchases, critical);
   } catch (error) {
-    console.error("[ai] loading the demo profile failed:", error instanceof Error ? error.message : "unknown error");
+    console.error("[ai] loading the Nessie customer failed:", error instanceof Error ? error.message : "unknown error");
     return null;
   }
 }

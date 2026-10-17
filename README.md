@@ -10,7 +10,7 @@ SwampHacks XII starter: Next.js App Router, TypeScript, Tailwind, shadcn/ui, and
 4. Copy `.env.example` to `.env.local` using your editor. Fill in credentials only when available.
 5. Run `npm run dev`, then open http://localhost:3000.
 
-The home screen and feature pages load the selected synthetic Nessie profile through server-only code. Configure your local Nessie key before opening them. `/api/dashboard` is an older configuration-only route; `/api/demo-data` serves the selected profile. No real bank connection or transfer is implemented.
+Every page reads the selected Nessie customer on the server; without credentials, pages show the Nessie error instead of substituting other data. `/api/dashboard` reports `connected: true` only after it actually read the active customer from Nessie. Nessie is a mock banking sandbox: no real bank connection or transfer is implemented.
 
 ## Commands
 
@@ -25,9 +25,17 @@ The home screen and feature pages load the selected synthetic Nessie profile thr
 
 Start with the [API quick reference](API-quick-reference.md) and [detailed team API guide](API-guide.md). They cover setup, endpoint schemas and gaps, shared keys, live testing, and connecting the two pages. The current production API base is `https://prod-api.nessieisreal.com`; the documentation website is a different host.
 
-Eight synthetic profiles have now been seeded into the shared Nessie sandbox with 32 historical transactions, 17 future bill schedules, and one existing loan. See [seeded data, terminal commands, and UI examples](NESSIE-DEMO-DATA.md). Read a profile with `node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts college`. Choose a user in the Profile dropdown. Home, Calendar, Forecast Fund, Swipe and Shine, Storm Solver, and Purchase Advisor use the selected profile. The added scenarios cover a small cash cushion, a future cash shortfall, and existing debt; debt is displayed separately from available cash.
+Eight synthetic profiles are seeded into the shared Nessie sandbox with 32 historical transactions, 17 future bill schedules, and one existing loan (see [seeded data, terminal commands, and UI examples](NESSIE-DEMO-DATA.md)). The scenarios include a small cash cushion, a future cash shortfall, and existing debt; debt is displayed separately from available cash. `npm run nessie:read` lists the customers this key can read; `npm run nessie:read -- <customerId>` prints exactly what the app reads for one of them.
 
-Run `node --env-file=.env.local scripts/nessie-smoke.mts accounts` from the repo root for a read-only connectivity test, after following the quick reference's environment setup. This script is separate from the app: `/api/dashboard` still does not contact Nessie. Confirm the fields and units needed for each feature before implementing reads in `src/lib/nessie.ts`. That module is server-only. Use `src/app/api/dashboard/route.ts` to expose only the data needed by the UI. Configure `NESSIE_ACCOUNT_ID` to your mock account. Never return API keys or raw upstream error URLs. Keep historical posted activity out of future balance calculations.
+## Where the data comes from
+
+- **One authority.** [src/lib/active-customer.ts](src/lib/active-customer.ts) decides whose data is shown: an httpOnly cookie holding a Nessie customer `_id`, checked against `GET /customers` (the first customer when unset or unknown). The layout, every page, `/api/dashboard`, and the AI routes resolve through it; "today" is also decided there, once per request, in America/New_York. Pick the customer on **Profile**.
+- **Normalization.** [src/lib/nessie-profile.ts](src/lib/nessie-profile.ts) reads the customer's accounts, then each checking/savings account's deposits, withdrawals, bills, and loans, and converts Nessie dollars to integer cents once. Checking and savings balances are the starting cash; approved loans are shown as debt; credit card accounts provide the Cash Back cards (by nickname). Customer names are the Nessie names.
+- **Plan assumptions, labeled.** Nessie has no income schedule or spending budget. Seeded customers use their income, everyday spending, and Cash Back category budget from `data/nessie-demo/plan.json`, matched by the seed's checking-account nickname ([src/lib/plan-assumptions.ts](src/lib/plan-assumptions.ts)). Any other customer gets estimates from Nessie history: the latest deposit repeated monthly, and the last 90 days of withdrawals ÷ 3.
+- **Browser state** (goals, purchases you add, card list edits, the critical balance) is saved per customer id received from the server, never sent to Nessie.
+- **Fixtures** live only in `src/test-fixtures/` for tests; lint blocks app code from importing them, and only `src/lib/plan-assumptions.ts` may read `data/nessie-demo/plan.json`.
+
+Run `node --env-file=.env.local scripts/nessie-smoke.mts accounts` from the repo root for a read-only connectivity test, after following the quick reference's environment setup. `NESSIE_ACCOUNT_ID` is only used by that smoke script; the app picks the customer itself. Nessie modules are server-only. Never return API keys or raw upstream error URLs. Keep historical posted activity out of future balance calculations.
 
 ## Team workflow
 
@@ -51,9 +59,9 @@ The ask box, Purchase Advisor explanation, Big Purchase summary, and Cash Back m
 
 ## Current scope
 
-Included: responsive sample dashboard, seven-day pure forecast, shared types, server-only integration placeholder, six UI components, and tests.
+Included: dashboard, calendar, Purchase Advisor, Storm Solver, Forecast Fund (`/big-purchase`), and Swipe and Shine (`/cash-back`), all on live Nessie reads for the selected customer, plus tests.
 
-The combined branch also includes `/big-purchase` and `/cash-back`, with their feature engines, tests, and labeled demo data. Their active data source is the selected synthetic Nessie profile, with local forecast assumptions and explicitly estimated monthly rewards budgets.
+Known limits: Nessie bills carry no flexibility, so bills are never suggested for cancelling or moving; `GET /accounts/{id}/purchases` responds but returned no records on 2026-10-17, so card-level purchases are not read.
 
 Next: verified Nessie reads, user-confirmed schedules, 30-day calendar, purchase simulator, and optional local storage. No separate database is needed for the initial demo. Forecasts currently report end-of-day balances; they do not model same-day posting order or bank fees.
 
