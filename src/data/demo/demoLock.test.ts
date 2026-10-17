@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { addMonths } from "../../lib/dates";
+import { addDays, addMonths } from "../../lib/dates";
+import { generateAdvice } from "../../features/big-purchase/advice/generateAdvice";
 import { projectBase } from "../../features/big-purchase/engine/base";
 import { computeForecast } from "../../features/big-purchase/engine/forecast";
 import { loadDemoScenario } from "../demoDataSource";
@@ -28,5 +29,13 @@ describe("demo lock: tightMonth", () => {
     expect(plan.affordableDate).not.toBeNull();
     expect(plan.affordableDate! >= addMonths(scenario.asOfDate, 3)).toBe(true);
     expect(plan.affordableDate! <= addMonths(scenario.asOfDate, 6)).toBe(true);
+  });
+
+  it("has at least two advice items that bring the date two or more weeks earlier", () => {
+    const result = computeForecast(scenario, laptop);
+    if (!result.ok) throw new Error(result.message);
+    const deadline = addDays(result.forecast.plan.affordableDate!, -30);
+    const advice = generateAdvice(scenario, laptop, result.forecast, deadline);
+    expect(advice.items.filter(item => (item.daysSooner ?? 0) >= 14).length).toBeGreaterThanOrEqual(2);
   });
 });
