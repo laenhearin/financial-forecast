@@ -276,6 +276,26 @@
 }
 
 @layer components {
+  .forecast-tooltip-enter {
+    animation: forecast-tooltip-enter 140ms ease-out both;
+  }
+
+  @keyframes forecast-tooltip-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast-tooltip-enter { animation: none; }
+  }
+
+  .home-forecast {
+    background:
+      radial-gradient(ellipse at 75% 0%, color-mix(in srgb, var(--ac) 28%, transparent), transparent 65%),
+      linear-gradient(160deg, var(--card), color-mix(in srgb, var(--rain) 32%, var(--card)));
+    box-shadow: 0 12px 40px color-mix(in srgb, var(--ac) 8%, transparent);
+  }
+
   .home-weather {
     --weather-glow: #FFD966;
     --weather-wash: #BFE6FF;

@@ -33,6 +33,7 @@ const PROJECTION_KEYFRAMES: ProjectionPoint[] = [
 ];
 
 export const homeData: HomeData = {
+  asOfDate: "2026-10-17",
   isSampleData: true,
   userName: USER_NAME,
   nextStormLabel: "Thursday",
@@ -65,7 +66,7 @@ export const homeData: HomeData = {
       id: "cash-back",
       icon: "credit-card",
       tone: "sun",
-      title: "Change of Weather",
+      title: "Swipe and Shine",
       subtitle: "$18 missed this month",
       actionLabel: "See cards",
       href: ROUTES.cashBack,

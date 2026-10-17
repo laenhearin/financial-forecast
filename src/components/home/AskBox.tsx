@@ -38,7 +38,7 @@ export function AskBox({ className }: { className?: string }) {
     <div className={className}>
       <form
         onSubmit={handleSubmit}
-        className="flex items-center gap-3 rounded-panel border border-accent-line bg-card px-6 py-5 has-[input:focus]:outline-2 has-[input:focus]:outline-offset-2 has-[input:focus]:outline-accent"
+        className="flex items-center gap-3 rounded-panel border border-accent-line bg-card px-4 py-3 has-[input:focus]:outline-2 has-[input:focus]:outline-offset-2 has-[input:focus]:outline-accent"
       >
         <Sparkles aria-hidden className="size-5 shrink-0 text-accent" strokeWidth={1.75} />
         <input

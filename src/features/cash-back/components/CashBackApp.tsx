@@ -31,7 +31,7 @@ export function CashBackApp({ initialCardId }: { initialCardId: string | null })
   return (
     <div className="mx-auto flex w-full max-w-350 flex-col gap-4 px-5 py-6 md:px-8 lg:py-7">
       <header className="shrink-0">
-        <h1 className="text-display font-medium text-primary">Change of Weather</h1>
+        <h1 className="text-display font-medium text-primary">Swipe and Shine</h1>
         <p className="mt-0.5 text-body text-secondary">Use the right card for every purchase.</p>
         {profile.isFixture && (
           <p className="mt-1 flex items-center gap-1.5 text-micro text-secondary">

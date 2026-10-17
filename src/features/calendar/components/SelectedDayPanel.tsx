@@ -2,7 +2,8 @@ import { formatDate } from "@/lib/dates";
 import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { FORECAST_DAYS } from "../config";
-import { balanceOn, dayAlert, riskLevel, type CalendarModel, type DayAlert } from "../engine/model";
+import { balanceOn, dayAlert, type CalendarModel, type DayAlert } from "../engine/model";
+import { balanceLevel } from "../engine/balanceThresholds";
 import { formatWeekday } from "../format";
 import type { CalendarEntry, ISODate } from "../types";
 import { panelClass, panelTitleClass, removeButtonClass, subtitleClass } from "./ui";
@@ -28,13 +29,14 @@ interface SelectedDayPanelProps {
   model: CalendarModel;
   date: ISODate;
   accountNames: Record<string, string>;
+  criticalBalanceCents: number;
   onRemovePurchase: (id: string) => void;
 }
 
-export function SelectedDayPanel({ model, date, accountNames, onRemovePurchase }: SelectedDayPanelProps) {
+export function SelectedDayPanel({ model, date, accountNames, criticalBalanceCents, onRemovePurchase }: SelectedDayPanelProps) {
   const entries = model.entriesByDate.get(date) ?? [];
   const balance = balanceOn(model, date);
-  const alert = dayAlert(model, date);
+  const alert = dayAlert(model, date, criticalBalanceCents);
   const isPast = date < model.asOfDate;
 
   return (
@@ -49,7 +51,7 @@ export function SelectedDayPanel({ model, date, accountNames, onRemovePurchase }
       </p>
 
       <p className="mt-4 text-caption text-secondary">Projected balance after this day</p>
-      <p className={cn("mt-1 text-display font-semibold", balance !== null && riskLevel(balance, model.startingCents) >= 2 ? "text-neg" : "text-primary")}>
+      <p className={cn("mt-1 text-display font-semibold", balance !== null && balanceLevel(balance, criticalBalanceCents) >= 4 ? "text-neg" : "text-primary")}>
         {balance !== null ? formatUSD(balance) : isPast ? "Past date" : "Outside forecast"}
       </p>
       <p className="mt-1 text-micro text-secondary">

@@ -31,9 +31,9 @@ describe("sidebar active state", () => {
       ["Home", "/"],
       ["Weather calendar", "/calendar"],
       ["Purchase advisor", "/purchase-advisor"],
-      ["Purchase Forecasting", "/big-purchase"],
+      ["Forecast Fund", "/big-purchase"],
       ["Storm solver", "/storm-solver"],
-      ["Change of Weather", "/cash-back"],
+      ["Swipe and Shine", "/cash-back"],
     ]);
   });
 });
