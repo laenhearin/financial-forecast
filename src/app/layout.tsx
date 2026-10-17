@@ -4,12 +4,13 @@ import { Geist } from "next/font/google";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { WeatherStageSync } from "@/components/layout/WeatherStageSync";
 import { cn } from "@/lib/utils";
 import { loadActiveDemo } from "@/lib/active-demo";
-import { monthlyActivity } from "@/lib/monthly-activity";
-import { dailyWeather } from "@/components/home/weeklyForecast";
 import styles from "@/components/layout/WeatherTheme.module.css";
-import { scenarioEntries } from "@/features/calendar/engine/entries";
+import { defaultCriticalBalanceCents } from "@/features/calendar/engine/balanceThresholds";
+import { weatherStage, type WeatherStage } from "@/features/calendar/engine/weatherStage";
+import type { Scenario } from "@/features/big-purchase/types";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -21,11 +22,14 @@ export const metadata: Metadata = {
 
 /** The shared shell: every page renders inside <main>, next to the one Sidebar. */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let weather: ReturnType<typeof dailyWeather> | "unavailable" = "unavailable";
+  let scenario: Scenario | null = null;
+  let criticalBalanceCents = 0;
+  let weather: WeatherStage | "unavailable" = "unavailable";
   try {
     const demo = await loadActiveDemo();
-    const today = monthlyActivity(demo.history.filter(record => record.date === demo.asOfDate), demo.asOfDate);
-    weather = dailyWeather(today.incomeCents - today.spendingCents, scenarioEntries(demo.scenario).some(entry => entry.kind === "bill" && entry.date === demo.asOfDate));
+    scenario = demo.scenario;
+    criticalBalanceCents = defaultCriticalBalanceCents(demo.scenario);
+    weather = weatherStage(demo.scenario, [], criticalBalanceCents);
   } catch {
     // Pages display their data errors; the shared shell remains usable without a weather claim.
   }
@@ -35,6 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body data-weather={weather} className={cn(styles.sky, "flex min-h-screen flex-col text-primary antialiased md:flex-row")}>
         <div aria-hidden="true" className={styles.rain} />
         <ThemeProvider>
+          <WeatherStageSync scenario={scenario} defaultCriticalBalanceCents={criticalBalanceCents} />
           <Sidebar />
           <AccountMenu />
           <main className="min-h-screen min-w-0 flex-1">{children}</main>

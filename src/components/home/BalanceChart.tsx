@@ -9,9 +9,12 @@ import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/dates";
 import { dailyWeather, forecastDate, forecastDays, weeklyCurve } from "./weeklyForecast";
 import type { BillMarker, ProjectionPoint } from "./types";
+import type { Scenario } from "@/features/big-purchase/types";
+import { useCalendarAdjustedForecast } from "./useCalendarAdjustedForecast";
 
 interface BalanceChartProps {
   asOfDate: string;
+  scenario: Scenario;
   todayNetCents: number;
   availableBalanceCents: number;
   projection: ProjectionPoint[];
@@ -21,12 +24,14 @@ interface BalanceChartProps {
   className?: string;
 }
 
-export function BalanceChart({ asOfDate, todayNetCents, availableBalanceCents, projection, markers, monthlyTotals, isLoading = false, className }: BalanceChartProps) {
+export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalanceCents, projection, markers, monthlyTotals, isLoading = false, className }: BalanceChartProps) {
   const [week, setWeek] = useState(0);
   const [selected, setSelected] = useState(0);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const id = useId();
-  const days = forecastDays(projection, availableBalanceCents, todayNetCents);
+  const adjusted = useCalendarAdjustedForecast(scenario, projection);
+  const openingAdjustment = adjusted.availableBalanceCents - availableBalanceCents;
+  const days = forecastDays(adjusted.projection, adjusted.availableBalanceCents, todayNetCents + openingAdjustment);
   const lastWeek = Math.max(0, Math.ceil(days.length / 7) - 1);
   const currentWeek = Math.min(week, lastWeek);
   const visible = days.slice(currentWeek * 7, currentWeek * 7 + 7);
@@ -55,7 +60,7 @@ export function BalanceChart({ asOfDate, todayNetCents, availableBalanceCents, p
       </div>
       <div className="mt-5 grid items-end gap-5 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <p className="text-5xl font-light tracking-tight text-primary 2xl:text-6xl">{formatUSD(availableBalanceCents)}</p>
+          <p className="text-5xl font-light tracking-tight text-primary 2xl:text-6xl">{formatUSD(adjusted.availableBalanceCents)}</p>
           <p className="mt-2 text-body text-secondary">Available balance</p>
         </div>
         <div className="sm:border-l sm:border-app sm:pl-4">

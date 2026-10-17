@@ -63,7 +63,22 @@ export function CalendarApp({ scenario, sourceLabel, isFixture, initialDate }: C
   return (
     <div className="mx-auto w-full max-w-300 px-5 py-12 md:px-10">
       <header className="mb-7">
-        <h1 className="text-display font-medium text-primary">Weather Calendar</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-display font-medium text-primary">Weather Calendar</h1>
+          {purchases.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Clear all ${purchases.length} saved test purchase${purchases.length === 1 ? "" : "s"} for this profile?`)) {
+                  purchaseStore.clear();
+                }
+              }}
+              className="rounded-item border border-app bg-card px-3 py-2 text-caption text-secondary hover:bg-nav-hover"
+            >
+              Clear test purchases
+            </button>
+          )}
+        </div>
         {isFixture && (
           <p className="mt-1.5 flex items-start gap-1.5 text-caption text-secondary">
             <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />

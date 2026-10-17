@@ -31,6 +31,12 @@
   --sky-contrast: 0.58;
 }
 
+.sky[data-weather="downpour"] {
+  --sky-image: url("/weather/cloudy.jpg");
+  --sky-exposure: 0.78;
+  --sky-contrast: 0.82;
+}
+
 .sky[data-weather="sunny"] {
   --sky-image: url("/weather/sunny-daylight.jpg");
   --sky-exposure: 1.12;
@@ -63,8 +69,25 @@
   pointer-events: none;
 }
 
-.sky[data-weather="rainy"] .rain {
+.sky[data-weather="rainy"] .rain,
+.sky[data-weather="downpour"] .rain {
   display: block;
+}
+
+.sky[data-weather="downpour"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 72% 12%, rgb(225 239 255 / 45%), transparent 48%);
+  opacity: 0;
+  animation: lightning 9s linear infinite;
+}
+
+@keyframes lightning {
+  0%, 37%, 39%, 72%, 74%, 100% { opacity: 0; }
+  38%, 73% { opacity: 0.7; }
 }
 
 .rain::before,
@@ -91,7 +114,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rain::before, .rain::after { animation: none; }
+  .rain::before, .rain::after, .sky[data-weather="downpour"]::after { animation: none; }
 }
 
 .sky :global(.home-forecast),

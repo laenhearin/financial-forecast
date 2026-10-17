@@ -71,6 +71,9 @@ export const purchaseStore = {
   add(purchase: Omit<UserPurchase, "id">) {
     publish([...getSnapshot(), { ...purchase, id: crypto.randomUUID() }]);
   },
+  clear() {
+    publish([]);
+  },
   remove(id: string) {
     publish(getSnapshot().filter((purchase) => purchase.id !== id));
   },
