@@ -26,7 +26,7 @@ export interface CalendarEntry {
   detail?: string;
 }
 
-/** A user-added purchase saved locally for the active demo profile. */
+/** A user-added purchase saved locally for the active Nessie customer. */
 export interface UserPurchase {
   id: string;
   label: string;

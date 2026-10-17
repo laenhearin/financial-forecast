@@ -9,8 +9,8 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import { APP_NAME } from "@/lib/config";
 import { getActiveHref, NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { useActiveCustomer } from "./ActiveCustomer";
 import { ThemeToggle } from "./ThemeToggle";
-import { useProfileName } from "./useProfileName";
 
 /*
  * Layout by width: 1024px+ full sidebar; 768–1023px a 64px icon rail (md:max-lg:) whose labels
@@ -27,7 +27,7 @@ function LogoMark() {
 }
 
 export function Sidebar() {
-  const profileName = useProfileName();
+  const profileName = useActiveCustomer()?.name ?? "No Nessie customer";
   const pathname = usePathname();
   const activeHref = getActiveHref(pathname);
   // The drawer is open only on the page where it was opened, so any navigation closes it.

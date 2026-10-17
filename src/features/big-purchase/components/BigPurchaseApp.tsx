@@ -3,7 +3,9 @@
 import { Database, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { DebtSummary } from "@/components/home/DebtSummary";
+import { forecastEstimateNote, nessieSourceNote } from "@/lib/data-source";
 import { useBigPurchase } from "../hooks/useBigPurchase";
+import type { Scenario } from "../types";
 import { canReset } from "../state/goalStore";
 import { AdvicePanel } from "./AdvicePanel";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -18,23 +20,35 @@ import { StatusSelector } from "./StatusSelector";
 import { cardClass, mutedTextClass, previewClass } from "./ui";
 import { WelcomeFlow } from "./WelcomeFlow";
 
-export function BigPurchaseApp({ seedDemoGoal }: { seedDemoGoal: boolean }) {
-  const model = useBigPurchase({ seedDemoGoal });
-  const { scenarioState, goal, forecast, valid, actions } = model;
+export type BigPurchaseLoad = { ok: true; scenario: Scenario } | { ok: false; message: string; details: string[] };
+
+/** The page loads the active Nessie customer on the server and passes either their scenario or the load error. */
+export function BigPurchaseApp({ load }: { load: BigPurchaseLoad }) {
+  if (!load.ok) {
+    return (
+      <div className="mx-auto max-w-[1280px] px-6 pb-16">
+        <header className="py-6"><h1 className="text-2xl font-semibold tracking-tight">Forecast Fund</h1></header>
+        <ErrorCard title="We couldn't load your data" message={load.message} details={load.details} />
+      </div>
+    );
+  }
+  return <Planner key={load.scenario.id} scenario={load.scenario} />;
+}
+
+function Planner({ scenario }: { scenario: Scenario }) {
+  const model = useBigPurchase(scenario);
+  const { goal, forecast, valid, actions } = model;
   const [confirm, setConfirm] = useState<"deactivate" | "reset" | null>(null);
-  const scenario = scenarioState.status === "ready" ? scenarioState.scenario : null;
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 pb-16">
       <header className="flex flex-wrap items-center justify-between gap-4 py-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Forecast Fund</h1>
-          {scenario && model.isFixture && (
-            <p className={`mt-1 flex items-center gap-1.5 text-sm ${mutedTextClass}`}>
-              <Database aria-hidden className="size-4" />
-              {model.sourceLabel}: {scenario.customerName}, {scenario.label.toLowerCase()} scenario. Not live bank data; includes estimated everyday spending.
-            </p>
-          )}
+          <p className={`mt-1 flex items-start gap-1.5 text-sm ${mutedTextClass}`}>
+            <Database aria-hidden className="mt-0.5 size-4 shrink-0" />
+            {nessieSourceNote(scenario.customerName, scenario.asOfDate)} {forecastEstimateNote(scenario)}
+          </p>
         </div>
         {goal && (
           <div className="flex items-center gap-3">
@@ -48,13 +62,11 @@ export function BigPurchaseApp({ seedDemoGoal }: { seedDemoGoal: boolean }) {
         )}
       </header>
 
-      {scenario && <DebtSummary scenario={scenario} />}
-      {scenarioState.status === "error" ? (
-        <ErrorCard title="We couldn't load your data" message={scenarioState.message} details={scenarioState.details} />
-      ) : scenarioState.status === "loading" || !model.hydrated ? (
+      <DebtSummary scenario={scenario} />
+      {!model.hydrated ? (
         <div className={`${cardClass} h-64 bp-shimmer`} aria-busy="true" aria-label="Loading" />
       ) : !goal ? (
-        <WelcomeFlow disabled={!scenario} onFinish={actions.startGoal} />
+        <WelcomeFlow disabled={false} onFinish={actions.startGoal} />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
           <FadeRise index={0} className="lg:sticky lg:top-6 lg:self-start">

@@ -56,7 +56,7 @@ export interface AccountSnapshot {
 
 export interface Scenario {
   id: string; label: string; customerName: string;
-  /** The demo's "today". Balances are end-of-day on this date; items dated on it are already posted. */
+  /** "Today", decided on the server. Balances are end-of-day on this date; items dated on it are already posted. */
   asOfDate: ISODate;
   accounts: AccountSnapshot[];
   income: IncomeSource[];

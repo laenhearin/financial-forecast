@@ -1,12 +1,4 @@
-import type { Scenario } from "../features/big-purchase/types";
-
-export interface DataSource {
-  /** Shown in the UI so fixture data is always labelled. */
-  readonly sourceLabel: string;
-  readonly isFixture: boolean;
-  getScenario(): Promise<Scenario>;   // normalized, in cents
-}
-
+/** A scenario that cannot be forecast; pages show the message and details on their error card. */
 export class ScenarioLoadError extends Error {
   constructor(message: string, readonly details: string[] = []) {
     super(message);

@@ -89,6 +89,19 @@ export function formatDate(value: string, style: keyof typeof formatters = "long
   return formatters[style].format(new Date(toUTCms(value)));
 }
 
+/** The app's calendar: "today" is the date in this zone, decided once on the server. */
+export const APP_TIME_ZONE = "America/New_York";
+
+/** The YYYY-MM-DD calendar date of an instant in a time zone. Pure: the caller supplies the instant. */
+export function calendarDateInTimeZone(instant: Date, timeZone: string = APP_TIME_ZONE): string {
+  if (!Number.isFinite(instant.getTime())) throw new Error("Expected a valid instant.");
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(instant);
+  const part = (type: string) => parts.find(entry => entry.type === type)?.value ?? "";
+  const value = `${part("year")}-${part("month")}-${part("day")}`;
+  assertISODate(value);
+  return value;
+}
+
 /** 1 -> "1st", 22 -> "22nd". */
 export function ordinal(n: number): string {
   const tens = n % 100;

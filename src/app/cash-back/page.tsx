@@ -1,18 +1,25 @@
+import { ActiveCustomerProvider } from "@/components/layout/ActiveCustomer";
 import { CashBackApp } from "@/features/cash-back/components/CashBackApp";
-import { loadActiveDemo } from "@/lib/active-demo";
-import { seededCashBackProfile } from "@/features/cash-back/data/source";
+import { loadActiveProfile } from "@/lib/active-customer";
 
 /** /cash-back?suggest=<cardId> opens that card's details, as linked from the homepage. */
 export default async function CashBackPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { suggest } = await searchParams;
-  let demo: Awaited<ReturnType<typeof loadActiveDemo>>;
-  let profile: ReturnType<typeof seededCashBackProfile>;
+  let profile: Awaited<ReturnType<typeof loadActiveProfile>>;
   try {
-    demo = await loadActiveDemo();
-    profile = seededCashBackProfile(demo.cashBack);
+    profile = await loadActiveProfile();
   } catch (error) {
-    return <p role="alert" className="p-6 text-neg">Could not load rewards: {error instanceof Error ? error.message : "Please try again."}</p>;
+    const message = error instanceof Error ? error.message : "The Nessie customer could not be loaded.";
+    return (
+      <div className="mx-auto w-full max-w-350 px-5 py-6 md:px-8 lg:py-7">
+        <h1 className="text-display font-medium text-primary">Swipe and Shine</h1>
+        <p role="alert" className="mt-4 rounded-panel border border-neg bg-card p-4 text-caption text-secondary">We couldn&apos;t load your data: {message}</p>
+      </div>
+    );
   }
-  return <CashBackApp key={demo.scenario.id} initialCardId={typeof suggest === "string" ? suggest : null}
-    profile={profile} profileSlug={demo.scenario.id.split("/").at(-1)!} scenario={demo.scenario} />;
+  return (
+    <ActiveCustomerProvider customer={profile.customer}>
+      <CashBackApp key={profile.customer.id} profile={profile.cashBack} scenario={profile.scenario} initialCardId={typeof suggest === "string" ? suggest : null} />
+    </ActiveCustomerProvider>
+  );
 }

@@ -21,7 +21,6 @@ export function buildHomeForecast(scenario: Scenario): HomeData {
     return {
       cards: [],
       asOfDate: scenario.asOfDate,
-      isSampleData: true,
       userName: scenario.customerName,
       nextStormLabel: low.day > 0 ? weekday(base.days[low.day].date) : null,
       availableBalanceCents: base.startingCashCents,

@@ -5,14 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, CircleUser, Settings2, WalletCards } from "lucide-react";
 import { ROUTES } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { useActiveCustomer } from "./ActiveCustomer";
 import { ThemeToggle } from "./ThemeToggle";
-import { useProfileName } from "./useProfileName";
 
 type Panel = "settings" | null;
 export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
-  const profileName = useProfileName();
+  const profileName = useActiveCustomer()?.name ?? "No Nessie customer";
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 

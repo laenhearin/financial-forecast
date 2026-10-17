@@ -29,6 +29,8 @@ Examples include campus wages/textbooks/groceries, an early-career paycheck/dini
 
 Every new account nickname and transaction description contains `ff-demo-v1`. Existing names, addresses, accounts, and balances were not overwritten. All five added customer names explicitly say Demo.
 
+**Later on 2026-10-17:** all eight customers were renamed in Nessie to their plan labels (for example "string string" became "College student" and "Alejandro Ponce" became "20s: commuter") so the app can show API names. Addresses were re-sent unchanged and verified. The original names are recorded in the ignored `data/nessie-demo/customer-names.local.json` on the machine that made the change.
+
 ## Read names and transactions directly from Terminal
 
 Run these commands **from the repository root**. No Next.js server or application script is required. The shell reads your trusted local environment file; the key itself never needs to appear in a command you paste.
@@ -71,15 +73,9 @@ Node.js 24 and `npm ci` are required. The `react-server` condition enables the i
 # Preview the fixed seed plan; no network calls or writes:
 node --conditions=react-server --env-file=.env.local scripts/seed-nessie.mts
 
-# Read API-backed data, normalized for the UI (read-only):
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts college
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts twenties-a
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts twenties-b
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts midlife
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts older
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts teen-low-cash
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts college-shortfall
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts existing-debt
+# Read API-backed data exactly as the app normalizes it (read-only):
+npm run nessie:read                 # lists customer ids and names
+npm run nessie:read -- <customerId> # prints that customer's normalized profile
 
 # Already performed for this key. Use only to fill missing seed records or seed another key:
 node --conditions=react-server --env-file=.env.local scripts/seed-nessie.mts --apply
@@ -132,7 +128,7 @@ Nessie's `rewards` field is not a reward-rate schedule or card-product identity.
 
 ## Use these records in the features
 
-The read-only [loadNessieDemo](src/lib/nessie-demo.ts) adapter returns:
+**Superseded later on 2026-10-17.** The app no longer uses this adapter or the plan's local assumptions. It reads any customer through [src/lib/nessie-profile.ts](src/lib/nessie-profile.ts) (see the README's "Where the data comes from"); `plan.json` is used only by the seed script and its tests. The description below is kept for the seed's history. The removed `loadNessieDemo` adapter returned:
 
 | Returned field | Intended use |
 | --- | --- |

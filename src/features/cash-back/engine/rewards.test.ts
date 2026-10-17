@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CARD_CATALOG, cardsByIds, findCard } from "../cards/catalog";
-import { DEMO_AS_OF_DATE, DEMO_OWNED_CARD_IDS, DEMO_SPEND_PROFILE } from "../data/demoProfile";
+import { DEMO_AS_OF_DATE, DEMO_OWNED_CARD_IDS, DEMO_SPEND_PROFILE } from "../../../test-fixtures/cashBackProfile";
 import type { CreditCard, SpendProfile } from "../types";
 import {
   bestCardsByCategory, CapLedger, chosenCategories, estimateCapUsage, getEffectiveRate, goldCards, periodKey,
