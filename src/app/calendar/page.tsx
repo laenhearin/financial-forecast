@@ -1,8 +1,30 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+import { ScenarioLoadError } from "@/data/dataSource";
+import { demoDataSource } from "@/data/demoDataSource";
+import type { Scenario } from "@/features/big-purchase/types";
+import { CalendarApp } from "@/features/calendar/components/CalendarApp";
+import { CalendarLoadError } from "@/features/calendar/components/CalendarLoadError";
+import "@/features/calendar/calendar.css";
 
 export const metadata: Metadata = { title: "Calendar · Financial Forecast" };
 
-export default function CalendarPage() {
-  return <ComingSoon title="Calendar" />;
+type LoadResult = { ok: true; scenario: Scenario } | { ok: false; message: string; details: string[] };
+
+/** Loads on the server so a future live data source stays server-only. */
+async function loadScenario(): Promise<LoadResult> {
+  try {
+    return { ok: true, scenario: await demoDataSource.getScenario() };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Unknown error.",
+      details: error instanceof ScenarioLoadError ? error.details : [],
+    };
+  }
+}
+
+export default async function CalendarPage() {
+  const result = await loadScenario();
+  if (!result.ok) return <CalendarLoadError message={result.message} details={result.details} />;
+  return <CalendarApp scenario={result.scenario} sourceLabel={demoDataSource.sourceLabel} isFixture={demoDataSource.isFixture} />;
 }
