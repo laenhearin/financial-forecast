@@ -19,7 +19,7 @@ import { ThemeToggle } from "./ThemeToggle";
 const iconButton =
   "ui-transition inline-flex size-8 shrink-0 items-center justify-center rounded-item text-secondary hover:bg-nav-hover hover:text-primary";
 
-const FEATURE_TOOLTIP_DELAY_MS = 2000;
+const FEATURE_TOOLTIP_DELAY_MS = 1000;
 
 function LogoMark() {
   return <Image src="/icon.png" alt="" width={32} height={32} className="size-8 shrink-0 rounded-logo object-cover" />;
