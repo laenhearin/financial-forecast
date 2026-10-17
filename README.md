@@ -27,6 +27,8 @@ Start with the [API quick reference](API-quick-reference.md) and [detailed team 
 
 Run `node --env-file=.env.local scripts/nessie-smoke.mts accounts` from the repo root for a read-only connectivity test, after following the quick reference's environment setup. This script is separate from the app: `/api/dashboard` still does not contact Nessie. Confirm the fields and units needed for each feature before implementing reads in `src/lib/nessie.ts`. That module is server-only. Use `src/app/api/dashboard/route.ts` to expose only the data needed by the UI. Configure `NESSIE_ACCOUNT_ID` to your mock account. Never return API keys or raw upstream error URLs. Keep historical posted activity out of future balance calculations.
 
+To practice GET/POST/PUT/DELETE, run `node scripts/nessie-playground.mts --help` and follow the [test-bill walkthrough](API-guide.md#mini-playground-get-post-put-delete). Writes require `--send`; otherwise they only preview. The guide also includes an [eight-hour integration schedule](API-guide.md#suggested-one-day-integration-schedule) for the existing pages.
+
 ## Team workflow
 
 New to GitHub? Follow [the step-by-step teammate setup and branches guide](GETTING_STARTED.md).

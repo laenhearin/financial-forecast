@@ -131,6 +131,47 @@ This is a **live smoke test**: it answers whether a request works now. It is not
 
 The official docs' “Try it out” and a local Postman environment are also useful for manual inspection. Use GET first. Keep secrets in private/local environment values, not exported collections or synced team examples. A POST/PUT/DELETE in the docs actually changes sandbox records; the interface is not a simulation of a request.
 
+### Mini playground: GET, POST, PUT, DELETE
+
+These are HTTP methods, not standalone shell commands. [`scripts/nessie-playground.mts`](scripts/nessie-playground.mts) passes the chosen method to Node's `fetch()`. It supports the documented account read and bill create/read/update/delete operations. It uses the same local environment variables as the smoke script, requires no running website, and does not add dependencies.
+
+GET sends immediately. POST, PUT, and DELETE display a preview by default; append `--send` to actually change the shared mock data. This is a sandbox write, not a change to a local fixture. Coordinate with the person responsible for demo data. The script does not automatically retry writes or fully validate the upstream schema; a timeout can leave a write applied even if you did not receive its response.
+
+1. Read the account and existing bills. Keep the quoted `{accountId}` token exactly as shown: the script replaces it with `NESSIE_ACCOUNT_ID`.
+
+```bash
+node --env-file=.env.local scripts/nessie-playground.mts GET '/accounts/{accountId}'
+node --env-file=.env.local scripts/nessie-playground.mts GET '/accounts/{accountId}/bills'
+```
+
+2. Inspect [`scripts/examples/nessie-bill-create.json`](scripts/examples/nessie-bill-create.json). Give the nickname a unique team/test label and choose a future `payment_date` before sending. `payment_amount: 1` is a raw Nessie API value, **not a verified dollar or cent amount**. These JSON files describe transport payloads; our app's normalized money model still uses integer cents. This experiment does not settle Nessie's monetary-unit or posting semantics.
+
+3. Preview the create request, then send it only when ready. Only the second command writes.
+
+```bash
+node --env-file=.env.local scripts/nessie-playground.mts POST '/accounts/{accountId}/bills' scripts/examples/nessie-bill-create.json
+node --env-file=.env.local scripts/nessie-playground.mts POST '/accounts/{accountId}/bills' scripts/examples/nessie-bill-create.json --send
+```
+
+4. Run the bills GET again. Find the bill with your unique test nickname and copy its `_id`. A create response may be only a success string; do not assume it contains an ID. Replace `BILL_ID` in the following commands with the actual ID, keeping the quotes. Do not use your account ID here.
+
+```bash
+node --env-file=.env.local scripts/nessie-playground.mts GET '/bills/BILL_ID'
+node --env-file=.env.local scripts/nessie-playground.mts PUT '/bills/BILL_ID' scripts/examples/nessie-bill-update.json
+node --env-file=.env.local scripts/nessie-playground.mts PUT '/bills/BILL_ID' scripts/examples/nessie-bill-update.json --send
+node --env-file=.env.local scripts/nessie-playground.mts GET '/bills/BILL_ID'
+```
+
+5. When finished, preview and delete only the test bill you created, then list the account's bills again to verify cleanup.
+
+```bash
+node --env-file=.env.local scripts/nessie-playground.mts DELETE '/bills/BILL_ID'
+node --env-file=.env.local scripts/nessie-playground.mts DELETE '/bills/BILL_ID' --send
+node --env-file=.env.local scripts/nessie-playground.mts GET '/accounts/{accountId}/bills'
+```
+
+Unlike the smoke script's limited summary, this playground shows successful JSON responses so you can inspect fields and values. It redacts the local key, key query parameters, and account numbers; other mock record fields remain visible, so review output before sharing it. It rejects unsupported methods/paths and other hosts. Errors include the HTTP status without raw upstream bodies or key-bearing URLs. Empty success bodies are supported. The writes have offline mocked tests; their availability is based on the official specification, not a claim that writes were performed against your account. Run `node scripts/nessie-playground.mts --help` for the supported operations.
+
 ## 4. Keys, teammates, and shared state
 
 **Technically, the same key can authenticate requests from multiple teammates' servers.** Requests carrying that key have the same authority; the API does not know which Git branch or developer initiated them. This is a consequence of the documented key-based access model, not a verified organizational key-sharing policy. We did not find a documented team-role or per-teammate permission mechanism; check event/provider rules if one is required.
@@ -298,6 +339,21 @@ Keep hypothetical purchases outside this base response. `mode: 'nessie'` means t
 For failures, return a safe object such as `{ error: { code: 'NESSIE_UNAVAILABLE', message: 'Could not load the mock account.' } }` with an appropriate non-2xx status. A suggested mapping is 503 for missing server configuration, 504 for upstream timeout, and 502 for upstream failures/invalid payloads. An upstream 401 refers to our server's Nessie credentials, not necessarily the browser user's login. Log only a safe operation label/status; never forward raw upstream URLs, bodies, or exception messages. For partial data, identify the missing collection instead of silently treating a failed bill fetch as zero bills.
 
 Keep response caching explicit (`Cache-Control: no-store` for this first version). Repeated reads on page load or a manual Refresh button are sufficient initially. Avoid polling on every keystroke in the simulator.
+
+### Suggested one-day integration schedule
+
+Assume roughly eight focused hours with the existing team ownership, and adjust for your actual submission deadline. The two feature pages and their engines already exist; put the next effort into data integration and a coherent demo rather than rebuilding them. Work in parallel across distinct files and keep PRs small.
+
+| Elapsed time | Owner / work | Evidence of completion |
+| --- | --- | --- |
+| 0-30 minutes | Team: run the existing pages, choose one demo account and one person for sandbox writes, agree on data contracts | Everyone can open `/big-purchase` and `/cash-back`, and knows which data is fixture versus API-backed |
+| 30 minutes-2 hours | Nessie owner + integrator: confirm monetary units/cutoff semantics, implement a server-only account read and expose sanitized data through the agreed route | One card displays a fetched mock account balance with source, observation time, loading, and error states |
+| Hours 2-4 | Nessie + forecast owners: validate bill data, add user-confirmed future income, map to the existing `Scenario` contract and test inclusion/normalization | Big Purchase can use a seven-day baseline without double-counting past activity; missing schedules are explicit |
+| In parallel, hours 1-4 | Cash-back owner: confirm a supported purchase-history source with Nessie maintainers and map purchases/cards to `CashBackData` | If supported, a tested server adapter; if not, keep labeled demo data and document the missing endpoint instead of fabricating live history |
+| Hours 4-6 | Integrator + page owners: connect navigation and the chosen data source, preserve source labels, verify the existing goal/scenario controls | A coherent flow through both pages; hypothetical changes do not write to Nessie |
+| Hours 6-8 | Team: run required checks, address integration failures, configure hosting secrets, test deployed routes, rehearse the demo | Reproducible deployed demo with a clear account of what is live, mock, or estimated |
+
+Reserve the last 60-90 minutes before submission for fixes and rehearsal. If upstream units or an endpoint remain unresolved, show a truthful hybrid demo: verified Nessie account data where semantics are established, confirmed app schedules, and explicitly labeled Cash Back fixtures. Defer new AI features, a database, additional services, and broad redesign until this flow works. The existing dependency audit and lint-tool upgrade need the integrator's separate review; avoid forcing major package changes during final integration.
 
 ## 9. Troubleshooting and verification
 

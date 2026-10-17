@@ -51,6 +51,15 @@ node --env-file=.env.local scripts/nessie-smoke.mts bills
 
 Other resources: `deposits`, `withdrawals`, `loans`. Run `node scripts/nessie-smoke.mts --help` for usage. No running Next.js server is required. The script sends only GETs, prints a limited summary, refuses other hosts/redirects, and exits nonzero on errors. It performs a limited shape check, not full business validation. `count: 0` is a successful empty result. `npm test` remains the offline test suite.
 
+For POST/PUT/DELETE practice, use [`scripts/nessie-playground.mts`](scripts/nessie-playground.mts). It supports account reads and bill create/read/update/delete operations. Writes preview by default; `--send` executes them against the shared sandbox. Follow the [complete walkthrough](API-guide.md#mini-playground-get-post-put-delete), including test-bill cleanup. HTTP methods are inputs to the script, not standalone terminal commands.
+
+```bash
+node --env-file=.env.local scripts/nessie-playground.mts GET '/accounts/{accountId}/bills'
+node --env-file=.env.local scripts/nessie-playground.mts POST '/accounts/{accountId}/bills' scripts/examples/nessie-bill-create.json
+```
+
+The second command is only a preview. Edit the example's date and unique nickname before sending. For priorities and team assignments, see the [suggested one-day integration schedule](API-guide.md#suggested-one-day-integration-schedule).
+
 ## Endpoints to use first
 
 All paths below are relative to the API base and require `?key=...` on the server. `{id}` is a placeholder, not literal text.
