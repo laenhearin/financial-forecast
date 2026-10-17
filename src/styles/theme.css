@@ -1,0 +1,96 @@
+/*
+ * Big Purchase design tokens. Every visual value in the feature comes from here; components
+ * reference them with Tailwind's variable shorthand, e.g. bg-(--bp-surface). Scoped to .bp-root
+ * so the rest of the app keeps its own look. Rules sit in cascade layers so Tailwind utilities win.
+ */
+@layer base {
+.bp-root {
+  /* Color */
+  --bp-bg: #f6f7fb;
+  --bp-surface: #ffffff;
+  --bp-ink: #2a2f45;
+  --bp-muted: #7a809c;
+  --bp-line: #e6e9f4;
+  --bp-primary: #8b9cf7;
+  --bp-primary-ink: #4455c7;
+  --bp-mint: #a8e6cf;
+  --bp-sky: #bfe3ff;
+  --bp-butter: #fff3b8;
+  --bp-peach: #ffd7ba;
+  --bp-rose: #ffc2d1;
+  --bp-lilac: #d9c8ff;
+  --bp-warn-ink: #8a5a00;
+  --bp-danger-ink: #a8304d;
+  --bp-hero-gradient: linear-gradient(135deg, #d9c8ff66 0%, #bfe3ff55 55%, #a8e6cf44 100%);
+  --bp-shimmer: linear-gradient(90deg, #e6e9f4 0%, #f6f7fb 50%, #e6e9f4 100%);
+
+  /* Shape */
+  --bp-radius-card: 20px;
+  --bp-radius-control: 12px;
+  --bp-control-height: 44px;
+  --bp-shadow-card: 0 8px 30px rgba(120, 130, 180, 0.12);
+  --bp-shadow-pill: 0 2px 10px rgba(120, 130, 180, 0.25);
+
+  /* Type */
+  --bp-font: var(--bp-font-jakarta), var(--bp-font-inter), ui-sans-serif, system-ui, sans-serif;
+  --bp-text-body: 15px;
+  --bp-text-hero: 40px;
+  --bp-icon-stroke: 1.75;
+
+  /* Draft preview */
+  --bp-preview-opacity: 0.7;
+  --bp-preview-filter: saturate(0.55);
+
+  /* Restyle shadcn primitives through the tokens */
+  --background: var(--bp-bg);
+  --foreground: var(--bp-ink);
+  --card: var(--bp-surface);
+  --card-foreground: var(--bp-ink);
+  --popover: var(--bp-surface);
+  --popover-foreground: var(--bp-ink);
+  --primary: var(--bp-primary);
+  --primary-foreground: var(--bp-ink);
+  --secondary: var(--bp-bg);
+  --secondary-foreground: var(--bp-ink);
+  --muted: var(--bp-bg);
+  --muted-foreground: var(--bp-muted);
+  --accent: var(--bp-lilac);
+  --accent-foreground: var(--bp-ink);
+  --destructive: var(--bp-danger-ink);
+  --border: var(--bp-line);
+  --input: var(--bp-line);
+  --ring: var(--bp-primary-ink);
+  --radius: var(--bp-radius-control);
+
+  font-family: var(--bp-font);
+  font-size: var(--bp-text-body);
+  color: var(--bp-ink);
+  background: var(--bp-bg);
+}
+
+.bp-root svg.lucide {
+  stroke-width: var(--bp-icon-stroke);
+}
+
+.bp-root :focus-visible {
+  outline: 2px solid var(--bp-primary-ink);
+  outline-offset: 2px;
+}
+}
+
+@keyframes bp-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@layer components {
+.bp-shimmer {
+  background: var(--bp-shimmer);
+  background-size: 200% 100%;
+  animation: bp-shimmer 1.2s linear infinite;
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-shimmer { animation: none; }
+}
