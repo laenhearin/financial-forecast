@@ -23,7 +23,9 @@ The home screen works without credentials and clearly displays fixed demo data. 
 
 ## Nessie integration next
 
-Confirm the current base URL, authentication method, account endpoint, and response shapes at https://prod.nessieisreal.com/docs before implementing reads in `src/lib/nessie.ts`. That module is server-only. Use `src/app/api/dashboard/route.ts` to expose only the data needed by the UI. Configure `NESSIE_ACCOUNT_ID` to your mock account. Never return API keys or raw upstream error URLs. Keep historical posted activity out of future balance calculations.
+Start with the [API quick reference](API-quick-reference.md) and [detailed team API guide](API-guide.md). They cover setup, endpoint schemas and gaps, shared keys, live testing, and connecting the two pages. The current production API base is `https://prod-api.nessieisreal.com`; the documentation website is a different host.
+
+Run `node --env-file=.env.local scripts/nessie-smoke.mts accounts` from the repo root for a read-only connectivity test, after following the quick reference's environment setup. This script is separate from the app: `/api/dashboard` still does not contact Nessie. Confirm the fields and units needed for each feature before implementing reads in `src/lib/nessie.ts`. That module is server-only. Use `src/app/api/dashboard/route.ts` to expose only the data needed by the UI. Configure `NESSIE_ACCOUNT_ID` to your mock account. Never return API keys or raw upstream error URLs. Keep historical posted activity out of future balance calculations.
 
 ## Team workflow
 
@@ -33,7 +35,7 @@ Read TEAM.md and AGENTS.md first. One person owns dependencies and integration. 
 
 ## Publish and deploy
 
-No GitHub repository or Vercel project has been created automatically.
+The GitHub repository is [laenhearin/financial-forecast](https://github.com/laenhearin/financial-forecast). The publishing steps below also describe setup for a new clone or fork; check the team's hosting project before creating another deployment.
 
 1. In GitHub Desktop, add this folder as an existing local repository; review files and commit.
 2. Publish to GitHub and invite teammates. Teammates clone, then follow Start locally.
@@ -44,6 +46,8 @@ No GitHub repository or Vercel project has been created automatically.
 ## Current scope
 
 Included: responsive sample dashboard, seven-day pure forecast, shared types, server-only integration placeholder, six UI components, and tests.
+
+The combined branch also includes `/big-purchase` and `/cash-back`, with their feature engines, tests, and labeled demo data. Their Nessie data sources remain placeholders; merging the pages does not establish a live API integration.
 
 Next: verified Nessie reads, user-confirmed schedules, 30-day calendar, purchase simulator, and optional local storage. No separate database is needed for the initial demo. Forecasts currently report end-of-day balances; they do not model same-day posting order or bank fees.
 
