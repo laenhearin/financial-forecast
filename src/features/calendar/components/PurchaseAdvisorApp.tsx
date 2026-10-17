@@ -9,7 +9,7 @@ import { ROUTES } from "@/lib/navigation";
 import type { Scenario } from "@/features/big-purchase/types";
 import { PURCHASE_NAME_MAX_LENGTH } from "../config";
 import { ALL_ACCOUNTS, type UserPurchase } from "../types";
-import { buildCalendarModel, lowestBalance } from "../engine/model";
+import { buildCalendarModel, lowestBalance, lowestBalanceFrom } from "../engine/model";
 import { scenarioEntries } from "../engine/entries";
 import { purchaseStore } from "../state/purchaseStore";
 import { useCriticalBalance } from "../state/useCriticalBalance";
@@ -36,7 +36,36 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
   } : null;
   const preview = hypothetical && !added ? buildCalendarModel(scenario, [...purchases, hypothetical], ALL_ACCOUNTS, entries) : null;
   const baselineLow = lowestBalance(baseline);
-  const previewLow = preview ? lowestBalance(preview) : null;
+  const baselineLowAfterDate = isValid ? lowestBalanceFrom(baseline, date) : baselineLow;
+  const previewLowAfterDate = preview ? lowestBalanceFrom(preview, date) : null;
+  const recommendation = previewLowAfterDate ? (() => {
+    const level = balanceLevel(previewLowAfterDate.cents, criticalBalanceCents);
+    if (level === 5) return {
+      title: "Not recommended for this date",
+      detail: `The forecast falls below $0, reaching ${formatUSD(previewLowAfterDate.cents)} on ${formatDate(previewLowAfterDate.date, "short")}. Consider waiting, choosing a cheaper option, or changing the date.`,
+      tone: "bg-neg-soft",
+    };
+    if (level === 4) return {
+      title: "I’d wait or lower the cost",
+      detail: `After this purchase, the forecast reaches ${formatUSD(previewLowAfterDate.cents)} on ${formatDate(previewLowAfterDate.date, "short")}—at or below your ${formatUSD(criticalBalanceCents)} critical threshold.`,
+      tone: "bg-neg-soft",
+    };
+    if (level === 3) return {
+      title: "This looks risky",
+      detail: `The lowest projected balance is only $200 or less above your critical threshold. Delaying the purchase or reducing its cost would leave more room for bills and unexpected expenses.`,
+      tone: "bg-rain-soft",
+    };
+    if (level === 2) return {
+      title: "Possible, with a tighter buffer",
+      detail: `The forecast stays above critical, but the lowest balance is less than $700 above your threshold. Consider whether the purchase can wait or cost less.`,
+      tone: "bg-accent-soft",
+    };
+    return {
+      title: level === 0 ? "Looks manageable in this forecast" : "The forecast keeps some room",
+      detail: `The lowest projected balance after the purchase is ${formatUSD(previewLowAfterDate.cents)} on ${formatDate(previewLowAfterDate.date, "short")}, above your ${formatUSD(criticalBalanceCents)} critical threshold.`,
+      tone: "bg-pos-soft",
+    };
+  })() : null;
 
   function addToCalendar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -112,9 +141,13 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
                 })}
               </ul>
               <div className="mt-3 grid gap-3 rounded-item bg-secondary p-3.5 sm:grid-cols-2">
-                <div><p className="text-micro text-secondary">Lowest balance without it</p><p className="mt-1 text-body font-semibold text-primary">{formatUSD(baselineLow.cents)} <span className="text-caption font-normal text-secondary">· {BALANCE_LABELS[balanceLevel(baselineLow.cents, criticalBalanceCents)]} · {formatDate(baselineLow.date, "short")}</span></p></div>
-                <div><p className="text-micro text-secondary">Lowest balance with it</p><p className={`mt-1 text-body font-semibold ${balanceLevel(previewLow!.cents, criticalBalanceCents) >= 4 ? "text-neg" : "text-primary"}`}>{formatUSD(previewLow!.cents)} <span className="text-caption font-normal text-secondary">· {BALANCE_LABELS[balanceLevel(previewLow!.cents, criticalBalanceCents)]} · {formatDate(previewLow!.date, "short")}</span></p></div>
+                <div><p className="text-micro text-secondary">Lowest balance without it</p><p className="mt-1 text-body font-semibold text-primary">{formatUSD(baselineLowAfterDate.cents)} <span className="text-caption font-normal text-secondary">· {BALANCE_LABELS[balanceLevel(baselineLowAfterDate.cents, criticalBalanceCents)]} · {formatDate(baselineLowAfterDate.date, "short")}</span></p></div>
+                <div><p className="text-micro text-secondary">Lowest balance with it</p><p className={`mt-1 text-body font-semibold ${balanceLevel(previewLowAfterDate!.cents, criticalBalanceCents) >= 4 ? "text-neg" : "text-primary"}`}>{formatUSD(previewLowAfterDate!.cents)} <span className="text-caption font-normal text-secondary">· {BALANCE_LABELS[balanceLevel(previewLowAfterDate!.cents, criticalBalanceCents)]} · {formatDate(previewLowAfterDate!.date, "short")}</span></p></div>
               </div>
+              {recommendation && <div className={`mt-3 rounded-item px-3.5 py-3 ${recommendation.tone}`}>
+                <p className="text-caption font-semibold text-primary">{recommendation.title}</p>
+                <p className="mt-1 text-caption text-primary">{recommendation.detail}</p>
+              </div>}
               <p className="mt-3 text-micro text-secondary">Forecast includes estimated everyday spending and listed income and bills. This is a demo estimate, not a guarantee.</p>
             </>
           )}

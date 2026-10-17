@@ -92,6 +92,15 @@ export function lowestBalance(model: CalendarModel): { date: ISODate; cents: Cen
   return lowest;
 }
 
+/** Lowest projected balance on or after a requested date. */
+export function lowestBalanceFrom(model: CalendarModel, fromDate: ISODate): { date: ISODate; cents: Cents } {
+  let lowest = { date: fromDate, cents: balanceOn(model, fromDate) ?? model.startingCents };
+  for (const [date, { totalCents }] of model.balances) {
+    if (date >= fromDate && totalCents < lowest.cents) lowest = { date, cents: totalCents };
+  }
+  return lowest;
+}
+
 export function upcomingBills(model: CalendarModel): { count: number; totalCents: Cents } {
   const bills = model.entries.filter((e) => e.kind === "bill" && e.date >= model.asOfDate && e.date <= model.forecastEnd);
   return { count: bills.length, totalCents: bills.reduce((sum, bill) => sum + bill.amountCents, 0) };

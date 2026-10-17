@@ -24,7 +24,7 @@ type Feature = {
 
 const FEATURES: Feature[] = [
   {
-    title: "Purchase Forecasting",
+    title: "Forecast Fund",
     description: "Plan a goal and see how contributions affect your forecast.",
     href: ROUTES.bigPurchase,
     icon: Target,
@@ -70,9 +70,9 @@ export function FeaturePreviews({ homeData, demoGoal }: { homeData: HomeData; ca
   const projectionLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
   const goal = storedGoal?.goals[0] ?? demoGoal;
   const progressByTitle: Record<string, { label: string; detail: string; percent?: number; figure?: string; href?: string; loading?: boolean; gold?: boolean }> = {
-    "Purchase Forecasting": {
+    "Forecast Fund": {
       label: goal ? `${goal.name || "Untitled goal"} · ${formatUSD(goal.costCents)}` : "No saved goal yet",
-      detail: goal ? `${goal.status === "active" ? "Active" : "Draft"} · ${goal.contributionCents === null ? "Suggested contribution" : `${formatUSD(goal.contributionCents)} per paycheck`}` : "Open Purchase Forecasting to start a goal.",
+      detail: goal ? `${goal.status === "active" ? "Active" : "Draft"} · ${goal.contributionCents === null ? "Suggested contribution" : `${formatUSD(goal.contributionCents)} per paycheck`}` : "Open Forecast Fund to start a goal.",
       percent: goal ? (Number(Boolean(goal.name.trim())) + Number(goal.costCents > 0)) * 50 : 0,
     },
     "Swipe and Shine": {

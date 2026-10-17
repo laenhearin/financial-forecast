@@ -23,7 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: ROUTES.home, icon: Home },
   { label: "Weather calendar", href: ROUTES.calendar, icon: CalendarDays },
   { label: "Purchase advisor", href: ROUTES.purchaseAdvisor, icon: ShoppingCart },
-  { label: "Purchase Forecasting", href: ROUTES.bigPurchase, icon: Target },
+  { label: "Forecast Fund", href: ROUTES.bigPurchase, icon: Target },
   { label: "Storm solver", href: ROUTES.stormSolver, icon: Umbrella },
   { label: "Swipe and Shine", href: ROUTES.cashBack, icon: CreditCard },
 ];
