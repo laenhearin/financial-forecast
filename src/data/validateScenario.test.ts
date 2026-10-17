@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeScenario, monthlyBill, paycheck } from "../features/big-purchase/engine/testScenario";
+import { ScenarioLoadError } from "./dataSource";
 import { loadDemoScenario } from "./demoDataSource";
 import { scenarios } from "./demo/scenarios";
 import { normalizeScenario } from "./scenarioInput";
@@ -30,6 +31,10 @@ describe("demo data", () => {
     const scenario = normalizeScenario("tightMonth", scenarios.tightMonth);
     expect(scenario.bills.find(bill => bill.id === "streaming")?.amountCents).toBe(1_549);
     expect(scenario.accounts.map(account => account.balanceCents)).toEqual([scenarios.tightMonth.accounts[0].balance * 100, 120_000]);
+  });
+
+  it("reports an unknown scenario as a load error for the error card", () => {
+    expect(() => loadDemoScenario("missing" as never)).toThrow(ScenarioLoadError);
   });
 
   it("loads and validates every registered scenario cleanly", () => {

@@ -26,10 +26,11 @@ export const templateNarrator: AdviceNarrator = {
           ? `which gets you there ${top.daysSooner} days sooner`
           : `which makes it affordable by ${formatDate(top.newAffordableDate!, "long")}`;
         sentences.push(`${target}, the biggest single change is ${actionPhrase(top)}, ${effect}.`);
-        if (advice.items.length > 1 && advice.combined) {
-          sentences.push(advice.combined.reachesDeadline
-            ? `Combining ${advice.combined.itemIds.length === 1 ? "it" : `the top ${advice.combined.itemIds.length}`} reaches your deadline.`
-            : `Even with every change, the earliest date is ${advice.combined.earliestDate ? formatDate(advice.combined.earliestDate, "long") : "beyond 24 months"}.`);
+        const combined = advice.combined;
+        if (combined && combined.reachesDeadline && combined.itemIds.length > 1) {
+          sentences.push(`Combining the top ${combined.itemIds.length} reaches your deadline.`);
+        } else if (combined && !combined.reachesDeadline && advice.items.length > 1) {
+          sentences.push(`Even with every change, the earliest date is ${combined.earliestDate ? formatDate(combined.earliestDate, "long") : "beyond 24 months"}.`);
         }
       }
     } else if (advice?.onTrack) {

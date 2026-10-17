@@ -121,4 +121,12 @@ describe("templateNarrator", () => {
     const text = await templateNarrator.narrate({ goal: g, forecast: current, advice });
     expect(text).toMatch(/^At \$\d+ per paycheck you can afford your laptop on [A-Z][a-z]+ \d+\. To reach your [A-Z][a-z]+ \d+ deadline, the biggest single change is [a-z]+ .+, which gets you there \d+ days sooner\./);
   });
+
+  it("only mentions combining when more than one change is needed", async () => {
+    const g = { ...createGoal("g", "2026-10-17", { name: "Laptop", costCents: 180_000 }), preferredDeadline: deadline };
+    const one = { ...advice, combined: { itemIds: [advice.items[0].id], reachesDeadline: true, earliestDate: deadline } };
+    const two = { ...advice, combined: { itemIds: advice.items.slice(0, 2).map(item => item.id), reachesDeadline: true, earliestDate: deadline } };
+    expect(await templateNarrator.narrate({ goal: g, forecast: current, advice: one })).not.toMatch(/Combining/);
+    expect(await templateNarrator.narrate({ goal: g, forecast: current, advice: two })).toMatch(/Combining the top 2 reaches your deadline\.$/);
+  });
 });
