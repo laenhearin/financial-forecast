@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { AccountMenu } from "@/components/layout/AccountMenu";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { WeatherStageSync } from "@/components/layout/WeatherStageSync";
 import { cn } from "@/lib/utils";
@@ -41,7 +40,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeProvider>
           <WeatherStageSync scenario={scenario} defaultCriticalBalanceCents={criticalBalanceCents} />
           <Sidebar />
-          <AccountMenu />
           <main className="min-h-screen min-w-0 flex-1">{children}</main>
         </ThemeProvider>
       </body>

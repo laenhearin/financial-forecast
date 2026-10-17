@@ -26,6 +26,7 @@ function newGoalId(): string {
 
 export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolean } = {}) {
   const [scenarioState, setScenarioState] = useState<ScenarioState>({ status: "loading" });
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     const load = () => {
@@ -55,7 +56,11 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
   const today = scenario?.asOfDate ?? null;
 
   const stored = useSyncExternalStore(goalStore.subscribe, goalStore.getSnapshot, goalStore.getServerSnapshot);
-  const goal: Goal | null = stored?.goals[0] ?? (scenarioState.status === "ready" ? scenarioState.demoGoal : null);
+  const goals = stored?.goals ?? [];
+  const goal: Goal | null = goals.find(item => item.id === selectedGoalId)
+    ?? goals.find(item => item.id === stored?.activeGoalId)
+    ?? goals[0]
+    ?? (scenarioState.status === "ready" && goals.length === 0 ? scenarioState.demoGoal : null);
   const hydrated = stored !== null;
 
   useEffect(() => {
@@ -84,6 +89,13 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
     [scenario, forecastGoal],
   );
   const forecast = forecastResult?.ok ? forecastResult.forecast : null;
+  const activeGoal = goals.find(item => item.id === stored?.activeGoalId && item.status === "active") ?? null;
+  const activeForecastResult = useMemo(() => {
+    if (!scenario || !activeGoal) return null;
+    if (activeGoal.id === goal?.id) return forecastResult;
+    return computeForecast(scenario, activeGoal);
+  }, [scenario, activeGoal, goal?.id, forecastResult]);
+  const activeForecast = activeForecastResult?.ok ? activeForecastResult.forecast : null;
   const valid = goal ? isGoalValid(goal) : false;
 
   const affordableDate = forecast?.plan.affordableDate ?? null;
@@ -121,7 +133,13 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
   const actions = {
     startGoal(fields: { name: string; costCents: Cents; bufferCents: Cents }) {
       if (!today) return;
-      save(createGoal(newGoalId(), today, fields));
+      const next = createGoal(newGoalId(), today, fields);
+      save(next);
+      setSelectedGoalId(next.id);
+    },
+    selectGoal(id: string) {
+      if (goals.some(item => item.id === id)) setSelectedGoalId(id);
+      setAdvice({ status: "closed" });
     },
     update(patch: GoalPatch) {
       if (!goal || !today) return;
@@ -156,7 +174,10 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
     sourceLabel: SOURCE_LABEL,
     isFixture: true,
     hydrated,
+    goals,
     goal,
+    activeGoal,
+    activeForecast,
     valid,
     forecastResult,
     forecast,

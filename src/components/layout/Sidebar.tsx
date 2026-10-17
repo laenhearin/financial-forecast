@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CircleUser, Menu, X } from "lucide-react";
 import { APP_NAME, USER_NAME } from "@/lib/config";
-import { getActiveHref, NAV_ITEMS } from "@/lib/navigation";
+import { getActiveHref, NAV_ITEMS, ROUTES } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -28,11 +28,32 @@ function LogoMark() {
 export function Sidebar() {
   const pathname = usePathname();
   const activeHref = getActiveHref(pathname);
+  const [profileName, setProfileName] = useState(USER_NAME);
   // The drawer is open only on the page where it was opened, so any navigation closes it.
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const updateProfileName = async () => {
+      try {
+        const response = await fetch("/api/demo-profiles", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json() as { activeSlug: string; profiles: { slug: string; label: string }[] };
+        setProfileName(data.profiles.find(profile => profile.slug === data.activeSlug)?.label ?? USER_NAME);
+      } catch {
+        setProfileName(USER_NAME);
+      }
+    };
+    updateProfileName();
+    window.addEventListener("cloudcash-profile-change", updateProfileName);
+    window.addEventListener("storage", updateProfileName);
+    return () => {
+      window.removeEventListener("cloudcash-profile-change", updateProfileName);
+      window.removeEventListener("storage", updateProfileName);
+    };
+  }, []);
 
   const closeDrawer = (returnFocus: boolean) => {
     setOpenOn(null);
@@ -92,7 +113,8 @@ export function Sidebar() {
         </div>
 
         <nav ref={navRef} aria-label="Main">
-          <ul className="flex flex-col gap-1">
+          <p className="mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-secondary md:max-lg:sr-only">Workspace</p>
+          <ul className="flex flex-col gap-3">
             {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
               const active = href === activeHref;
               return (
@@ -102,7 +124,7 @@ export function Sidebar() {
                     aria-current={active ? "page" : undefined}
                     onClick={() => closeDrawer(false)}
                     className={cn(
-                      "ui-transition group relative flex h-10 items-center gap-3 rounded-item px-3 text-body md:max-lg:justify-center md:max-lg:px-0",
+                      "ui-transition group relative flex h-12 items-center gap-3 rounded-item px-3 text-body md:max-lg:justify-center md:max-lg:px-0",
                       active ? "bg-nav-active font-medium text-accent" : "text-secondary hover:bg-nav-hover hover:text-primary",
                     )}
                   >
@@ -115,10 +137,28 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        <div className="mt-auto flex items-center gap-3 pt-6 pl-2.5 md:max-lg:flex-col md:max-lg:pl-0">
-          <CircleUser aria-hidden className="size-5 shrink-0 text-secondary" strokeWidth={1.75} />
-          <span className="truncate text-body text-secondary md:max-lg:sr-only">{USER_NAME}</span>
-          <ThemeToggle className="ml-auto md:max-lg:ml-0" />
+        <div className="mt-auto border-t border-app pt-4">
+          <div className="mb-3 flex items-center gap-2 rounded-panel bg-app p-2.5 md:max-lg:justify-center md:max-lg:bg-transparent md:max-lg:p-0">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+              <CircleUser aria-hidden className="size-5" strokeWidth={1.75} />
+            </span>
+            <div className="min-w-0 md:max-lg:sr-only">
+              <p className="text-[0.65rem] font-medium uppercase tracking-wide text-secondary">Current profile</p>
+              <p className="truncate text-caption font-semibold text-primary">{profileName}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 md:max-lg:flex-col">
+            <Link
+              href={ROUTES.profile}
+              aria-current={pathname === ROUTES.profile ? "page" : undefined}
+              onClick={() => closeDrawer(false)}
+              className={cn("ui-transition group relative flex h-10 min-w-0 flex-1 items-center gap-3 rounded-item px-3 text-body md:max-lg:w-full md:max-lg:justify-center md:max-lg:px-0", pathname === ROUTES.profile ? "bg-nav-active font-medium text-accent" : "text-secondary hover:bg-nav-hover hover:text-primary")}
+            >
+              <CircleUser aria-hidden className="size-4.5 shrink-0" strokeWidth={1.75} />
+              <span className={cn("truncate md:max-lg:overflow-visible", railTooltip)}>Profile &amp; settings</span>
+            </Link>
+            <ThemeToggle className="size-10 shrink-0 md:max-lg:size-8" />
+          </div>
         </div>
       </aside>
     </>

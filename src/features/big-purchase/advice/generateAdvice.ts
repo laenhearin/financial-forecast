@@ -3,7 +3,7 @@ import { formatUSD, percentOfCents } from "../../../lib/money";
 import { CATEGORY_CUT_STEP_PERCENT, DEFAULT_MAX_SHIFT_DAYS, MAX_ADVICE_ITEMS } from "../config";
 import { projectBase } from "../engine/base";
 import { requiredContribution } from "../engine/deadline";
-import { maxCandidateCents, suggestedContribution } from "../engine/limits";
+import { maxCandidateCents, suggestedContribution, suggestedContributionCapCents } from "../engine/limits";
 import { affordableDateFor, isAffordableNow } from "../engine/plan";
 import type { AdviceItem, AdviceResult, Bill, Cents, Forecast, ISODate, Scenario, ScenarioMods } from "../types";
 import type { ForecastGoal } from "../engine/forecast";
@@ -24,12 +24,13 @@ export function generateAdvice(scenario: Scenario, goal: ForecastGoal, forecast:
 
   const planGoal = { costCents: goal.costCents, bufferCents: goal.bufferCents };
   const maxCents = maxCandidateCents(scenario, goal.costCents);
+  const suggestedCapCents = suggestedContributionCapCents(scenario, goal.costCents);
 
   /** Affordable date with the contribution set to the new suggested amount (or a fixed amount). */
   const evaluate = (mods: ScenarioMods, fixedContribution?: Cents): Outcome => {
     const base = projectBase(scenario, mods);
     if (isAffordableNow(base.days, planGoal)) return { date: base.asOfDate, suggestedCents: 0 };
-    const suggestedCents = suggestedContribution(base.days, base.paydays, planGoal, maxCents);
+    const suggestedCents = suggestedContribution(base.days, base.paydays, planGoal, suggestedCapCents);
     return { date: affordableDateFor(base.paydays, goal.costCents, fixedContribution ?? suggestedCents), suggestedCents };
   };
 

@@ -15,6 +15,14 @@ export function maxCandidateCents(scenario: Scenario, costCents: Cents): Cents {
   return Math.min(roundDownToStep(largestPaycheck, CONTRIBUTION_STEP_CENTS), roundUpToStep(costCents, CONTRIBUTION_STEP_CENTS));
 }
 
+/** Suggested contributions are capped at 20% of the smallest paycheck source. */
+export function suggestedContributionCapCents(scenario: Scenario, costCents: Cents): Cents {
+  const paychecks = scenario.income.filter(income => income.isPaycheck).map(income => income.amountCents);
+  const smallestPaycheck = paychecks.length ? Math.min(...paychecks) : 0;
+  const twentyPercent = Math.floor(smallestPaycheck * 0.2);
+  return Math.min(maxCandidateCents(scenario, costCents), roundDownToStep(twentyPercent, CONTRIBUTION_STEP_CENTS));
+}
+
 /**
  * Largest step multiple whose plan has no violations at the floor. Scans every candidate from the
  * top down rather than assuming feasibility is monotonic.

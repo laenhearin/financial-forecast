@@ -34,7 +34,7 @@ export function AdvicePanel({ model }: { model: BigPurchaseModel }) {
               ? `Doing ${result.combined.itemIds.length === 1 ? "the first of these" : `these ${result.combined.itemIds.length} things`} gets you there by ${target}.`
               : result.combined.earliestDate
                 ? `Even with all of these, the earliest date is ${formatDate(result.combined.earliestDate, "full")}.`
-                : "Even with all of these, it stays out of reach within 24 months."}
+                : "Even with all of these, it stays out of reach within 5 years."}
           </p>
         )}
       </div>

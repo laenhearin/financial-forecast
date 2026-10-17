@@ -137,7 +137,7 @@ export interface AdviceResult {
 
 export interface StoredState {
   version: 1;
-  goals: Goal[];                // UI shows goals[0] only for now
+  goals: Goal[];
   activeGoalId: string | null;  // at most one active goal
-  queue: string[];              // reserved for "next goal"; unused in the UI
+  queue: string[];
 }

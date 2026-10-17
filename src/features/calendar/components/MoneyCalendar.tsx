@@ -25,6 +25,7 @@ const CHIP_STYLE: Record<CalendarEntry["kind"], string> = {
   bill: "bg-accent-soft",
   planned: "bg-accent-soft",
   purchase: "border border-app bg-card",
+  payment: "bg-pos-soft text-pos",
   estimate: "border border-dashed border-app bg-card",
 };
 
@@ -38,6 +39,8 @@ function chipText(entry: CalendarEntry): string {
       return `Plan · ${entry.label}`;
     case "purchase":
       return `Buy · ${entry.label}`;
+    case "payment":
+      return `Paid · ${formatUSD(entry.amountCents)}`;
     case "estimate":
       return "Est. · Spending";
   }

@@ -1,7 +1,7 @@
 import { MAX_COST_CENTS } from "../config";
 import type { Cents, ForecastResult, Goal, Scenario, ScenarioMods } from "../types";
 import { projectBase } from "./base";
-import { contributionLimit, maxCandidateCents, suggestedContribution } from "./limits";
+import { contributionLimit, maxCandidateCents, suggestedContribution, suggestedContributionCapCents } from "./limits";
 import { isAffordableNow, simulatePlan } from "./plan";
 import { buildFunding } from "./series";
 
@@ -25,7 +25,7 @@ export function computeForecast(scenario: Scenario, goal: ForecastGoal, mods: Sc
   const planGoal = { costCents, bufferCents };
   const affordableNow = isAffordableNow(base.days, planGoal);
   const maxCents = maxCandidateCents(scenario, costCents);
-  const suggested = affordableNow ? 0 : suggestedContribution(base.days, base.paydays, planGoal, maxCents);
+  const suggested = affordableNow ? 0 : suggestedContribution(base.days, base.paydays, planGoal, suggestedContributionCapCents(scenario, costCents));
   const limit = affordableNow ? 0 : contributionLimit(base.days, base.paydays, planGoal, maxCents);
   const inEffect = contributionCents ?? suggested;
 

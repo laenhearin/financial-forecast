@@ -50,7 +50,10 @@ export function buildCalendarModel(
 
   const balances = new Map<ISODate, DayBalance>();
   for (let date = asOfDate; date <= forecastEnd; date = addDays(date, 1)) {
-    for (const entry of entriesByDate.get(date) ?? []) running[entry.accountId] += signedCents(entry);
+    for (const entry of entriesByDate.get(date) ?? []) {
+      // Completed payments are already included in the opening balance snapshot.
+      if (entry.kind !== "payment") running[entry.accountId] += signedCents(entry);
+    }
     const totalCents = Object.values(running).reduce((sum, cents) => sum + cents, 0);
     if (!Number.isSafeInteger(totalCents)) throw new Error("Projected balance exceeds the supported range.");
     balances.set(date, { totalCents, byAccount: { ...running } });
