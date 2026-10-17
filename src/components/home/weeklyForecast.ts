@@ -17,12 +17,12 @@ export function forecastDate(asOfDate: string, day: number) {
 }
 
 /** Pair each future day with its previous balance before dividing into weeks. */
-export function forecastDays(projection: readonly ProjectionPoint[], openingCents: number) {
+export function forecastDays(projection: readonly ProjectionPoint[], openingCents: number, todayNetCents = 0) {
   const sorted = [...projection].sort((a, b) => a.day - b.day);
   return sorted.map((point, index) => ({
     ...point,
-    netCents: point.balanceCents - (sorted[index - 1]?.balanceCents ?? openingCents),
-  })).filter((point) => point.day > 0);
+    netCents: point.day === 0 ? todayNetCents : point.balanceCents - (sorted[index - 1]?.balanceCents ?? openingCents),
+  })).filter((point) => point.day >= 0);
 }
 
 /** Horizontal Bezier handles keep the curve inside each pair of daily balances. */

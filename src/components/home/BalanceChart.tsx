@@ -12,6 +12,7 @@ import type { BillMarker, ProjectionPoint } from "./types";
 
 interface BalanceChartProps {
   asOfDate: string;
+  todayNetCents: number;
   availableBalanceCents: number;
   projection: ProjectionPoint[];
   markers: BillMarker[];
@@ -20,12 +21,12 @@ interface BalanceChartProps {
   className?: string;
 }
 
-export function BalanceChart({ asOfDate, availableBalanceCents, projection, markers, monthlyTotals, isLoading = false, className }: BalanceChartProps) {
+export function BalanceChart({ asOfDate, todayNetCents, availableBalanceCents, projection, markers, monthlyTotals, isLoading = false, className }: BalanceChartProps) {
   const [week, setWeek] = useState(0);
   const [selected, setSelected] = useState(0);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const id = useId();
-  const days = forecastDays(projection, availableBalanceCents);
+  const days = forecastDays(projection, availableBalanceCents, todayNetCents);
   const lastWeek = Math.max(0, Math.ceil(days.length / 7) - 1);
   const currentWeek = Math.min(week, lastWeek);
   const visible = days.slice(currentWeek * 7, currentWeek * 7 + 7);
@@ -54,7 +55,7 @@ export function BalanceChart({ asOfDate, availableBalanceCents, projection, mark
       </div>
       <div className="mt-5 grid items-end gap-5 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <p className="text-5xl font-medium tracking-tight text-primary 2xl:text-6xl">{formatUSD(availableBalanceCents)}</p>
+          <p className="text-5xl font-light tracking-tight text-primary 2xl:text-6xl">{formatUSD(availableBalanceCents)}</p>
           <p className="mt-2 text-body text-secondary">Available balance</p>
         </div>
         <div className="sm:border-l sm:border-app sm:pl-4">
@@ -95,7 +96,7 @@ export function BalanceChart({ asOfDate, availableBalanceCents, projection, mark
                 const day = visible[index];
                 const change = day.netCents === 0 ? "" : `, ${day.netCents > 0 ? "+" : ""}${formatUSD(day.netCents)} from previous day`;
                 return <g key={day.day}>
-                  <circle cx={point.x} cy={point.y} r={index === active ? 6 : 4} className="fill-card stroke-accent" strokeWidth={index === active ? 3 : 2} />
+                  <circle cx={point.x} cy={point.y} r={tooltipVisible && index === active ? 6 : 4} className="fill-card stroke-accent" strokeWidth={tooltipVisible && index === active ? 3 : 2} />
                   <circle cx={point.x} cy={point.y} r="30" fill="transparent" tabIndex={0} role="button"
                     aria-label={`${forecastDate(asOfDate, day.day).label}: ${formatUSD(day.balanceCents)}${change}`}
                     onPointerEnter={() => { setSelected(index); setTooltipVisible(true); }}
@@ -123,12 +124,19 @@ export function BalanceChart({ asOfDate, availableBalanceCents, projection, mark
                 const weather = dailyWeather(day.netCents, bills.length > 0);
                 const Icon = weather === "sunny" ? Sun : weather === "rainy" ? CloudRain : Cloud;
                 const outlook = weather === "sunny" ? "Steady or gaining money" : weather === "rainy" ? "Bill day or large loss" : "Losing money";
-                return <button type="button" key={day.day} onClick={() => setSelected(index)} aria-pressed={index === active} className={cn("flex min-w-0 flex-col items-center rounded-2xl border px-1 py-3 text-center transition-colors", index === active ? "border-accent-line bg-card ring-1 ring-accent" : "border-transparent bg-card/65 hover:bg-card")}>
+                return <button type="button" key={day.day} data-day-weather={weather}
+                  onPointerEnter={() => { setSelected(index); setTooltipVisible(true); }}
+                  onPointerLeave={() => setTooltipVisible(false)}
+                  onFocus={() => { setSelected(index); setTooltipVisible(true); }}
+                  onBlur={() => setTooltipVisible(false)}
+                  onKeyDown={event => { if (event.key === "Escape") setTooltipVisible(false); }}
+                  onClick={() => { setSelected(index); setTooltipVisible(true); }}
+                  aria-pressed={tooltipVisible && index === active} className={cn("flex min-w-0 flex-col items-center rounded-2xl border px-1 py-3 text-center transition-colors", tooltipVisible && index === active ? "border-accent-line bg-card ring-1 ring-accent" : "border-transparent bg-card/65 hover:bg-card")}>
                   <span className="text-xs font-semibold tracking-tight text-primary 2xl:text-sm">{formatUSD(day.balanceCents)}</span>
                   <Icon aria-hidden className={cn("my-3 size-8", weather === "sunny" ? "text-sun" : "text-accent")} strokeWidth={1.5} />
                   <span className="sr-only">{outlook}. </span>
                   <span className="text-micro text-secondary">net <span className={day.netCents < 0 ? "text-neg" : day.netCents > 0 ? "text-pos" : "text-secondary"}>{day.netCents > 0 ? "+" : ""}{formatUSD(day.netCents)}</span></span>
-                  <span className="mt-3 text-caption font-semibold text-primary">{date.weekday}</span>
+                  <span className="mt-3 text-caption font-semibold text-primary">{day.day === 0 ? "TODAY" : date.weekday}</span>
                   <time dateTime={date.date} className="mt-1 text-micro text-secondary">{date.label}</time>
                   {bills.length > 0 && <span className="mt-2 text-micro text-secondary">{bills.map((bill) => bill.label).join(", ")}</span>}
                 </button>;

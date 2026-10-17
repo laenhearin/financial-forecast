@@ -64,7 +64,13 @@ export interface PurchaseInput {
   accountId: string;
 }
 
-export interface SavedPurchaseInput extends PurchaseInput { id: string }
+/** A purchase the user saved in the calendar (localStorage), possibly a monthly series. */
+export interface SavedPurchaseInput extends PurchaseInput {
+  id: string;
+  recurring?: boolean;
+  cancelFromDate?: ISODate;
+  skippedDates?: ISODate[];
+}
 
 export interface AdvisorRequest {
   purchase: PurchaseInput;

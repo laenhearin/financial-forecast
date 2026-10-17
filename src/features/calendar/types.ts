@@ -33,6 +33,11 @@ export interface UserPurchase {
   amountCents: Cents;
   date: ISODate;
   accountId: string;
+  recurring?: boolean;
+  /** First date on which this series no longer posts. */
+  cancelFromDate?: ISODate;
+  /** Individual monthly occurrences removed from the series. */
+  skippedDates?: ISODate[];
 }
 
 /** "all" or one account id. */

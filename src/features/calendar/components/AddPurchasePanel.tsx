@@ -21,6 +21,7 @@ interface AddPurchasePanelProps {
 export function AddPurchasePanel({ accounts, date, onDateChange, view, onViewChange, onAdd }: AddPurchasePanelProps) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [recurring, setRecurring] = useState(false);
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
   const viewName = accounts.find((a) => a.id === view)?.nickname;
@@ -33,9 +34,10 @@ export function AddPurchasePanel({ accounts, date, onDateChange, view, onViewCha
       setError("Enter a purchase name, valid amount, and date.");
       return;
     }
-    onAdd({ label, amountCents, date: date as ISODate, accountId });
+    onAdd({ label, amountCents, date: date as ISODate, accountId, recurring });
     setName("");
     setAmount("");
+    setRecurring(false);
     setError(null);
   }
 
@@ -65,6 +67,10 @@ export function AddPurchasePanel({ accounts, date, onDateChange, view, onViewCha
           </label>
           <input id="purchase-date" type="date" value={date} onChange={(e) => onDateChange(e.target.value)} className={inputClass} />
         </div>
+        <label htmlFor="purchase-recurring" className="flex cursor-pointer items-start gap-2.5 rounded-item border border-app bg-app px-3 py-3 text-caption text-primary">
+          <input id="purchase-recurring" type="checkbox" checked={recurring} onChange={(event) => setRecurring(event.target.checked)} className="mt-0.5 size-4 accent-(--accent)" />
+          <span><span className="block font-medium">This purchase is recurring</span><span className="mt-0.5 block text-micro text-secondary">Add it monthly on this day, such as a subscription.</span></span>
+        </label>
         <div>
           <label htmlFor="purchase-account" className={labelClass}>
             Charge purchase to

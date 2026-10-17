@@ -1,7 +1,7 @@
 import { isISODate } from "@/lib/dates";
 import { isCents } from "@/lib/money";
 import { ACTIVE_PROFILE_STORAGE_KEY } from "@/features/big-purchase/config";
-import type { UserPurchase } from "../types";
+import type { ISODate, UserPurchase } from "../types";
 
 const STORAGE_KEY = "calendar-purchases.v1";
 const EMPTY_PURCHASES: UserPurchase[] = [];
@@ -25,7 +25,10 @@ function read(key: string): UserPurchase[] {
       const purchase = item as Partial<UserPurchase>;
       return typeof purchase.id === "string" && typeof purchase.label === "string"
         && isCents(purchase.amountCents) && purchase.amountCents > 0
-        && typeof purchase.date === "string" && isISODate(purchase.date) && typeof purchase.accountId === "string";
+        && typeof purchase.date === "string" && isISODate(purchase.date) && typeof purchase.accountId === "string"
+        && (purchase.recurring === undefined || typeof purchase.recurring === "boolean")
+        && (purchase.cancelFromDate === undefined || (typeof purchase.cancelFromDate === "string" && isISODate(purchase.cancelFromDate)))
+        && (purchase.skippedDates === undefined || (Array.isArray(purchase.skippedDates) && purchase.skippedDates.every((date) => typeof date === "string" && isISODate(date))));
     });
   } catch {
     return [];
@@ -70,5 +73,26 @@ export const purchaseStore = {
   },
   remove(id: string) {
     publish(getSnapshot().filter((purchase) => purchase.id !== id));
+  },
+  removeOccurrence(id: string, date: ISODate, deleteFuturePayments: boolean) {
+    const existing = getSnapshot().find((purchase) => purchase.id === id);
+    if (!existing) return;
+    if (!existing.recurring) {
+      publish(getSnapshot().filter((purchase) => purchase.id !== id));
+      return;
+    }
+    if (deleteFuturePayments) {
+      if (date <= existing.date) {
+        publish(getSnapshot().filter((purchase) => purchase.id !== id));
+        return;
+      }
+      publish(getSnapshot().map((purchase) => purchase.id === id
+        ? { ...purchase, cancelFromDate: purchase.cancelFromDate && purchase.cancelFromDate < date ? purchase.cancelFromDate : date }
+        : purchase));
+      return;
+    }
+    const skippedDates = new Set(existing.skippedDates ?? []);
+    skippedDates.add(date);
+    publish(getSnapshot().map((purchase) => purchase.id === id ? { ...purchase, skippedDates: [...skippedDates] } : purchase));
   },
 };

@@ -15,6 +15,7 @@ export const MAX_SAVED_PURCHASES = 40;
 /** $1,000,000 */
 export const MAX_PURCHASE_CENTS = 100_000_000;
 const MAX_ID_LENGTH = 80;
+const MAX_SKIPPED_DATES = 36;
 
 type Obj = Record<string, unknown>;
 
@@ -62,11 +63,28 @@ export function parseSavedPurchases(value: unknown): SavedPurchaseInput[] | null
   if (!Array.isArray(value) || value.length > MAX_SAVED_PURCHASES) return null;
   const out: SavedPurchaseInput[] = [];
   for (const item of value) {
-    const body = object(item, ["id", "label", "amountCents", "date", "accountId"]);
+    const body = object(item, ["id", "label", "amountCents", "date", "accountId"], ["recurring", "cancelFromDate", "skippedDates"]);
     const id = body ? text(body.id, MAX_ID_LENGTH) : null;
     const purchase = body ? parsePurchaseInput({ label: body.label, amountCents: body.amountCents, date: body.date, accountId: body.accountId }) : null;
-    if (!id || !purchase) return null;
-    out.push({ id, ...purchase });
+    if (!body || !id || !purchase) return null;
+    const saved: SavedPurchaseInput = { id, ...purchase };
+    // Monthly series fields, matching the calendar's purchase store.
+    if (body.recurring !== undefined) {
+      if (typeof body.recurring !== "boolean") return null;
+      saved.recurring = body.recurring;
+    }
+    if (body.cancelFromDate !== undefined) {
+      const cancelFromDate = date(body.cancelFromDate);
+      if (!cancelFromDate) return null;
+      saved.cancelFromDate = cancelFromDate;
+    }
+    if (body.skippedDates !== undefined) {
+      if (!Array.isArray(body.skippedDates) || body.skippedDates.length > MAX_SKIPPED_DATES) return null;
+      const skipped = body.skippedDates.map(date);
+      if (skipped.some((day) => day === null)) return null;
+      saved.skippedDates = skipped as string[];
+    }
+    out.push(saved);
   }
   return out;
 }

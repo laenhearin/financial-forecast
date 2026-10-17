@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CircleUser, Menu, X } from "lucide-react";
 import { APP_NAME, USER_NAME } from "@/lib/config";
@@ -21,15 +22,7 @@ const railTooltip =
   "md:max-lg:pointer-events-none md:max-lg:absolute md:max-lg:top-1/2 md:max-lg:left-full md:max-lg:ml-4 md:max-lg:-translate-y-1/2 md:max-lg:rounded-item md:max-lg:border md:max-lg:border-app md:max-lg:bg-card md:max-lg:px-2.5 md:max-lg:py-1 md:max-lg:text-primary md:max-lg:opacity-0 md:max-lg:group-hover:opacity-100 md:max-lg:group-focus-visible:opacity-100";
 
 function LogoMark() {
-  return (
-    <svg aria-hidden viewBox="0 0 64 64" className="size-8 shrink-0 rounded-logo">
-      <rect width="64" height="64" rx="18" fill="#1F7F89" />
-      <path d="M17 43c-6.4 0-10-3.7-10-9.1 0-4.8 3.6-8.5 9-9.1.8-8.9 7-14.5 15.2-14.5 6.2 0 11.3 3.2 14.1 8.5 1.8-.8 3.5-1.2 5.4-1.2 7.1 0 12 5.1 12 12.3S58 43 51.7 43H17Z" fill="white" />
-      <rect x="22" y="32" width="6" height="7" rx="1.5" fill="#1F7F89" />
-      <rect x="31" y="27" width="6" height="12" rx="1.5" fill="#1F7F89" />
-      <rect x="40" y="21" width="6" height="18" rx="1.5" fill="#F5B83D" />
-    </svg>
-  );
+  return <Image src="/icon.png" alt="" width={32} height={32} className="size-8 shrink-0 rounded-logo object-cover" />;
 }
 
 export function Sidebar() {

@@ -17,7 +17,7 @@ function useHasMounted() {
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useHasMounted();
-  const isHeavyRain = resolvedTheme === THEMES.heavyRain;
+  const isHeavyRain = mounted && resolvedTheme === THEMES.heavyRain;
   const Icon = isHeavyRain ? Sun : Moon;
 
   return (

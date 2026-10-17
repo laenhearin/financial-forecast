@@ -10,6 +10,13 @@ describe("parseAdvisorRequest", () => {
       .toEqual({ purchase, criticalBalanceCents: 50_000, purchases: [{ id: "p1", ...purchase }] });
   });
 
+  it("accepts monthly purchase series saved by the calendar", () => {
+    const series = { id: "rent-share", ...purchase, recurring: true, cancelFromDate: "2027-01-20", skippedDates: ["2026-11-20"] };
+    expect(parseAdvisorRequest({ purchase, purchases: [series] })?.purchases).toEqual([series]);
+    expect(parseAdvisorRequest({ purchase, purchases: [{ ...series, recurring: "yes" }] })).toBeNull();
+    expect(parseAdvisorRequest({ purchase, purchases: [{ ...series, skippedDates: ["soon"] }] })).toBeNull();
+  });
+
   it("rejects unknown keys, bad amounts, bad dates and oversized lists", () => {
     expect(parseAdvisorRequest({ purchase, facts: {} })).toBeNull();
     expect(parseAdvisorRequest({ purchase: { ...purchase, extra: 1 } })).toBeNull();
