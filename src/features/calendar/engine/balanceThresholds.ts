@@ -1,5 +1,5 @@
 import type { Scenario } from "@/features/big-purchase/types";
-import { addDays } from "@/lib/dates";
+import { addDays } from "../../../lib/dates";
 import type { CalendarEntry, Cents, ISODate } from "../types";
 
 export type BalanceLevel = 0 | 1 | 2 | 3 | 4 | 5;

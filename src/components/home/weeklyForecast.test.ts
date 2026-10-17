@@ -17,8 +17,13 @@ describe("weekly forecast", () => {
   it("uses the prior day's balance across week boundaries and preserves cents", () => {
     const projection = Array.from({ length: 10 }, (_, day) => ({ day, balanceCents: 10000 - day * 123 }));
     const days = forecastDays(projection, 10000);
-    expect(days).toHaveLength(9);
-    expect(days[7]).toEqual({ day: 8, balanceCents: 9016, netCents: -123 });
+    expect(days).toHaveLength(10);
+    expect(days[8]).toEqual({ day: 8, balanceCents: 9016, netCents: -123 });
+    expect(days.slice(0, 7).map(day => day.day)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+  it("uses recorded net activity for today without changing tomorrow's delta", () => {
+    expect(forecastDays([{ day: 0, balanceCents: 50000 }, { day: 1, balanceCents: 48000 }], 50000, -15000))
+      .toEqual([{ day: 0, balanceCents: 50000, netCents: -15000 }, { day: 1, balanceCents: 48000, netCents: -2000 }]);
   });
   it("sorts without mutating data and uses the opening balance when needed", () => {
     const projection = [{ day: 2, balanceCents: -100 }, { day: 1, balanceCents: 200 }];

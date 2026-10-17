@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { listNessieDemoProfiles, loadNessieDemo } from "@/lib/nessie-demo";
 
@@ -9,6 +10,6 @@ export async function getActiveDemoSlug() {
   return listNessieDemoProfiles().some((profile) => profile.slug === requested) ? requested! : "college";
 }
 
-export async function loadActiveDemo() {
+export const loadActiveDemo = cache(async function loadActiveDemo() {
   return loadNessieDemo(await getActiveDemoSlug());
-}
+});

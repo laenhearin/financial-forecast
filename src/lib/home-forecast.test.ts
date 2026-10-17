@@ -13,7 +13,7 @@ describe("selected profile home forecast", () => {
     expect(home.isSampleData).toBe(true);
     expect(home.availableBalanceCents).toBe(50000);
     expect(home.projection).toHaveLength(31);
-    const first = forecastDays(home.projection, home.availableBalanceCents)[0];
+    const first = forecastDays(home.projection, home.availableBalanceCents)[1];
     expect(first).toEqual({ day: 1, balanceCents: 38000, netCents: -12000 });
     expect(forecastDate(home.asOfDate, first.day).date).toBe("2027-01-01");
     expect(home.markers).toContainEqual({ day: 1, label: "Rent" });

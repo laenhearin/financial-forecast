@@ -173,6 +173,42 @@
   color-scheme: dark;
 }
 
+/* Shared weather palette, including portaled dialogs and menus. */
+:root,
+[data-theme="clear-sky"],
+[data-theme="heavy-rain"] {
+  --bg: #527faf;
+  --sb: rgb(55 104 164 / 78%);
+  --weather-card-solid: #467fbd;
+  --card: var(--weather-card-solid);
+  --tx: #ffffff;
+  --tx2: #e5f2ff;
+  --bd: rgb(231 241 255 / 35%);
+  --ac: #c5e9ff;
+  --rain: #b8e5ff;
+  --sun: #ffdc75;
+  --sun-ink: #ffe38e;
+  --pos: #a7f3d0;
+  --neg: #ffc1b7;
+  --gold: #ffdc75;
+  --gold-tint: rgb(255 220 117 / 15%);
+  --gold-ink: #ffe4a0;
+  --weather-glass: linear-gradient(145deg, rgb(69 130 198 / 78%), rgb(60 116 181 / 72%));
+  --chart-1: #c5e9ff;
+  --chart-2: #a7f3d0;
+  --chart-3: #ffdc75;
+  --chart-4: #ffc1b7;
+  --chart-5: #e5f2ff;
+  color-scheme: dark;
+}
+
+[data-theme="heavy-rain"] {
+  --bg: #355a86;
+  --sb: rgb(35 69 112 / 84%);
+  --weather-card-solid: #355f91;
+  --weather-glass: linear-gradient(145deg, rgb(44 87 139 / 82%), rgb(34 70 115 / 78%));
+}
+
 :root {
   /* shadcn base tokens follow the app theme (--card is shared by name). */
   --background: var(--bg);

@@ -32,8 +32,9 @@ export function HomeHeader({ balanceCents, defaultCriticalBalanceCents, majorBil
   const weather: Weather = level >= 4 ? "downpour" : level >= 2 ? "rainy" : level === 1 ? "cloudy" : "sunny";
   const { icon: TodayIcon, label } = CONDITIONS[weather];
   return (
-    <div className={cn("text-center", className)}>
-      <h1 className="text-3xl font-medium tracking-tight text-balance text-primary md:text-3xl 2xl:text-4xl">Welcome back, {userName}</h1>
+    <div className={cn("home-weather-heading text-center", className)}>
+      <p className="mb-1 text-[10px] font-medium tracking-[0.2em] text-secondary uppercase">Your financial weather</p>
+      <h1 className="text-3xl font-light tracking-tight text-balance text-primary md:text-4xl 2xl:text-5xl">Welcome back, {userName}</h1>
       <p className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-body text-secondary">
         <span className="inline-flex items-center gap-1.5">
           <TodayIcon aria-hidden className={cn("size-4", weather === "sunny" ? "text-sun" : weather === "downpour" ? "text-neg" : "text-rain")} strokeWidth={1.75} />
