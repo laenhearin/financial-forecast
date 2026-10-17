@@ -8,13 +8,23 @@ import { formatUSD, parseDollarsToCents } from "@/lib/money";
 import { ROUTES } from "@/lib/navigation";
 import type { Scenario } from "@/features/big-purchase/types";
 import { PURCHASE_NAME_MAX_LENGTH } from "../config";
-import { ALL_ACCOUNTS, type UserPurchase } from "../types";
-import { buildCalendarModel, lowestBalance, lowestBalanceFrom } from "../engine/model";
+import { buildAdvisorFacts } from "@/lib/ai/facts/advisor";
+import { advisorTemplate } from "@/lib/ai/fallbacks";
+import type { PurchaseInput } from "@/lib/ai/types";
+import { ALL_ACCOUNTS } from "../types";
+import { buildCalendarModel, lowestBalance } from "../engine/model";
 import { scenarioEntries } from "../engine/entries";
+import { checkPurchase, purchaseRecommendation } from "../engine/purchaseCheck";
 import { purchaseStore } from "../state/purchaseStore";
+import { useAdvisorExplanation } from "../state/useAdvisorExplanation";
 import { useCriticalBalance } from "../state/useCriticalBalance";
-import { BALANCE_LABELS, balanceLevel, defaultCriticalBalanceCents } from "../engine/balanceThresholds";
+import { BALANCE_LABELS, balanceLevel, defaultCriticalBalanceCents, type BalanceLevel } from "../engine/balanceThresholds";
+import { AdvisorExplanationPanel } from "./AdvisorExplanationPanel";
 import { inputClass, labelClass, panelClass, panelTitleClass, primaryButtonClass, subtitleClass } from "./ui";
+
+const RECOMMENDATION_TONES: Record<BalanceLevel, string> = {
+  0: "bg-pos-soft", 1: "bg-pos-soft", 2: "bg-accent-soft", 3: "bg-rain-soft", 4: "bg-neg-soft", 5: "bg-neg-soft",
+};
 
 export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scenario: Scenario; sourceLabel: string; isFixture: boolean }) {
   const [name, setName] = useState("");
@@ -31,41 +41,15 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
   const isValid = name.trim().length > 0 && amountCents !== null && amountCents > 0
     && isISODate(date) && date >= scenario.asOfDate && date <= baseline.forecastEnd
     && scenario.accounts.some((account) => account.id === accountId);
-  const hypothetical: UserPurchase | null = isValid ? {
-    id: "hypothetical-purchase", label: name.trim(), amountCents: amountCents!, date, accountId,
-  } : null;
-  const preview = hypothetical && !added ? buildCalendarModel(scenario, [...purchases, hypothetical], ALL_ACCOUNTS, entries) : null;
+  const hypothetical: PurchaseInput | null = isValid ? { label: name.trim(), amountCents: amountCents!, date, accountId } : null;
+  const check = hypothetical && !added ? checkPurchase(scenario, purchases, hypothetical, criticalBalanceCents, entries, baseline) : null;
+  const preview = check?.preview ?? null;
   const baselineLow = lowestBalance(baseline);
-  const baselineLowAfterDate = isValid ? lowestBalanceFrom(baseline, date) : baselineLow;
-  const previewLowAfterDate = preview ? lowestBalanceFrom(preview, date) : null;
-  const recommendation = previewLowAfterDate ? (() => {
-    const level = balanceLevel(previewLowAfterDate.cents, criticalBalanceCents);
-    if (level === 5) return {
-      title: "Not recommended for this date",
-      detail: `The forecast falls below $0, reaching ${formatUSD(previewLowAfterDate.cents)} on ${formatDate(previewLowAfterDate.date, "short")}. Consider waiting, choosing a cheaper option, or changing the date.`,
-      tone: "bg-neg-soft",
-    };
-    if (level === 4) return {
-      title: "I’d wait or lower the cost",
-      detail: `After this purchase, the forecast reaches ${formatUSD(previewLowAfterDate.cents)} on ${formatDate(previewLowAfterDate.date, "short")}—at or below your ${formatUSD(criticalBalanceCents)} critical threshold.`,
-      tone: "bg-neg-soft",
-    };
-    if (level === 3) return {
-      title: "This looks risky",
-      detail: `The lowest projected balance is only $200 or less above your critical threshold. Delaying the purchase or reducing its cost would leave more room for bills and unexpected expenses.`,
-      tone: "bg-rain-soft",
-    };
-    if (level === 2) return {
-      title: "Possible, with a tighter buffer",
-      detail: `The forecast stays above critical, but the lowest balance is less than $700 above your threshold. Consider whether the purchase can wait or cost less.`,
-      tone: "bg-accent-soft",
-    };
-    return {
-      title: level === 0 ? "Looks manageable in this forecast" : "The forecast keeps some room",
-      detail: `The lowest projected balance after the purchase is ${formatUSD(previewLowAfterDate.cents)} on ${formatDate(previewLowAfterDate.date, "short")}, above your ${formatUSD(criticalBalanceCents)} critical threshold.`,
-      tone: "bg-pos-soft",
-    };
-  })() : null;
+  const baselineLowAfterDate = check?.lowestWithout ?? baselineLow;
+  const previewLowAfterDate = check?.lowestWith ?? null;
+  const recommendation = check ? { ...purchaseRecommendation(check), tone: RECOMMENDATION_TONES[check.level] } : null;
+  const explanation = useAdvisorExplanation(check ? hypothetical : null, criticalBalanceCents, purchases,
+    () => hypothetical ? advisorTemplate(buildAdvisorFacts(scenario, purchases, hypothetical, criticalBalanceCents, entries)) : null);
 
   function addToCalendar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -148,6 +132,7 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
                 <p className="text-caption font-semibold text-primary">{recommendation.title}</p>
                 <p className="mt-1 text-caption text-primary">{recommendation.detail}</p>
               </div>}
+              <AdvisorExplanationPanel state={explanation} />
               <p className="mt-3 text-micro text-secondary">Forecast includes estimated everyday spending and listed income and bills. This is a demo estimate, not a guarantee.</p>
             </>
           )}

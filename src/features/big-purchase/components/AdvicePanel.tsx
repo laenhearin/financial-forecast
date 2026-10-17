@@ -8,7 +8,7 @@ import { cardClass, mutedTextClass } from "./ui";
 
 /** Shown after Help me get there; stays in sync as the deadline moves. */
 export function AdvicePanel({ model }: { model: BigPurchaseModel }) {
-  const { advice, narration, deadline } = model;
+  const { advice, narration, narrationSource, deadline } = model;
   if (advice.status === "closed") return null;
 
   if (advice.status === "loading") {
@@ -26,7 +26,7 @@ export function AdvicePanel({ model }: { model: BigPurchaseModel }) {
     <section aria-labelledby="bp-advice-heading" className="space-y-4">
       <h3 id="bp-advice-heading" className="sr-only">Ways to get there sooner</h3>
       <div className={`${cardClass} space-y-2 p-5`}>
-        <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-(--bp-primary-ink) uppercase"><Sparkles aria-hidden className="size-4" /> Summary</p>
+        <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-(--bp-primary-ink) uppercase"><Sparkles aria-hidden className="size-4" /> {narrationSource && narrationSource !== "template" ? "AI summary" : "Summary"}</p>
         {narration ? <p aria-live="polite">{narration}</p> : <div className="h-5 w-3/4 rounded bp-shimmer" />}
         {result.combined && result.items.length > 0 && (
           <p className={`text-sm ${mutedTextClass}`}>

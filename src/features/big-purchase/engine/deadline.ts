@@ -11,7 +11,10 @@ export interface RequiredContribution { contributionCents: Cents; tier: Tier }
  */
 export function requiredContribution(base: BaseDay[], paydays: ISODate[], goal: PlanGoal, deadline: ISODate, maxCents: Cents): RequiredContribution | null {
   if (isAffordableNow(base, goal)) return { contributionCents: 0, tier: "ok" };
-  for (let candidate = CONTRIBUTION_STEP_CENTS; candidate <= maxCents; candidate += CONTRIBUTION_STEP_CENTS) {
+  // A local copy: Next 16.4's Turbopack build renames the imported constant but misses it in a
+  // for-loop update clause, leaving "CONTRIBUTION_STEP_CENTS is not defined" in production bundles.
+  const step = CONTRIBUTION_STEP_CENTS;
+  for (let candidate = step; candidate <= maxCents; candidate += step) {
     const date = affordableDateFor(paydays, goal.costCents, candidate);
     if (!date || date > deadline) continue;
     if (!satisfiesInvariant(base, paydays, goal.costCents, candidate, 0)) continue;

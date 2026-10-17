@@ -58,7 +58,7 @@ export default async function HomePage() {
             monthlyTotals={monthlyTotals}
           />
           <section aria-label="Ask about your money" className="mt-3 flex flex-1 flex-col rounded-3xl border border-app bg-card p-3">
-            <AskBox className="flex flex-1 flex-col" />
+            <AskBox className="flex flex-1 flex-col" defaultCriticalBalanceCents={defaultCriticalCents} />
             <SuggestionChips className="mt-3" />
           </section>
         </div>
