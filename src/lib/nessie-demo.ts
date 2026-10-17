@@ -104,5 +104,9 @@ export async function loadNessieDemo(slug = "college") {
 
 /** Safe profile metadata for the client-side demo user picker. */
 export function listNessieDemoProfiles() {
-  return plan.profiles.map(({ slug, label }) => ({ slug, label }));
+  return plan.profiles.map(({ slug, label, bills }) => ({
+    slug,
+    label,
+    criticalBalanceDefaultCents: bills.find((bill) => /housing|rent/i.test(bill.label))?.amountCents ?? 0,
+  }));
 }

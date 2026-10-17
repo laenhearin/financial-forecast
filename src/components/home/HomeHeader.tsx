@@ -1,5 +1,9 @@
+"use client";
+
 import { Cloud, CloudLightning, CloudRain, Sun, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { balanceLevel } from "@/features/calendar/engine/balanceThresholds";
+import { useCriticalBalance } from "@/features/calendar/state/useCriticalBalance";
 import type { Weather } from "./types";
 
 const CONDITIONS: Record<Weather, { icon: LucideIcon; label: string }> = {
@@ -11,13 +15,17 @@ const CONDITIONS: Record<Weather, { icon: LucideIcon; label: string }> = {
 
 interface HomeHeaderProps {
   userName: string;
-  weather: Weather;
+  balanceCents: number;
+  defaultCriticalBalanceCents: number;
   /** Day of the next tight spot, such as "Thursday"; null hides the second half of the status line. */
   nextStormLabel: string | null;
   className?: string;
 }
 
-export function HomeHeader({ weather, nextStormLabel, userName, className }: HomeHeaderProps) {
+export function HomeHeader({ balanceCents, defaultCriticalBalanceCents, nextStormLabel, userName, className }: HomeHeaderProps) {
+  const criticalBalanceCents = useCriticalBalance(defaultCriticalBalanceCents);
+  const level = balanceLevel(balanceCents, criticalBalanceCents);
+  const weather: Weather = level >= 4 ? "downpour" : level >= 2 ? "rainy" : level === 1 ? "cloudy" : "sunny";
   const { icon: TodayIcon, label } = CONDITIONS[weather];
   return (
     <div className={cn("text-center", className)}>

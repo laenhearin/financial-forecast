@@ -184,7 +184,7 @@ function CardRow({ card, owned, gold, analysis, today, spendProfile, selections,
   );
 }
 
-/** Every catalog card in one table that scrolls inside its own box, so the page stays still. */
+/** Every catalog card in one table that scrolls inside its own box, about ten rows tall. */
 export function CardTable({ analysis, prefs, today, spendProfile, onOpen, onAdd, onRemove, onSort, onOwnership, onShowBusiness, className }: CardTableProps) {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
@@ -242,14 +242,14 @@ export function CardTable({ analysis, prefs, today, spendProfile, onOpen, onAdd,
         </label>
       </div>
 
-      <div className="relative min-h-0 lg:flex-1">
+      <div className="relative">
         <motion.div
           ref={scrollRef}
           layoutScroll
           tabIndex={0}
           role="region"
           aria-label="Credit cards"
-          className="max-h-[70dvh] min-h-90 overflow-y-auto overscroll-contain focus-visible:outline-offset-[-2px] lg:absolute lg:inset-0 lg:max-h-none lg:min-h-0"
+          className="h-190 max-h-[85dvh] overflow-y-auto overscroll-contain focus-visible:outline-offset-[-2px]"
         >
           {groups.length === 0 ? (
             <div className="flex min-h-60 flex-col items-center justify-center gap-3 px-6 text-center text-body text-secondary">

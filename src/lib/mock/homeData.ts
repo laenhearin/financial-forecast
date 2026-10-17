@@ -66,7 +66,7 @@ export const homeData: HomeData = {
       id: "cash-back",
       icon: "credit-card",
       tone: "sun",
-      title: "Change of Weather",
+      title: "Swipe and Shine",
       subtitle: "$18 missed this month",
       actionLabel: "See cards",
       href: ROUTES.cashBack,

@@ -1,14 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, CloudRain } from "lucide-react";
-import { riskLevel } from "@/features/calendar/engine/model";
+import { balanceLevel, defaultCriticalBalanceCents } from "@/features/calendar/engine/balanceThresholds";
+import { useCriticalBalance } from "@/features/calendar/state/useCriticalBalance";
+import type { Scenario } from "@/features/big-purchase/types";
 import { addDays, formatDate } from "@/lib/dates";
 import { formatUSD } from "@/lib/money";
 import { ROUTES } from "@/lib/navigation";
 import type { HomeData } from "./types";
 
-export function StormPreview({ homeData }: { homeData: HomeData }) {
+export function StormPreview({ homeData, scenario }: { homeData: HomeData; scenario: Scenario }) {
+  const criticalCents = useCriticalBalance(defaultCriticalBalanceCents(scenario));
   const criticalDays = homeData.projection
-    .filter(day => day.day > 0 && riskLevel(day.balanceCents, homeData.availableBalanceCents) >= 4)
+    .filter(day => day.day > 0 && balanceLevel(day.balanceCents, criticalCents) >= 4)
     .sort((a, b) => a.day - b.day);
 
   return (
@@ -37,7 +42,7 @@ export function StormPreview({ homeData }: { homeData: HomeData }) {
           })}
         </ul>
       ) : <div className="flex flex-1 items-center justify-center rounded-item border border-dashed border-app bg-app p-3 text-center text-caption text-secondary">No critical dates in the current forecast.</div>}
-      <p className="text-micro text-secondary">Based on forecast balances. Storm solver recommendations are coming soon.</p>
+      <p className="text-micro text-secondary">Forecast balances at or below your {formatUSD(criticalCents)} critical threshold. Open Storm solver to review ways to prepare.</p>
       <Link href={ROUTES.stormSolver} className="jump-link mt-auto self-end">Open Storm solver <ArrowRight aria-hidden className="size-4" /></Link>
     </section>
   );

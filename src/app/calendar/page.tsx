@@ -23,8 +23,10 @@ async function loadScenario(): Promise<LoadResult> {
   }
 }
 
-export default async function CalendarPage() {
+export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ date?: string | string[] }> }) {
+  const { date } = await searchParams;
+  const initialDate = typeof date === "string" ? date : undefined;
   const result = await loadScenario();
   if (!result.ok) return <CalendarLoadError message={result.message} details={result.details} />;
-  return <CalendarApp scenario={result.scenario} sourceLabel="Synthetic Nessie data + local demo assumptions" isFixture />;
+  return <CalendarApp key={`${result.scenario.id}:${initialDate ?? ""}`} initialDate={initialDate} scenario={result.scenario} sourceLabel="Synthetic Nessie data + local demo assumptions" isFixture />;
 }

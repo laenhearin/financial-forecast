@@ -17,7 +17,7 @@ export function FeaturePreviews({ homeData, demoGoal, scenario }: { homeData: Ho
     <section aria-labelledby="feature-previews-title" className="h-full">
       <h2 id="feature-previews-title" className="sr-only">Explore your tools</h2>
       <div className="grid h-full gap-3 sm:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3">
-        <StormPreview homeData={homeData} />
+        <StormPreview homeData={homeData} scenario={scenario} />
         <GoalsPreview goal={goal} scenario={scenario} />
         <CashBackPreview />
       </div>

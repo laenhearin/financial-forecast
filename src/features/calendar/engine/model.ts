@@ -2,6 +2,7 @@ import { addDays } from "../../../lib/dates";
 import { formatUSD } from "../../../lib/money";
 import type { Scenario } from "../../big-purchase/types";
 import { FORECAST_DAYS } from "../config";
+import { balanceLevel, BALANCE_LABELS } from "./balanceThresholds";
 import { ALL_ACCOUNTS, type AccountView, type CalendarEntry, type Cents, type DayBalance, type ISODate, type UserPurchase } from "../types";
 import { forecastEndDate, purchaseEntry, scenarioEntries, signedCents, sortEntries } from "./entries";
 
@@ -91,6 +92,15 @@ export function lowestBalance(model: CalendarModel): { date: ISODate; cents: Cen
   return lowest;
 }
 
+/** Lowest projected balance on or after a requested date. */
+export function lowestBalanceFrom(model: CalendarModel, fromDate: ISODate): { date: ISODate; cents: Cents } {
+  let lowest = { date: fromDate, cents: balanceOn(model, fromDate) ?? model.startingCents };
+  for (const [date, { totalCents }] of model.balances) {
+    if (date >= fromDate && totalCents < lowest.cents) lowest = { date, cents: totalCents };
+  }
+  return lowest;
+}
+
 export function upcomingBills(model: CalendarModel): { count: number; totalCents: Cents } {
   const bills = model.entries.filter((e) => e.kind === "bill" && e.date >= model.asOfDate && e.date <= model.forecastEnd);
   return { count: bills.length, totalCents: bills.reduce((sum, bill) => sum + bill.amountCents, 0) };
@@ -107,19 +117,16 @@ export interface DayAlert {
 }
 
 /** The message at the top of the selected-day panel. */
-export function dayAlert(model: CalendarModel, date: ISODate): DayAlert {
+export function dayAlert(model: CalendarModel, date: ISODate, criticalCents = 0): DayAlert {
   const balance = balanceOn(model, date);
   if (balance === null) {
     return date < model.asOfDate
       ? { tone: "safe", text: "This date is in the past. Select today or a future date to see the forecast." }
       : { tone: "safe", text: `This date is past the ${FORECAST_DAYS}-day forecast window.` };
   }
-  if (balance < 0) return { tone: "danger", text: `⚠️ Danger: your projected balance is ${formatUSD(-balance)} below zero.` };
-  if (atOrBelowShare(balance, model.startingCents, 25)) {
-    return { tone: "caution", text: `⚠️ Low balance: you may have only ${formatUSD(balance)} left after this day's transactions. Review upcoming spending.` };
-  }
-  if (atOrBelowShare(balance, model.startingCents, 50)) {
-    return { tone: "caution", text: `Heads up: your projected balance is ${formatUSD(balance)}. Keep an eye on upcoming bills.` };
-  }
-  return { tone: "safe", text: `✓ Your projected balance is ${formatUSD(balance)} after this day's transactions.` };
+  const level = balanceLevel(balance, criticalCents);
+  if (level === 5) return { tone: "danger", text: `⚠️ Danger: your projected balance is ${formatUSD(-balance)} below zero.` };
+  if (level === 4) return { tone: "danger", text: `⚠️ Critical: projected balance ${formatUSD(balance)} is at or below your ${formatUSD(criticalCents)} critical threshold.` };
+  if (level >= 2) return { tone: "caution", text: `Heads up: projected balance is ${BALANCE_LABELS[level].toLowerCase()} at ${formatUSD(balance)}.` };
+  return { tone: "safe", text: `✓ Your projected balance is ${BALANCE_LABELS[level].toLowerCase()} at ${formatUSD(balance)}.` };
 }

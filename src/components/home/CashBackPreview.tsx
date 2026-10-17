@@ -14,7 +14,7 @@ export function CashBackPreview() {
   return (
     <section aria-labelledby="cash-back-preview-title" className="flex min-w-0 flex-col gap-2 rounded-panel border border-app bg-card p-3">
       <div className="flex items-center justify-between">
-        <h3 id="cash-back-preview-title" className="text-caption font-medium text-secondary">Change of Weather</h3>
+        <h3 id="cash-back-preview-title" className="text-caption font-medium text-secondary">Swipe and Shine</h3>
         <Link href={ROUTES.cashBack} aria-label="Manage cards" className="rounded-item p-1 text-secondary hover:text-accent"><ArrowUpRight aria-hidden className="size-4" /></Link>
       </div>
       {!analysis ? (
@@ -54,7 +54,7 @@ export function CashBackPreview() {
           ) : <p className="rounded-item bg-app p-2 text-micro text-secondary">No additional cards recommended right now.</p>}
         </div>
       </>}
-      <Link href={ROUTES.cashBack} className="jump-link mt-auto self-end">Open Change of Weather <ArrowRight aria-hidden className="size-4" /></Link>
+      <Link href={ROUTES.cashBack} className="jump-link mt-auto self-end">Open Swipe and Shine <ArrowRight aria-hidden className="size-4" /></Link>
     </section>
   );
 }

@@ -39,7 +39,7 @@ export function GoalsPreview({ goal, scenario }: { goal: Goal; scenario: Scenari
           <span className="text-micro">More goals coming soon</span>
         </div>
       ))}
-      <Link href={ROUTES.bigPurchase} className="jump-link self-end">Open Purchase Forecasting <ArrowRight aria-hidden className="size-4" /></Link>
+      <Link href={ROUTES.bigPurchase} className="jump-link self-end">Open Forecast Fund <ArrowRight aria-hidden className="size-4" /></Link>
     </section>
   );
 }
