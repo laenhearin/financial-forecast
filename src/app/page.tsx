@@ -1,4 +1,5 @@
 import { buildHomeForecast } from "@/lib/home-forecast";
+import { monthlyActivity } from "@/lib/monthly-activity";
 import { AskBox } from "@/components/home/AskBox";
 import { BalanceChart } from "@/components/home/BalanceChart";
 import { FeaturePreviews } from "@/components/home/FeaturePreviews";
@@ -14,11 +15,13 @@ export default async function HomePage() {
   let homeData: HomeData;
   let cashBackData: CashBackData;
   let demoGoal: Goal;
+  let monthlyTotals: ReturnType<typeof monthlyActivity>;
   try {
     const demo = await loadActiveDemo();
     homeData = buildHomeForecast(demo.scenario);
     cashBackData = demo.cashBack;
     demoGoal = demo.goal;
+    monthlyTotals = monthlyActivity(demo.history, demo.asOfDate);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The selected demo profile could not be loaded.";
     return <div className="mx-auto max-w-180 px-5 py-16 text-body text-neg">CloudCash could not load this demo profile: {message}</div>;
@@ -39,7 +42,7 @@ export default async function HomePage() {
             availableBalanceCents={homeData.availableBalanceCents}
             projection={homeData.projection}
             markers={homeData.markers}
-            isSampleData={homeData.isSampleData}
+            monthlyTotals={monthlyTotals}
           />
           <section aria-label="Ask about your money" className="mt-3 rounded-3xl border border-app bg-card p-3">
             <AskBox />
@@ -49,6 +52,7 @@ export default async function HomePage() {
         <aside className="min-w-0 lg:col-start-2 lg:row-start-2">
           <FeaturePreviews homeData={homeData} cashBackData={cashBackData} demoGoal={demoGoal} />
         </aside>
+        <p className="text-micro text-secondary lg:col-span-2">Synthetic Nessie demo data and forecast assumptions.</p>
       </div>
     </div>
   );

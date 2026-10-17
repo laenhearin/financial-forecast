@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { forecastDate, forecastDays, weeklyCurve } from "./weeklyForecast";
+import { dailyWeather, forecastDate, forecastDays, weeklyCurve } from "./weeklyForecast";
 
 describe("weekly forecast", () => {
+  it("uses net cash flow for weather, including bill days offset by income", () => {
+    expect(dailyWeather(0, true)).toBe("sunny");
+    expect(dailyWeather(50000, true)).toBe("sunny");
+    expect(dailyWeather(-9999, false)).toBe("cloudy");
+    expect(dailyWeather(-10000, false)).toBe("rainy");
+    expect(dailyWeather(-1, true)).toBe("rainy");
+  });
   it("labels dates consistently across daylight saving and year boundaries", () => {
     expect(forecastDate("2026-10-17", 1)).toEqual({ date: "2026-10-18", weekday: "SUN", label: "Oct 18" });
     expect(forecastDate("2026-10-31", 2)).toEqual({ date: "2026-11-02", weekday: "MON", label: "Nov 2" });

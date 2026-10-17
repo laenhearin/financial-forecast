@@ -1,6 +1,12 @@
 import type { ProjectionPoint } from "./types";
 import { addDays, dayOfWeek, formatDate } from "../../lib/dates";
 
+/** A bill day with a net loss, or a loss of at least $100, is rainy. */
+export function dailyWeather(netCents: number, hasBill: boolean) {
+  if (netCents >= 0) return "sunny";
+  return hasBill || netCents <= -10000 ? "rainy" : "cloudy";
+}
+
 export function forecastDate(asOfDate: string, day: number) {
   const date = addDays(asOfDate, day);
   return {

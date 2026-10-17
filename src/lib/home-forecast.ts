@@ -17,8 +17,7 @@ export function buildHomeForecast(scenario: Scenario): HomeData {
     const markers = entries
       .filter((entry) => entry.kind === "bill")
       .map((entry) => ({ day: daysBetween(scenario.asOfDate, entry.date), label: entry.label }))
-      .filter((marker) => marker.day > 0 && marker.day <= 30)
-      .slice(0, 3);
+      .filter((marker) => marker.day > 0 && marker.day <= 30);
     return {
       cards: [],
       asOfDate: scenario.asOfDate,
