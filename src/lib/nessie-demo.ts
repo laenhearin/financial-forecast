@@ -1,6 +1,6 @@
 import "server-only";
 import plan from "../../data/nessie-demo/plan.json" with { type: "json" };
-import { getCustomers, getCustomerAccounts, getAccountBills, getAccountDeposits, getAccountWithdrawals } from "../nessieApi.js";
+import { getCustomers, getCustomerAccounts, getAccountBills, getAccountDeposits, getAccountWithdrawals, getAccountLoans } from "../nessieApi.js";
 import type { NessieRecord } from "./nessie-api";
 import type { Scenario, Goal } from "../features/big-purchase/types";
 import type { CashBackData } from "../features/cash-back/data/source";
@@ -55,8 +55,20 @@ export async function loadNessieDemo(slug = "college") {
     return { id: row._id, kind: transaction.kind, date: transaction.date,
       amountCents: cents(row.amount), label: transaction.label, cardId: transaction.cardId };
   });
+  const debts: NonNullable<Scenario["debts"]> = [];
+  if (profile.loan) {
+    const loan = profile.loan;
+    const row = one(await getAccountLoans(checking._id), "description", `${plan.seedId}/${slug}/loan | SYNTHETIC | ${loan.label}`);
+    if (row.status !== "approved" || cents(row.amount) !== loan.amountCents || cents(row.monthly_payment) !== loan.monthlyPaymentCents) {
+      throw new Error("Seeded loan changed; reconcile its debt balance and payment before forecasting.");
+    }
+    const payment = profile.bills.find(bill => bill.label === loan.paymentBillLabel);
+    if (!payment || payment.amountCents !== cents(row.monthly_payment)) throw new Error("Seeded loan needs a matching payment schedule.");
+    debts.push({ id: row._id, label: loan.label, balanceCents: cents(row.amount), monthlyPaymentCents: cents(row.monthly_payment) });
+  }
   const cashBack: CashBackData = {
     customerName: profile.label, asOfDate: plan.asOfDate, ownedCardIds: profile.ownedCardIds,
+    spendProfile: profile.monthlySpendingByCategory,
     purchases: history.filter(row => row.kind === "withdrawal").map(row => ({
       id: row.id, date: row.date, merchant: row.label, amountCents: row.amountCents, cardId: row.cardId!,
     })),
@@ -79,12 +91,13 @@ export async function loadNessieDemo(slug = "college") {
       }
       return { id: row._id, label: bill.label, amountCents: cents(row.payment_amount),
         schedule: { frequency: "monthly" as const, dayOfMonth: bill.recurringDay },
-        category: bill.label === "Housing" ? "housing" : "utilities", cancellable: false, shiftable: false };
+        category: "category" in bill ? bill.category : (bill.label === "Housing" ? "housing" : "utilities"), cancellable: false, shiftable: false };
     }),
     spending: [{ id: `${slug}-everyday`, label: "Everyday spending (demo estimate)",
       monthlyAmountCents: profile.estimatedMonthlySpendingCents, cuttable: true, maxCutPercent: 25 }],
     // Posted history is already represented by the end-of-day balance, never replayed into the forecast.
     oneOffs: [],
+    debts,
   };
   const goal: Goal = { id: `${slug}-hypothetical-goal`, ...profile.goal, bufferIsCustom: true, priority: 1,
     status: "draft", contributionCents: null, createdAt: plan.asOfDate, updatedAt: plan.asOfDate };
@@ -98,6 +111,7 @@ export async function loadNessieDemo(slug = "college") {
       "Cash-back purchases are a demo projection of seeded withdrawals, not native Nessie purchase or card-charge records.",
       "Card assignments, reward rules, future income/spending, and goals are local fixtures; history is sparse.",
       "Balances are snapshots as of 2026-10-17; the seed did not cause balances to change on transaction creation.",
+      "Seed loan amount represents outstanding principal at this snapshot. Only scheduled loan payments reduce forecast cash; interest and amortization are not modeled.",
     ],
   };
 }

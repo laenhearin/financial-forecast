@@ -4,7 +4,7 @@ const { loadNessieDemo }: typeof import("../src/lib/nessie-demo") =
   await import(new URL("../src/lib/nessie-demo.ts", import.meta.url).href);
 
 try {
-  if (process.argv.length > 3) throw new Error("Usage: scripts/read-nessie-demo.mts [college|twenties-a|twenties-b|midlife|older]");
+  if (process.argv.length > 3) throw new Error("Usage: scripts/read-nessie-demo.mts [profile-slug]; see data/nessie-demo/plan.json for profiles.");
   console.log(JSON.stringify(await loadNessieDemo(process.argv[2]), null, 2));
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Reading the seeded demo failed.");

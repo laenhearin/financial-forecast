@@ -4,11 +4,14 @@ import {
   getCustomers, createCustomer, getCustomerAccounts, createAccount,
   getAccountDeposits, getAccountWithdrawals, createDeposit, createWithdrawal,
   getAccountBills, createBill,
+  getAccountLoans, createLoan,
 } from "../src/nessieApi.js";
 import type { NessieRecord, NessieAccountType } from "../src/lib/nessie-api";
 
 type Transaction = { key: string; kind: "deposit" | "withdrawal"; date: string; amountCents: number; label: string; cardId?: string };
 interface Profile {
+  createNewCustomer?: boolean;
+  loan?: { label: string; amountCents: number; monthlyPaymentCents: number; creditScore: number; type: string };
   slug: string; label: string; checkingCents: number; savingsCents: number; ownedCardIds: string[];
   income: { label: string; amountCents: number; frequency: string; anchorDate: string };
   bills: { label: string; payee: string; amountCents: number; paymentDate: string; recurringDay: number }[];
@@ -22,6 +25,7 @@ interface ProfileReceipt {
   accounts: { id: string; role: string; balanceRaw: number }[];
   transactions: { key: string; id: string; kind: string; amountCents: number; date: string }[];
   bills: { id: string; label: string; amountCents: number; paymentDate: string }[];
+  loans?: { id: string; amountCents: number; monthlyPaymentCents: number }[];
 }
 interface Receipt { seedId: string; asOfDate: string; isFixture: true; profiles: ProfileReceipt[]; verifiedAt?: string }
 
@@ -82,6 +86,7 @@ async function main() {
       // On the first run, preserve the first available people in returned order.
       for (const profile of plan.profiles) {
         if (receipt.profiles.some(row => row.slug === profile.slug)) continue;
+        if (profile.createNewCustomer) continue;
         const customer = customers.find(row => !receipt.profiles.some(saved => saved.customerId === row._id));
         if (customer) receipt.profiles.push({ slug: profile.slug, customerId: customer._id, accounts: [], transactions: [], bills: [] });
       }
@@ -128,6 +133,19 @@ async function main() {
         await save();
       }
       const checkingId = saved.accounts.find(account => account.role === "checking")!.id;
+      if (profile.loan) {
+        const loan = profile.loan;
+        const description = `${plan.seedId}/${profile.slug}/loan | SYNTHETIC | ${loan.label}`;
+        let row = unique(await getAccountLoans(checkingId), "description", description);
+        if (!row) {
+          await createLoan(checkingId, loan.type, units(loan.amountCents), units(loan.monthlyPaymentCents), loan.creditScore, description);
+          row = unique(await getAccountLoans(checkingId), "description", description);
+        }
+        if (!row) throw new Error(`Loan for ${profile.slug} was not readable.`);
+        verify(row, { type: loan.type, status: "approved", amount: units(loan.amountCents), monthly_payment: units(loan.monthlyPaymentCents) });
+        saved.loans = [{ id: row._id, amountCents: loan.amountCents, monthlyPaymentCents: loan.monthlyPaymentCents }];
+        await save();
+      }
       for (const transaction of profile.transactions) {
         const description = `${plan.seedId}/${transaction.key} | SYNTHETIC | ${transaction.label}`;
         const list = transaction.kind === "deposit" ? getAccountDeposits : getAccountWithdrawals;
@@ -173,6 +191,7 @@ async function main() {
       accounts: receipt.profiles.reduce((sum, row) => sum + row.accounts.length, 0),
       historicalTransactions: receipt.profiles.reduce((sum, row) => sum + row.transactions.length, 0),
       recurringBills: receipt.profiles.reduce((sum, row) => sum + row.bills.length, 0),
+      loans: receipt.profiles.reduce((sum, row) => sum + (row.loans?.length ?? 0), 0),
       receipt: "data/nessie-demo/receipt.local.json",
     }, null, 2));
   } finally { await lock.close(); await unlink(lockURL); }

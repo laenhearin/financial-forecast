@@ -3,38 +3,18 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, CircleUser, Settings2, WalletCards } from "lucide-react";
-import { USER_NAME } from "@/lib/config";
 import { ROUTES } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { useProfileName } from "./useProfileName";
 
 type Panel = "settings" | null;
 export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
-  const [profileName, setProfileName] = useState(USER_NAME);
+  const profileName = useProfileName();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const updateProfileName = async () => {
-      try {
-        const response = await fetch("/api/demo-profiles");
-        if (!response.ok) return;
-        const data = await response.json() as { activeSlug: string; profiles: { slug: string; label: string }[] };
-        setProfileName(data.profiles.find((profile) => profile.slug === data.activeSlug)?.label ?? USER_NAME);
-      } catch {
-        setProfileName(USER_NAME);
-      }
-    };
-    updateProfileName();
-    window.addEventListener("cloudcash-profile-change", updateProfileName);
-    window.addEventListener("storage", updateProfileName);
-    return () => {
-      window.removeEventListener("cloudcash-profile-change", updateProfileName);
-      window.removeEventListener("storage", updateProfileName);
-    };
-  }, []);
 
   useEffect(() => {
     if (!open) return;

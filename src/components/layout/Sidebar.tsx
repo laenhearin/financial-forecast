@@ -5,10 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CircleUser, Menu, X } from "lucide-react";
-import { APP_NAME, USER_NAME } from "@/lib/config";
+import { APP_NAME } from "@/lib/config";
 import { getActiveHref, NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { useProfileName } from "./useProfileName";
 
 /*
  * Layout by width: 1024px+ full sidebar; 768–1023px a 64px icon rail (md:max-lg:) whose labels
@@ -26,6 +27,7 @@ function LogoMark() {
 }
 
 export function Sidebar() {
+  const profileName = useProfileName();
   const pathname = usePathname();
   const activeHref = getActiveHref(pathname);
   // The drawer is open only on the page where it was opened, so any navigation closes it.
@@ -117,7 +119,7 @@ export function Sidebar() {
 
         <div className="mt-auto flex items-center gap-3 pt-6 pl-2.5 md:max-lg:flex-col md:max-lg:pl-0">
           <CircleUser aria-hidden className="size-5 shrink-0 text-secondary" strokeWidth={1.75} />
-          <span className="truncate text-body text-secondary md:max-lg:sr-only">{USER_NAME}</span>
+          <span title={profileName} className="truncate text-body text-secondary md:max-lg:sr-only">{profileName}</span>
           <ThemeToggle className="ml-auto md:max-lg:ml-0" />
         </div>
       </aside>
