@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col bg-app text-primary antialiased md:flex-row">
         <ThemeProvider>
           <Sidebar />
+          <AccountMenu />
           <main className="min-h-screen min-w-0 flex-1">{children}</main>
         </ThemeProvider>
       </body>

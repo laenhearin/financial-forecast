@@ -5,11 +5,12 @@ import { useMemo, useSyncExternalStore } from "react";
 import { ArrowRight, ArrowUpRight, CreditCard, Target, Umbrella, type LucideIcon } from "lucide-react";
 import { formatUSD } from "@/lib/money";
 import { ROUTES } from "@/lib/navigation";
-import { homeData } from "@/lib/mock/homeData";
+import type { HomeData } from "./types";
+import type { Goal } from "@/features/big-purchase/types";
 import { goalStore } from "@/features/big-purchase/state/goalStore";
 import { analyzeCashBack } from "@/features/cash-back/engine/analyze";
 import { categorize } from "@/features/cash-back/engine/categorize";
-import { loadDemoCashBackData } from "@/features/cash-back/data/source";
+import type { CashBackData } from "@/features/cash-back/data/source";
 import { prefsStore } from "@/features/cash-back/state/prefsStore";
 
 type Feature = {
@@ -53,11 +54,11 @@ const TONES = {
   slate: "bg-secondary text-secondary",
 } as const;
 
-export function FeaturePreviews() {
+export function FeaturePreviews({ homeData, cashBackData, demoGoal }: { homeData: HomeData; cashBackData: CashBackData; demoGoal: Goal }) {
   const storedGoal = useSyncExternalStore(goalStore.subscribe, goalStore.getSnapshot, goalStore.getServerSnapshot);
   const cashPrefs = useSyncExternalStore(prefsStore.subscribe, prefsStore.getSnapshot, prefsStore.getServerSnapshot);
   const cashBackProgress = useMemo(() => {
-    const data = loadDemoCashBackData();
+    const data = cashBackData;
     const analysis = analyzeCashBack({
       purchases: categorize(data.purchases),
       selectedCardIds: cashPrefs?.selectedCardIds ?? data.ownedCardIds,
@@ -65,10 +66,10 @@ export function FeaturePreviews() {
       windowDays: cashPrefs?.windowDays ?? 90,
     });
     return analysis;
-  }, [cashPrefs]);
+  }, [cashPrefs, cashBackData]);
 
   const projectionLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
-  const goal = storedGoal?.goals[0] ?? null;
+  const goal = storedGoal?.goals[0] ?? demoGoal;
   const progressByTitle: Record<string, { label: string; detail: string; percent?: number }> = {
     "Purchase Forecasting": {
       label: goal ? `${goal.name || "Untitled goal"} · ${formatUSD(goal.costCents)}` : "No saved goal yet",

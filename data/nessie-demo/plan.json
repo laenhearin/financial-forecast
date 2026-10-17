@@ -1,0 +1,369 @@
+{
+  "seedId": "ff-demo-v1",
+  "asOfDate": "2026-10-17",
+  "windowStart": "2026-07-20",
+  "isFixture": true,
+  "moneyConvention": "For these synthetic records only: 1 raw Nessie unit represents 1 USD; all local values use integer cents. The provider spec does not explicitly define units.",
+  "profiles": [
+    {
+      "slug": "college",
+      "label": "College student",
+      "checkingCents": 35000,
+      "savingsCents": 40000,
+      "ownedCardIds": [
+        "everyday-1",
+        "market-fresh"
+      ],
+      "income": {
+        "label": "Paycheck",
+        "amountCents": 65000,
+        "frequency": "biweekly",
+        "anchorDate": "2026-10-23"
+      },
+      "bills": [
+        {
+          "label": "Housing",
+          "payee": "Demo housing provider",
+          "amountCents": 65000,
+          "paymentDate": "2026-11-01",
+          "recurringDay": 1
+        },
+        {
+          "label": "Utilities and internet",
+          "payee": "Demo utilities provider",
+          "amountCents": 6000,
+          "paymentDate": "2026-10-24",
+          "recurringDay": 24
+        }
+      ],
+      "estimatedMonthlySpendingCents": 32000,
+      "goal": {
+        "name": "Laptop",
+        "costCents": 120000,
+        "bufferCents": 30000,
+        "preferredDeadline": "2026-12-16"
+      },
+      "transactions": [
+        {
+          "key": "college-1",
+          "kind": "deposit",
+          "date": "2026-07-21",
+          "amountCents": 65000,
+          "label": "Campus library paycheck"
+        },
+        {
+          "key": "college-2",
+          "kind": "withdrawal",
+          "date": "2026-08-13",
+          "amountCents": 9200,
+          "label": "Publix groceries",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "college-3",
+          "kind": "withdrawal",
+          "date": "2026-09-15",
+          "amountCents": 14500,
+          "label": "Campus bookstore textbooks",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "college-4",
+          "kind": "withdrawal",
+          "date": "2026-10-12",
+          "amountCents": 2800,
+          "label": "Chipotle dinner with friends",
+          "cardId": "everyday-1"
+        }
+      ]
+    },
+    {
+      "slug": "twenties-a",
+      "label": "20s: early-career renter",
+      "checkingCents": 110000,
+      "savingsCents": 120000,
+      "ownedCardIds": [
+        "steady-2",
+        "dine-play"
+      ],
+      "income": {
+        "label": "Paycheck",
+        "amountCents": 230000,
+        "frequency": "biweekly",
+        "anchorDate": "2026-10-23"
+      },
+      "bills": [
+        {
+          "label": "Housing",
+          "payee": "Demo housing provider",
+          "amountCents": 140000,
+          "paymentDate": "2026-11-01",
+          "recurringDay": 1
+        },
+        {
+          "label": "Utilities and internet",
+          "payee": "Demo utilities provider",
+          "amountCents": 9000,
+          "paymentDate": "2026-10-24",
+          "recurringDay": 24
+        }
+      ],
+      "estimatedMonthlySpendingCents": 65000,
+      "goal": {
+        "name": "Weekend trip",
+        "costCents": 180000,
+        "bufferCents": 100000,
+        "preferredDeadline": "2026-12-31"
+      },
+      "transactions": [
+        {
+          "key": "twenties-a-1",
+          "kind": "deposit",
+          "date": "2026-07-27",
+          "amountCents": 230000,
+          "label": "Design studio paycheck"
+        },
+        {
+          "key": "twenties-a-2",
+          "kind": "withdrawal",
+          "date": "2026-08-20",
+          "amountCents": 12500,
+          "label": "Trader Joes groceries",
+          "cardId": "steady-2"
+        },
+        {
+          "key": "twenties-a-3",
+          "kind": "withdrawal",
+          "date": "2026-09-22",
+          "amountCents": 8500,
+          "label": "Local restaurant dinner",
+          "cardId": "steady-2"
+        },
+        {
+          "key": "twenties-a-4",
+          "kind": "withdrawal",
+          "date": "2026-10-14",
+          "amountCents": 4500,
+          "label": "Cinema tickets",
+          "cardId": "steady-2"
+        }
+      ]
+    },
+    {
+      "slug": "twenties-b",
+      "label": "20s: commuter",
+      "checkingCents": 85000,
+      "savingsCents": 80000,
+      "ownedCardIds": [
+        "everyday-1",
+        "road-rewards"
+      ],
+      "income": {
+        "label": "Paycheck",
+        "amountCents": 190000,
+        "frequency": "biweekly",
+        "anchorDate": "2026-10-23"
+      },
+      "bills": [
+        {
+          "label": "Housing",
+          "payee": "Demo housing provider",
+          "amountCents": 115000,
+          "paymentDate": "2026-11-01",
+          "recurringDay": 1
+        },
+        {
+          "label": "Utilities and internet",
+          "payee": "Demo utilities provider",
+          "amountCents": 8000,
+          "paymentDate": "2026-10-24",
+          "recurringDay": 24
+        }
+      ],
+      "estimatedMonthlySpendingCents": 60000,
+      "goal": {
+        "name": "Used car down payment",
+        "costCents": 400000,
+        "bufferCents": 100000,
+        "preferredDeadline": "2027-02-14"
+      },
+      "transactions": [
+        {
+          "key": "twenties-b-1",
+          "kind": "deposit",
+          "date": "2026-08-03",
+          "amountCents": 190000,
+          "label": "Technical support paycheck"
+        },
+        {
+          "key": "twenties-b-2",
+          "kind": "withdrawal",
+          "date": "2026-08-28",
+          "amountCents": 5800,
+          "label": "Shell gas",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "twenties-b-3",
+          "kind": "withdrawal",
+          "date": "2026-09-28",
+          "amountCents": 11000,
+          "label": "Aldi groceries",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "twenties-b-4",
+          "kind": "withdrawal",
+          "date": "2026-10-15",
+          "amountCents": 42000,
+          "label": "Auto service tires",
+          "cardId": "everyday-1"
+        }
+      ]
+    },
+    {
+      "slug": "midlife",
+      "label": "30-50: household budget",
+      "checkingCents": 420000,
+      "savingsCents": 950000,
+      "ownedCardIds": [
+        "steady-2",
+        "grocery-max"
+      ],
+      "income": {
+        "label": "Paycheck",
+        "amountCents": 360000,
+        "frequency": "biweekly",
+        "anchorDate": "2026-10-23"
+      },
+      "bills": [
+        {
+          "label": "Housing",
+          "payee": "Demo housing provider",
+          "amountCents": 210000,
+          "paymentDate": "2026-11-01",
+          "recurringDay": 1
+        },
+        {
+          "label": "Utilities and internet",
+          "payee": "Demo utilities provider",
+          "amountCents": 22000,
+          "paymentDate": "2026-10-24",
+          "recurringDay": 24
+        }
+      ],
+      "estimatedMonthlySpendingCents": 110000,
+      "goal": {
+        "name": "Replace household appliance",
+        "costCents": 240000,
+        "bufferCents": 300000,
+        "preferredDeadline": "2027-01-15"
+      },
+      "transactions": [
+        {
+          "key": "midlife-1",
+          "kind": "deposit",
+          "date": "2026-07-29",
+          "amountCents": 360000,
+          "label": "Operations paycheck"
+        },
+        {
+          "key": "midlife-2",
+          "kind": "withdrawal",
+          "date": "2026-08-26",
+          "amountCents": 23500,
+          "label": "Publix family groceries",
+          "cardId": "steady-2"
+        },
+        {
+          "key": "midlife-3",
+          "kind": "withdrawal",
+          "date": "2026-09-25",
+          "amountCents": 7200,
+          "label": "Chevron gas",
+          "cardId": "steady-2"
+        },
+        {
+          "key": "midlife-4",
+          "kind": "withdrawal",
+          "date": "2026-10-13",
+          "amountCents": 16000,
+          "label": "Home Depot repair supplies",
+          "cardId": "steady-2"
+        }
+      ]
+    },
+    {
+      "slug": "older",
+      "label": "50+: semi-retired",
+      "checkingCents": 180000,
+      "savingsCents": 1600000,
+      "ownedCardIds": [
+        "steady-2",
+        "dine-play"
+      ],
+      "income": {
+        "label": "Pension and part-time income",
+        "amountCents": 280000,
+        "frequency": "monthly",
+        "anchorDate": "2026-10-23"
+      },
+      "bills": [
+        {
+          "label": "Housing",
+          "payee": "Demo housing provider",
+          "amountCents": 95000,
+          "paymentDate": "2026-11-01",
+          "recurringDay": 1
+        },
+        {
+          "label": "Utilities and internet",
+          "payee": "Demo utilities provider",
+          "amountCents": 15000,
+          "paymentDate": "2026-10-24",
+          "recurringDay": 24
+        }
+      ],
+      "estimatedMonthlySpendingCents": 75000,
+      "goal": {
+        "name": "Family visit",
+        "costCents": 300000,
+        "bufferCents": 250000,
+        "preferredDeadline": "2027-02-14"
+      },
+      "transactions": [
+        {
+          "key": "older-1",
+          "kind": "deposit",
+          "date": "2026-07-22",
+          "amountCents": 280000,
+          "label": "Monthly pension and part-time income"
+        },
+        {
+          "key": "older-2",
+          "kind": "withdrawal",
+          "date": "2026-08-18",
+          "amountCents": 6500,
+          "label": "CVS pharmacy essentials",
+          "cardId": "steady-2"
+        },
+        {
+          "key": "older-3",
+          "kind": "withdrawal",
+          "date": "2026-09-19",
+          "amountCents": 14500,
+          "label": "Kroger groceries",
+          "cardId": "steady-2"
+        },
+        {
+          "key": "older-4",
+          "kind": "withdrawal",
+          "date": "2026-10-16",
+          "amountCents": 9500,
+          "label": "Local restaurant family lunch",
+          "cardId": "steady-2"
+        }
+      ]
+    }
+  ]
+}

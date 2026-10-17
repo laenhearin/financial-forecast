@@ -6,7 +6,7 @@ import { buildAdviceFacts } from "../ai/facts";
 import { templateNarration } from "../ai/narrator";
 import { cardsByIds, findCard } from "../cards/library";
 import { MAX_AI_MERCHANTS } from "../config";
-import { CashBackLoadError, demoCashBackSource, type CashBackData, type CashBackDataSource } from "../data/source";
+import type { CashBackData } from "../data/source";
 import { analyzeCashBack } from "../engine/analyze";
 import { categorize, categorizeByKeyword, unmatchedMerchants } from "../engine/categorize";
 import { lookupPurchase } from "../engine/playbook";
@@ -14,8 +14,7 @@ import { actualCapLedger } from "../engine/rewards";
 import { prefsStore, sameSelection, toggleCard } from "../state/prefsStore";
 import { isCategory, type Category, type CategorySource, type Cents, type WindowDays } from "../types";
 
-// Choose the data source here. nessieCashBackSource is a stub: the Nessie API has no purchase-list endpoint yet.
-const dataSource: CashBackDataSource = demoCashBackSource;
+const SOURCE_LABEL = "Synthetic Nessie data + local demo assumptions";
 
 type DataState =
   | { status: "loading" }
@@ -57,18 +56,26 @@ export function useCashBack() {
   const [dataState, setDataState] = useState<DataState>({ status: "loading" });
   useEffect(() => {
     let live = true;
-    dataSource.load().then(
-      data => { if (live) setDataState({ status: "ready", data }); },
-      (error: unknown) => {
+    const load = () => {
+      setDataState({ status: "loading" });
+      fetch("/api/demo-data", { cache: "no-store" }).then(async (response) => {
+        const body = await response.json() as { cashBack?: CashBackData; message?: string };
+        if (!response.ok || !body.cashBack) throw new Error(body.message ?? "The selected demo profile could not be loaded.");
+        return body.cashBack;
+      }).then(data => {
+        if (live) setDataState({ status: "ready", data });
+      }).catch((error: unknown) => {
         if (!live) return;
         setDataState({
           status: "error",
           message: messageOf(error, "The purchase data could not be loaded."),
-          details: error instanceof CashBackLoadError ? error.details : [],
+          details: [],
         });
-      },
-    );
-    return () => { live = false; };
+      });
+    };
+    load();
+    window.addEventListener("cloudcash-profile-change", load);
+    return () => { live = false; window.removeEventListener("cloudcash-profile-change", load); };
   }, []);
   const data = dataState.status === "ready" ? dataState.data : null;
 
@@ -191,8 +198,8 @@ export function useCashBack() {
 
   return {
     dataState,
-    sourceLabel: dataSource.sourceLabel,
-    isFixture: dataSource.isFixture,
+    sourceLabel: SOURCE_LABEL,
+    isFixture: true,
     hydrated,
     data,
     selectedCardIds,

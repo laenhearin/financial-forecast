@@ -1,13 +1,29 @@
+import { buildHomeForecast } from "@/lib/home-forecast";
 import { AskBox } from "@/components/home/AskBox";
 import { BalanceChart } from "@/components/home/BalanceChart";
 import { FeaturePreviews } from "@/components/home/FeaturePreviews";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { SuggestionChips } from "@/components/home/SuggestionChips";
-import { homeData } from "@/lib/mock/homeData";
 import { riskLevel } from "@/features/calendar/engine/model";
+import type { HomeData } from "@/components/home/types";
+import { loadActiveDemo } from "@/lib/active-demo";
+import type { CashBackData } from "@/features/cash-back/data/source";
+import type { Goal } from "@/features/big-purchase/types";
 
-/** Forecast-first home dashboard, backed by the existing sample data. */
-export default function HomePage() {
+export default async function HomePage() {
+  let homeData: HomeData;
+  let cashBackData: CashBackData;
+  let demoGoal: Goal;
+  try {
+    const demo = await loadActiveDemo();
+    homeData = buildHomeForecast(demo.scenario);
+    cashBackData = demo.cashBack;
+    demoGoal = demo.goal;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The selected demo profile could not be loaded.";
+    return <div className="mx-auto max-w-180 px-5 py-16 text-body text-neg">CloudCash could not load this demo profile: {message}</div>;
+  }
+
   const projectedLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
   const risk = riskLevel(projectedLow.balanceCents, homeData.availableBalanceCents);
   const weather = risk >= 4 ? "downpour" : risk >= 2 ? "rainy" : risk === 1 ? "cloudy" : "sunny";
@@ -31,7 +47,7 @@ export default function HomePage() {
           </section>
         </div>
         <aside className="min-w-0 lg:col-start-2 lg:row-start-2">
-          <FeaturePreviews />
+          <FeaturePreviews homeData={homeData} cashBackData={cashBackData} demoGoal={demoGoal} />
         </aside>
       </div>
     </div>

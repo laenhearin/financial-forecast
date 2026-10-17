@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# Local Nessie seed receipts link records to this API key's namespace.
+/data/nessie-demo/*.local.json
+/data/nessie-demo/*.local.lock

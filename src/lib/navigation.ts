@@ -4,6 +4,7 @@ import { Home, CalendarDays, ShoppingCart, Target, Umbrella, CreditCard } from "
 /** Every in-app route. Link to these instead of writing paths inside components. */
 export const ROUTES = {
   home: "/",
+  profile: "/profile",
   calendar: "/calendar",
   purchaseAdvisor: "/purchase-advisor",
   bigPurchase: "/big-purchase",
