@@ -1,20 +1,22 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { loadDemoProfile } from "../data/source";
+import { useActiveCustomerId } from "@/components/layout/ActiveCustomer";
+import type { CashBackProfile } from "../data/source";
 import { analyzeWallet } from "../engine/analyze";
 import type { OwnershipFilter, SortMode } from "../engine/table";
-import { prefsStore } from "../state/prefsStore";
+import { prefsStore, resolvePrefs, type SavedCashBackPrefs } from "../state/prefsStore";
 import type { CategoryId } from "../types";
 
-const profile = loadDemoProfile();
-
 /**
- * Saved preferences plus everything computed from them. `prefs` and `analysis` are null on the server
- * and during hydration (local storage is client only), so callers show a skeleton until then.
+ * The active customer's saved preferences plus everything computed from them and their Nessie
+ * profile. `prefs` and `analysis` are null on the server and during hydration (local storage is
+ * client only), so callers show a skeleton until then.
  */
-export function useCashBack() {
-  const prefs = useSyncExternalStore(prefsStore.subscribe, prefsStore.getSnapshot, prefsStore.getServerSnapshot);
+export function useCashBack(profile: CashBackProfile) {
+  const customerId = useActiveCustomerId();
+  const saved = useSyncExternalStore(prefsStore.subscribe, () => prefsStore.getSnapshot(customerId), prefsStore.getServerSnapshot);
+  const prefs = useMemo(() => saved && resolvePrefs(saved, profile.ownedCardIds), [saved, profile.ownedCardIds]);
   const analysis = useMemo(
     () => prefs && analyzeWallet({
       ownedCardIds: prefs.ownedCardIds,
@@ -23,33 +25,35 @@ export function useCashBack() {
       selections: prefs.selections,
       dismissedSuggestions: prefs.dismissedSuggestions,
     }),
-    [prefs],
+    [prefs, profile.spendProfile, profile.asOfDate],
   );
 
+  const update = (change: (current: SavedCashBackPrefs) => SavedCashBackPrefs) => prefsStore.update(customerId, change);
+  const ownedNow = (current: SavedCashBackPrefs) => current.ownedCardIds ?? [...profile.ownedCardIds];
   const actions = {
     addCard(cardId: string) {
-      prefsStore.update(current => (current.ownedCardIds.includes(cardId) ? current : { ...current, ownedCardIds: [...current.ownedCardIds, cardId] }));
+      update(current => (ownedNow(current).includes(cardId) ? current : { ...current, ownedCardIds: [...ownedNow(current), cardId] }));
     },
     removeCard(cardId: string) {
-      prefsStore.update(current => ({ ...current, ownedCardIds: current.ownedCardIds.filter(id => id !== cardId) }));
+      update(current => ({ ...current, ownedCardIds: ownedNow(current).filter(id => id !== cardId) }));
     },
     setSelection(cardId: string, choice: CategoryId[]) {
-      prefsStore.update(current => ({ ...current, selections: { ...current.selections, [cardId]: choice } }));
+      update(current => ({ ...current, selections: { ...current.selections, [cardId]: choice } }));
     },
     dismissSuggestion(cardId: string) {
-      prefsStore.update(current => ({ ...current, dismissedSuggestions: [...new Set([...current.dismissedSuggestions, cardId])] }));
+      update(current => ({ ...current, dismissedSuggestions: [...new Set([...current.dismissedSuggestions, cardId])] }));
     },
     restoreSuggestions() {
-      prefsStore.update(current => ({ ...current, dismissedSuggestions: [] }));
+      update(current => ({ ...current, dismissedSuggestions: [] }));
     },
     setSort(sort: SortMode) {
-      prefsStore.update(current => ({ ...current, sort }));
+      update(current => ({ ...current, sort }));
     },
     setOwnershipFilter(ownershipFilter: OwnershipFilter) {
-      prefsStore.update(current => ({ ...current, ownershipFilter }));
+      update(current => ({ ...current, ownershipFilter }));
     },
     setShowBusiness(showBusiness: boolean) {
-      prefsStore.update(current => ({ ...current, showBusiness }));
+      update(current => ({ ...current, showBusiness }));
     },
   };
 

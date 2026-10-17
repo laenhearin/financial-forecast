@@ -56,13 +56,15 @@ export interface AccountSnapshot {
 
 export interface Scenario {
   id: string; label: string; customerName: string;
-  /** The demo's "today". Balances are end-of-day on this date; items dated on it are already posted. */
+  /** "Today", decided on the server. Balances are end-of-day on this date; items dated on it are already posted. */
   asOfDate: ISODate;
   accounts: AccountSnapshot[];
   income: IncomeSource[];
   bills: Bill[];
   spending: SpendingCategory[];
   oneOffs: OneOffEvent[];
+  /** Outstanding liabilities at the snapshot date, not spendable cash. Payments are in bills. */
+  debts?: { id: string; label: string; balanceCents: Cents; monthlyPaymentCents: Cents }[];
 }
 
 /** Changes the advice engine tests without mutating the scenario. */

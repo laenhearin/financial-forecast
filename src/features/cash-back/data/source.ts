@@ -2,39 +2,28 @@ import { isISODate } from "../../../lib/dates";
 import { isCents } from "../../../lib/money";
 import { resolveCardId } from "../cards/catalog";
 import type { ISODate, Purchase, SpendProfile } from "../types";
-import { DEMO_AS_OF_DATE, DEMO_CUSTOMER, DEMO_OWNED_CARD_IDS, DEMO_SPEND_PROFILE } from "./demoProfile";
 
-/** What the Cash Back page runs on. */
+/**
+ * What the Cash Back page runs on, built on the server from the active Nessie customer
+ * (src/lib/nessie-profile.ts): owned cards from their credit card accounts, and monthly spend per
+ * category estimated from their recent withdrawals.
+ */
 export interface CashBackProfile {
   customerName: string;
   /** The data's "today", YYYY-MM-DD. Every calculation takes it as an input. */
   asOfDate: ISODate;
-  /** Starting owned cards, until the user saves their own list. */
+  /** Cards from the customer's Nessie credit card accounts, until the user saves their own list. */
   ownedCardIds: readonly string[];
   /** Monthly spend per category. */
   spendProfile: SpendProfile;
-  /** Shown in the UI so fixture data is always labelled. */
+  /** Shown in the UI so the data source is always labelled. */
   sourceLabel: string;
-  isFixture: boolean;
-}
-
-/** The demo customer with fixed monthly spending, so the numbers are stable on stage. */
-export function loadDemoProfile(): CashBackProfile {
-  return {
-    customerName: DEMO_CUSTOMER,
-    asOfDate: DEMO_AS_OF_DATE,
-    ownedCardIds: DEMO_OWNED_CARD_IDS,
-    spendProfile: DEMO_SPEND_PROFILE,
-    sourceLabel: "Demo data",
-    isFixture: true,
-  };
 }
 
 /**
- * Purchase history in cents, as produced by the seeded Nessie adapter (src/lib/nessie-demo.ts).
- * The page doesn't read it yet: the current Nessie API (checked 2026-10-17 against
- * https://prod.nessieisreal.com/nessie-openapi-spec.yaml) has no endpoint that lists an account's
- * purchases, and the seed has only a few withdrawals per profile, too sparse for a spending profile.
+ * Card-level purchase history in cents. Used to check the seed plan's card assignments
+ * (data/nessie-demo/plan.json). The app does not read it: Nessie withdrawals carry no card, and the
+ * purchase list route returns no records for these accounts (checked 2026-10-17).
  */
 export interface CashBackData {
   customerName: string;

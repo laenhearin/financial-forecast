@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { homeData } from "../../lib/mock/homeData";
+import { homeData } from "../../test-fixtures/homeData";
 import { CHART, describeBalanceChart, estimateLabelWidth, layoutBalanceChart } from "./balanceChartGeometry";
 import type { ProjectionPoint } from "./types";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEMO_AS_OF_DATE, DEMO_OWNED_CARD_IDS, DEMO_SPEND_PROFILE } from "../data/demoProfile";
+import { DEMO_AS_OF_DATE, DEMO_OWNED_CARD_IDS, DEMO_SPEND_PROFILE } from "../../../test-fixtures/cashBackProfile";
 import type { SpendProfile } from "../types";
 import { analyzeWallet } from "./analyze";
 import { buildLineup } from "./lineup";

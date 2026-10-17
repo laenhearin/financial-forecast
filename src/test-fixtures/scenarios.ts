@@ -1,16 +1,33 @@
-// EDIT HERE. Amounts are in dollars; they are converted to cents on load.
-// This is fixture data for the demo, not a real customer or live bank data.
-// tightMonth is tuned so the demo-lock test passes (checking $500, paycheck $2,250; the first
+// TEST FIXTURES ONLY. The app reads Nessie (src/lib/nessie-profile.ts); lint blocks app imports of this folder.
+// Amounts are in dollars for easy editing; normalizeScenario converts them to cents once.
+// tightMonth is tuned so scenarios.test.ts passes (checking $500, paycheck $2,250; the first
 // draft of $2,450 and $1,650 was too comfortable). Run npm test after editing.
-import type { ScenarioInput } from "../scenarioInput";
+import { ScenarioLoadError } from "../data/dataSource";
+import { reportScenarioIssues, validateScenario } from "../data/validateScenario";
+import type { Scenario, Schedule } from "../features/big-purchase/types";
+import { dollarsToCents } from "../lib/money";
 
-export const ACTIVE_SCENARIO_ID: ScenarioId = "tightMonth";
+export interface ScenarioInput {
+  label: string;
+  customerName: string;
+  /** The fixture's "today", YYYY-MM-DD. */
+  asOfDate: string;
+  accounts: { id: string; nickname: string; type: "checking" | "savings"; balance: number; includeInForecast: boolean }[];
+  income: { id: string; label: string; amount: number; schedule: Schedule; isPaycheck: boolean }[];
+  bills: {
+    id: string; label: string; amount: number; schedule: Schedule; category: string;
+    cancellable: boolean; shiftable: boolean; maxShiftDays?: number;
+  }[];
+  spending: { id: string; label: string; monthlyAmount: number; cuttable: boolean; maxCutPercent: number }[];
+  /** Positive amounts; `type` gives the direction. */
+  oneOffs: { id: string; label: string; date: string; amount: number; type: "income" | "expense" }[];
+}
 
 export type ScenarioId = "tightMonth" | "comfortable";
 
 const tightMonth: ScenarioInput = {
   label: "Tight month",
-  customerName: "Alex Rivera",
+  customerName: "Fixture Customer",
   asOfDate: "2026-10-17",
   accounts: [
     { id: "checking", nickname: "Everyday Checking", type: "checking", balance: 500, includeInForecast: true },
@@ -49,5 +66,30 @@ const comfortable: ScenarioInput = {
   oneOffs: [],
 };
 
-// Registry. Scenarios in other files can be imported and added here.
 export const scenarios: Record<ScenarioId, ScenarioInput> = { tightMonth, comfortable };
+
+export function normalizeScenario(id: string, input: ScenarioInput): Scenario {
+  return {
+    id,
+    label: input.label,
+    customerName: input.customerName,
+    asOfDate: input.asOfDate,
+    accounts: input.accounts.map(({ balance, ...rest }) => ({ ...rest, balanceCents: dollarsToCents(balance) })),
+    income: input.income.map(({ amount, ...rest }) => ({ ...rest, amountCents: dollarsToCents(amount) })),
+    bills: input.bills.map(({ amount, ...rest }) => ({ ...rest, amountCents: dollarsToCents(amount) })),
+    spending: input.spending.map(({ monthlyAmount, ...rest }) => ({ ...rest, monthlyAmountCents: dollarsToCents(monthlyAmount) })),
+    oneOffs: input.oneOffs.map(({ amount, ...rest }) => ({ ...rest, amountCents: dollarsToCents(amount) })),
+  };
+}
+
+/** Throws ScenarioLoadError when the fixture is unknown or fails validation. */
+export function loadTestScenario(id: ScenarioId = "tightMonth"): Scenario {
+  const input = scenarios[id];
+  if (!input) throw new ScenarioLoadError(`Unknown test scenario "${id}".`);
+  const scenario = normalizeScenario(id, input);
+  const issues = validateScenario(scenario);
+  reportScenarioIssues(id, issues);
+  const errors = issues.filter(issue => issue.level === "error");
+  if (errors.length) throw new ScenarioLoadError(`Test scenario "${id}" is invalid.`, errors.map(issue => issue.message));
+  return scenario;
+}

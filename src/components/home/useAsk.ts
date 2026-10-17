@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { ASK_UNAVAILABLE_TEXT, streamAsk } from "@/lib/ai/ask";
 import type { AiMeta, AskTurn } from "@/lib/ai/types";
 import { MAX_HISTORY_TURNS, MAX_TURN_LENGTH } from "@/lib/ai/validate";
+import { useActiveCustomerId } from "@/components/layout/ActiveCustomer";
 import { purchaseStore } from "@/features/calendar/state/purchaseStore";
 import { useCriticalBalance } from "@/features/calendar/state/useCriticalBalance";
 
@@ -19,7 +20,8 @@ export function useAsk(defaultCriticalBalanceCents: number) {
   const [state, setState] = useState<AskState | null>(null);
   const history = useRef<AskTurn[]>([]);
   const controller = useRef<AbortController | null>(null);
-  const purchases = useSyncExternalStore(purchaseStore.subscribe, purchaseStore.getSnapshot, purchaseStore.getServerSnapshot);
+  const customerId = useActiveCustomerId();
+  const purchases = useSyncExternalStore(purchaseStore.subscribe, () => purchaseStore.getSnapshot(customerId), purchaseStore.getServerSnapshot);
   const criticalBalanceCents = useCriticalBalance(defaultCriticalBalanceCents);
 
   useEffect(() => () => controller.current?.abort(), []);

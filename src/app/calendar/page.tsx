@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { ActiveCustomerProvider } from "@/components/layout/ActiveCustomer";
 import { ScenarioLoadError } from "@/data/dataSource";
-import { loadActiveDemo } from "@/lib/active-demo";
-import type { Scenario } from "@/features/big-purchase/types";
+import { loadActiveProfile } from "@/lib/active-customer";
+import type { CustomerProfile } from "@/lib/nessie-profile";
 import { CalendarApp } from "@/features/calendar/components/CalendarApp";
 import { CalendarLoadError } from "@/features/calendar/components/CalendarLoadError";
 import "@/features/calendar/calendar.css";
@@ -10,22 +11,18 @@ export const metadata: Metadata = { title: "Weather Calendar" };
 
 interface RecordedPayment {
   id: string;
+  accountId: string;
   date: string;
   label: string;
   amountCents: number;
 }
 
-type LoadResult = { ok: true; scenario: Scenario; pastPayments: RecordedPayment[] } | { ok: false; message: string; details: string[] };
+type LoadResult = { ok: true; profile: CustomerProfile } | { ok: false; message: string; details: string[] };
 
-/** Loads on the server so a future live data source stays server-only. */
-async function loadScenario(): Promise<LoadResult> {
+/** Loads the active Nessie customer on the server; the browser never sees the API key. */
+async function loadProfile(): Promise<LoadResult> {
   try {
-    const demo = await loadActiveDemo();
-    const pastPayments = demo.history
-      .filter((transaction) => transaction.kind === "withdrawal")
-      .map(({ id, date, label, amountCents }) => ({ id, date, label, amountCents }))
-      .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
-    return { ok: true, scenario: demo.scenario, pastPayments };
+    return { ok: true, profile: await loadActiveProfile() };
   } catch (error) {
     return {
       ok: false,
@@ -38,7 +35,15 @@ async function loadScenario(): Promise<LoadResult> {
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ date?: string | string[] }> }) {
   const { date } = await searchParams;
   const initialDate = typeof date === "string" ? date : undefined;
-  const result = await loadScenario();
+  const result = await loadProfile();
   if (!result.ok) return <CalendarLoadError message={result.message} details={result.details} />;
-  return <CalendarApp key={`${result.scenario.id}:${initialDate ?? ""}`} initialDate={initialDate} scenario={result.scenario} pastPayments={result.pastPayments} sourceLabel="Synthetic Nessie data + local demo assumptions" isFixture />;
+  const { customer, scenario } = result.profile;
+  const pastPayments = result.profile.history
+    .filter(transaction => transaction.kind === "withdrawal" && transaction.date <= scenario.asOfDate)
+    .map(({ id, accountId, date, label, amountCents }) => ({ id, accountId, date, label, amountCents }));
+  return (
+    <ActiveCustomerProvider customer={customer}>
+      <CalendarApp key={`${scenario.id}:${scenario.asOfDate}:${initialDate ?? ""}`} initialDate={initialDate} scenario={scenario} pastPayments={pastPayments} />
+    </ActiveCustomerProvider>
+  );
 }

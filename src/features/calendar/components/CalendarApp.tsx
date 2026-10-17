@@ -2,7 +2,10 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { CalendarDays, Database, List } from "lucide-react";
+import { useActiveCustomerId } from "@/components/layout/ActiveCustomer";
+import { forecastEstimateNote, nessieSourceNote } from "@/lib/data-source";
 import { isISODate } from "@/lib/dates";
+import { DebtSummary } from "@/components/home/DebtSummary";
 import type { Scenario } from "../../big-purchase/types";
 import { forecastEndDate, scenarioEntries } from "../engine/entries";
 import { monthStartOf } from "../engine/grid";
@@ -20,6 +23,7 @@ import { CalendarListView } from "./CalendarListView";
 
 interface RecordedPayment {
   id: string;
+  accountId: string;
   date: ISODate;
   label: string;
   amountCents: number;
@@ -29,12 +33,11 @@ interface CalendarAppProps {
   scenario: Scenario;
   pastPayments: RecordedPayment[];
   initialDate?: string;
-  sourceLabel: string;
-  isFixture: boolean;
 }
 
-/** Money calendar and weekly spending for one scenario; view state is local, purchases are saved per demo profile. */
-export function CalendarApp({ scenario, pastPayments, sourceLabel, isFixture, initialDate }: CalendarAppProps) {
+/** Money calendar and weekly spending for one scenario; view state is local, purchases are saved per Nessie customer. */
+export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarAppProps) {
+  const customerId = useActiveCustomerId();
   const asOf = scenario.asOfDate;
   const startDate = initialDate && isISODate(initialDate) && initialDate >= asOf && initialDate <= forecastEndDate(asOf) ? initialDate : asOf;
   const [view, setView] = useState<AccountView>(ALL_ACCOUNTS);
@@ -42,24 +45,21 @@ export function CalendarApp({ scenario, pastPayments, sourceLabel, isFixture, in
   const [month, setMonth] = useState<ISODate>(monthStartOf(startDate));
   const [purchaseDate, setPurchaseDate] = useState<string>(startDate);
   const [calendarView, setCalendarView] = useState<"calendar" | "list">("calendar");
-  const purchases = useSyncExternalStore(purchaseStore.subscribe, purchaseStore.getSnapshot, purchaseStore.getServerSnapshot);
+  const purchases = useSyncExternalStore(purchaseStore.subscribe, () => purchaseStore.getSnapshot(customerId), purchaseStore.getServerSnapshot);
   const criticalBalanceCents = useCriticalBalance(defaultCriticalBalanceCents(scenario));
 
   const baseEntries = useMemo(() => {
-    const openingDate = scenario.asOfDate;
     const checkingAccountId = scenario.accounts[0]?.id ?? "";
-    const recorded = pastPayments
-      .filter((payment) => payment.date <= openingDate)
-      .map((payment) => ({
-        id: `payment-${payment.id}`,
-        sourceId: payment.id,
-        date: payment.date,
-        kind: "payment" as const,
-        label: payment.label,
-        amountCents: payment.amountCents,
-        accountId: checkingAccountId,
-        recurring: false,
-      }));
+    const recorded = pastPayments.map(payment => ({
+      id: `payment-${payment.id}`,
+      sourceId: payment.id,
+      date: payment.date,
+      kind: "payment" as const,
+      label: payment.label,
+      amountCents: payment.amountCents,
+      accountId: payment.accountId || checkingAccountId,
+      recurring: false,
+    }));
     return [...scenarioEntries(scenario), ...recorded];
   }, [pastPayments, scenario]);
   const model = useMemo(() => buildCalendarModel(scenario, purchases, view, baseEntries), [scenario, purchases, view, baseEntries]);
@@ -81,7 +81,7 @@ export function CalendarApp({ scenario, pastPayments, sourceLabel, isFixture, in
   }
 
   function addPurchase(purchase: Omit<UserPurchase, "id">) {
-    purchaseStore.add(purchase);
+    purchaseStore.add(customerId, purchase);
     selectDay(purchase.date);
     setMonth(monthStartOf(purchase.date));
   }
@@ -95,8 +95,8 @@ export function CalendarApp({ scenario, pastPayments, sourceLabel, isFixture, in
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(`Clear all ${purchases.length} saved test purchase${purchases.length === 1 ? "" : "s"} for this profile?`)) {
-                  purchaseStore.clear();
+                if (window.confirm(`Clear all ${purchases.length} saved test purchase${purchases.length === 1 ? "" : "s"} for this customer?`)) {
+                  purchaseStore.clear(customerId);
                 }
               }}
               className="rounded-item border border-app bg-card px-3 py-2 text-caption text-secondary hover:bg-nav-hover"
@@ -105,15 +105,14 @@ export function CalendarApp({ scenario, pastPayments, sourceLabel, isFixture, in
             </button>
           )}
         </div>
-        {isFixture && (
-          <p className="mt-1.5 flex items-start gap-1.5 text-caption text-secondary">
-            <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
-            {sourceLabel}: {scenario.customerName}, {scenario.label.toLowerCase()} scenario. Not live bank data; includes estimated everyday spending. Purchases you add are saved in this browser for the selected demo profile.
-          </p>
-        )}
+        <p className="mt-1.5 flex items-start gap-1.5 text-caption text-secondary">
+          <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
+          {nessieSourceNote(scenario.customerName, scenario.asOfDate)} {forecastEstimateNote(scenario)} Purchases you add are saved in this browser for this customer.
+        </p>
       </header>
 
       <StatsRow model={model} viewName={viewName} criticalBalanceCents={criticalBalanceCents} />
+      <DebtSummary scenario={scenario} />
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)] xl:items-start">
         <div className="flex min-w-0 flex-col gap-5">
@@ -138,7 +137,7 @@ export function CalendarApp({ scenario, pastPayments, sourceLabel, isFixture, in
             date={selected}
             accountNames={accountNames}
             criticalBalanceCents={criticalBalanceCents}
-            onRemovePurchase={purchaseStore.removeOccurrence}
+            onRemovePurchase={(id, date, deleteFuturePayments) => purchaseStore.removeOccurrence(customerId, id, date, deleteFuturePayments)}
           />
           <AddPurchasePanel accounts={scenario.accounts} date={purchaseDate} onDateChange={setPurchaseDate} view={view} onViewChange={changeView} onAdd={addPurchase} />
         </div>

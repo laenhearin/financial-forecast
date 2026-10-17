@@ -9,7 +9,8 @@ export interface ScenarioIssue {
   message: string;
 }
 
-export function validateScenario(scenario: Scenario): ScenarioIssue[] {
+/** requirePaycheck: false accepts a scenario without paycheck income; Forecast Fund then reports it on its own. */
+export function validateScenario(scenario: Scenario, { requirePaycheck = true }: { requirePaycheck?: boolean } = {}): ScenarioIssue[] {
   const issues: ScenarioIssue[] = [];
   const error = (message: string) => issues.push({ level: "error", message });
 
@@ -39,7 +40,7 @@ export function validateScenario(scenario: Scenario): ScenarioIssue[] {
   for (const bill of scenario.bills) {
     if (bill.maxShiftDays !== undefined && !(Number.isInteger(bill.maxShiftDays) && bill.maxShiftDays >= 0)) error(`${bill.label}: maxShiftDays must be a nonnegative integer.`);
   }
-  if (!scenario.income.some(income => income.isPaycheck)) error("The scenario has no paycheck income, so there are no contribution dates.");
+  if (requirePaycheck && !scenario.income.some(income => income.isPaycheck)) error("The scenario has no paycheck income, so there are no contribution dates.");
 
   if (issues.length === 0) {
     const negative = projectBase(scenario).days.find(day => day.baseCents < 0);

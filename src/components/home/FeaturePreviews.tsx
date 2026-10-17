@@ -3,15 +3,17 @@
 import { useSyncExternalStore } from "react";
 import type { HomeData } from "./types";
 import type { Goal, Scenario } from "@/features/big-purchase/types";
-import type { CashBackData } from "@/features/cash-back/data/source";
+import type { CashBackProfile } from "@/features/cash-back/data/source";
 import { goalStore } from "@/features/big-purchase/state/goalStore";
+import { useActiveCustomerId } from "@/components/layout/ActiveCustomer";
 import { GoalsPreview } from "./GoalsPreview";
 import { CashBackPreview } from "./CashBackPreview";
 import { StormPreview } from "./StormPreview";
 
-export function FeaturePreviews({ homeData, demoGoal, scenario }: { homeData: HomeData; cashBackData: CashBackData; demoGoal: Goal; scenario: Scenario }) {
-  const storedGoal = useSyncExternalStore(goalStore.subscribe, goalStore.getSnapshot, goalStore.getServerSnapshot);
-  const goal = storedGoal?.goals[0] ?? demoGoal;
+export function FeaturePreviews({ homeData, cashBack, scenario }: { homeData: HomeData; cashBack: CashBackProfile; scenario: Scenario }) {
+  const customerId = useActiveCustomerId();
+  const storedGoal = useSyncExternalStore(goalStore.subscribe, () => goalStore.getSnapshot(customerId), goalStore.getServerSnapshot);
+  const goal: Goal | null = storedGoal?.goals[0] ?? null;
 
   return (
     <section aria-labelledby="feature-previews-title" className="h-full">
@@ -19,7 +21,7 @@ export function FeaturePreviews({ homeData, demoGoal, scenario }: { homeData: Ho
       <div className="grid h-full gap-3 sm:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3">
         <StormPreview homeData={homeData} scenario={scenario} />
         <GoalsPreview goal={goal} scenario={scenario} />
-        <CashBackPreview />
+        <CashBackPreview profile={cashBack} />
       </div>
     </section>
   );

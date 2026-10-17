@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ROUTES } from "../navigation";
+import { ROUTES } from "../lib/navigation";
 import { homeData, interpolateDaily } from "./homeData";
 
 describe("interpolateDaily", () => {
@@ -32,8 +32,7 @@ describe("homeData", () => {
     expect(homeData.projection.every((p) => Number.isSafeInteger(p.balanceCents))).toBe(true);
   });
 
-  it("is labeled as sample data and links cards to their pages", () => {
-    expect(homeData.isSampleData).toBe(true);
+  it("links cards to their pages", () => {
     expect(homeData.cards.map((c) => c.href)).toEqual([ROUTES.stormSolver, ROUTES.bigPurchase, ROUTES.cashBack]);
   });
 });

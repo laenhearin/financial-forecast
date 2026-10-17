@@ -1,7 +1,10 @@
 "use client";
 
+import { DebtSummary } from "@/components/home/DebtSummary";
+
 import { useMemo, useState } from "react";
 import { Database } from "lucide-react";
+import { forecastEstimateNote, nessieSourceNote } from "@/lib/data-source";
 import { parseDollarsToCents } from "@/lib/money";
 import type { Scenario } from "../../big-purchase/types";
 import { scenarioEntries } from "../engine/entries";
@@ -16,7 +19,7 @@ const READY: StormState = {
   items: [],
 };
 
-export function StormSolverApp({ scenario, sourceLabel, isFixture }: { scenario: Scenario; sourceLabel: string; isFixture: boolean }) {
+export function StormSolverApp({ scenario }: { scenario: Scenario }) {
   const [storm, setStorm] = useState<StormState>(READY);
   const entries = useMemo(() => scenarioEntries(scenario), [scenario]);
   const model = useMemo(() => buildCalendarModel(scenario, [], ALL_ACCOUNTS, entries), [scenario, entries]);
@@ -30,7 +33,7 @@ export function StormSolverApp({ scenario, sourceLabel, isFixture }: { scenario:
     }
     setStorm({
       tone: "success",
-      message: "Advice generated from the current demo forecast. Nothing has been rescheduled, paid, or changed.",
+      message: "Advice generated from the current forecast. Nothing has been rescheduled, paid, or changed.",
       items: stormAdvice(model, accountNames, bufferCents),
     });
   }
@@ -40,13 +43,12 @@ export function StormSolverApp({ scenario, sourceLabel, isFixture }: { scenario:
       <header className="mb-7">
         <h1 className="text-display font-medium text-primary">Storm Solver</h1>
         <p className="mt-1.5 text-caption text-secondary">Review upcoming bills, your projected balance, and ways to prepare for tight spots.</p>
-        {isFixture && (
-          <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary">
-            <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
-            {sourceLabel}: {scenario.customerName}, {scenario.label.toLowerCase()} scenario. Not live bank data; recommendations use the combined account forecast.
-          </p>
-        )}
+        <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary">
+          <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
+          {nessieSourceNote(scenario.customerName, scenario.asOfDate)} {forecastEstimateNote(scenario)} Recommendations use the combined account forecast.
+        </p>
       </header>
+      <DebtSummary scenario={scenario} />
       <div className="max-w-3xl">
         <StormSolverPanel storm={storm} onAnalyze={analyze} />
       </div>

@@ -1,5 +1,5 @@
 /**
- * Data contract for the Home page. Values are mapped from the selected server-side demo profile.
+ * Data contract for the Home page. Values are mapped from the active Nessie customer on the server.
  * Money is integer cents.
  */
 export type Weather = "sunny" | "cloudy" | "rainy" | "downpour";
@@ -27,8 +27,6 @@ export interface CardData {
 export interface HomeData {
   /** Calendar date for day zero of the projection. */
   asOfDate: string;
-  /** True while the page shows fixtures; the page labels them as sample data. */
-  isSampleData: boolean;
   userName: string;
   nextStormLabel: string | null;
   availableBalanceCents: number;

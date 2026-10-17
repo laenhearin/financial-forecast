@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { loadDemoScenario } from "../../../data/demoDataSource";
+import { loadTestScenario } from "../../../test-fixtures/scenarios";
 import type { CreditCard } from "../types";
 import { cardSummary, compareCards } from "./cardAdvice";
 import { buildCalendarModel, lowestBalance } from "./model";
 import { nextBills, stormAdvice } from "./stormAdvice";
 
-const scenario = loadDemoScenario("tightMonth");
+const scenario = loadTestScenario("tightMonth");
 const model = buildCalendarModel(scenario, [], "checking");
 const names = { checking: "Everyday Checking", savings: "Savings" };
 

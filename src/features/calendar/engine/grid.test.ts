@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadDemoScenario } from "../../../data/demoDataSource";
+import { loadTestScenario } from "../../../test-fixtures/scenarios";
 import { monthGrid, monthStartOf, shiftMonth, weekDates } from "./grid";
 import { buildCalendarModel } from "./model";
 import { WEEK_CHART, weekChartPoints, weeklySpending, weekScaleMaxCents } from "./weekly";
@@ -22,7 +22,7 @@ describe("month grid", () => {
 });
 
 describe("weekly spending", () => {
-  const model = buildCalendarModel(loadDemoScenario("tightMonth"), [], "checking");
+  const model = buildCalendarModel(loadTestScenario("tightMonth"), [], "checking");
 
   it("sums money going out each day and ignores income", () => {
     expect(weeklySpending(model, "2026-10-21").map((d) => d.spendingCents)).toEqual([0, 14000, 0, 0, 0, 23077, 11000]);

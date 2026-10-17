@@ -4,7 +4,7 @@ Verified against the API on **2026-10-17**. These are **synthetic records stored
 
 ## What is now in the API
 
-There were only three customers available. We preserved those customers and the original account, then created two clearly fictional customers. The assignment follows the first response's customer order; future runs recover it from seed markers.
+At the original seed, there were only three customers available. We preserved those customers and the original account, then created two clearly fictional customers. The original assignment follows the first response's customer order; future runs recover it from seed markers. This extension adds three new customers without assigning their personas to existing customers.
 
 | Profile slug | Existing or new customer | Checking snapshot | Savings snapshot | Hypothetical goal | Preferred deadline |
 | --- | --- | ---: | ---: | --- | --- |
@@ -13,17 +13,23 @@ There were only three customers available. We preserved those customers and the 
 | `twenties-b` | Existing `Alejandro Ponce` | $850 | $800 | $4,000 car down payment; $1,000 buffer | 2027-02-14 |
 | `midlife` | New `Demo-midlife ff-demo-v1` | $4,200 | $9,500 | $2,400 appliance; $3,000 buffer | 2027-01-15 |
 | `older` | New `Demo-older ff-demo-v1` | $1,800 | $16,000 | $3,000 family visit; $2,500 buffer | 2027-02-14 |
+| `teen-low-cash` | New `Demo-teen-low-cash ff-demo-v1` | $85 | $15 | $120 school headphones; $100 buffer | 2026-12-18 |
+| `college-shortfall` | New `Demo-college-shortfall ff-demo-v1` | $220 | $30 | $450 refurbished laptop; $100 buffer | 2027-01-15 |
+| `existing-debt` | New `Demo-existing-debt ff-demo-v1` | $60 | $0 | $90 work shoes; $100 buffer | 2027-01-15 |
 
 Created and read back:
 
-- **20 historical transactions total:** five deposits and 15 withdrawals, four per person. All dates fall within the inclusive 90-day window **2026-07-20 through 2026-10-17**. This is a small selection of activity, not a complete 90-day statement or a basis for estimating a person's income from frequency.
-- **20 supporting accounts:** checking, savings, and two credit card account shells per person. The pre-existing account remains, so the key now has 21 accounts total.
-- **10 recurring bills:** housing and utilities per person. These are future bill schedules, separate from the 20 posted transactions. Nessie bill records are not PDF bank statements.
-- Five local hypothetical goals and explicit future-income/spending assumptions in [the seed plan](data/nessie-demo/plan.json). These fields are not native Nessie fields and were not sent as transactions.
+- **32 historical transactions total:** eight deposits and 24 withdrawals, four per person. All dates fall within the inclusive 90-day window **2026-07-20 through 2026-10-17**. This is a small selection of activity, not a complete 90-day statement or a basis for estimating a person's income from frequency.
+- **29 supporting accounts:** checking and savings for each person, two card shells per original profile, and one per new profile. The pre-existing account remains, giving 30 accounts total for this seed and the original account.
+- **17 recurring bills:** housing, utilities, transport, and a loan payment as appropriate. These are future bill schedules, separate from the 32 posted transactions. Nessie bill records are not PDF bank statements.
+- **One existing personal loan:** $1,500 outstanding in the seed convention, with a $75 monthly payment. Only its scheduled payment reduces cash; the principal is shown as a separate liability.
+- Eight local hypothetical goals and explicit future-income/spending assumptions in [the seed plan](data/nessie-demo/plan.json). These fields are not native Nessie fields and were not sent as transactions.
 
 Examples include campus wages/textbooks/groceries, an early-career paycheck/dining/cinema, a commuter's gas and tires, a household's groceries and repairs, and a semi-retired person's income, pharmacy purchase, and family meal. These are individual fictional examples, not claims about what everyone of an age buys.
 
-Every new account nickname and transaction description contains `ff-demo-v1`. Existing names, addresses, accounts, and balances were not overwritten. The two new names explicitly say Demo.
+Every new account nickname and transaction description contains `ff-demo-v1`. Existing names, addresses, accounts, and balances were not overwritten. All five added customer names explicitly say Demo.
+
+**Later on 2026-10-17:** all eight customers were renamed in Nessie to their plan labels (for example "string string" became "College student" and "Alejandro Ponce" became "20s: commuter") so the app can show API names. Addresses were re-sent unchanged and verified. The original names are recorded in the ignored `data/nessie-demo/customer-names.local.json` on the machine that made the change.
 
 ## Read names and transactions directly from Terminal
 
@@ -67,12 +73,9 @@ Node.js 24 and `npm ci` are required. The `react-server` condition enables the i
 # Preview the fixed seed plan; no network calls or writes:
 node --conditions=react-server --env-file=.env.local scripts/seed-nessie.mts
 
-# Read API-backed data, normalized for the UI (read-only):
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts college
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts twenties-a
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts twenties-b
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts midlife
-node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts older
+# Read API-backed data exactly as the app normalizes it (read-only):
+npm run nessie:read                 # lists customer ids and names
+npm run nessie:read -- <customerId> # prints that customer's normalized profile
 
 # Already performed for this key. Use only to fill missing seed records or seed another key:
 node --conditions=react-server --env-file=.env.local scripts/seed-nessie.mts --apply
@@ -82,7 +85,7 @@ node --conditions=react-server --env-file=.env.local scripts/seed-nessie.mts --a
 
 The ignored [local receipt](data/nessie-demo/receipt.local.json) contains created/matched IDs and verified balances, never a key. Teammates using the same key can discover the records through the reader without this file. A new key may expose different customers/data; do not copy a receipt across keys. If a process is forcibly killed, inspect the API and remove `data/nessie-demo/seed.local.lock` only after confirming no seed is running. Read-back failure means inspect first, not blindly repeat a POST.
 
-The dates deliberately remain fixed so reruns do not create another 20 records. When rolling the demo forward, update dates and expectations together in a separately reviewed seed version.
+The dates deliberately remain fixed so reruns do not create another set of records. When rolling the demo forward, update dates and expectations together in a separately reviewed seed version.
 
 Node may print `MODULE_TYPELESS_PACKAGE_JSON` because the existing project does not declare an ESM package type. Node 24 still runs these ESM helpers; it is not an API failure. We have not changed the entire project's module format to silence it.
 
@@ -90,7 +93,7 @@ Node may print `MODULE_TYPELESS_PACKAGE_JSON` because the existing project does 
 
 [src/nessieApi.js](src/nessieApi.js) retains the original helper names and now delegates to typed, server-only [src/lib/nessie-api.ts](src/lib/nessie-api.ts). The key comes from `.env.local`, never a source-code constant. Amount arguments here are **raw API units**, for compatibility with the original helpers.
 
-The seed script itself is a working, executed example of `createCustomer`, `createAccount`, `createDeposit`, `createWithdrawal`, and `createBill`. Here is a smaller example you can run later. **It adds one extra $25 demo deposit** outside the fixed 20-record seed; it has not been run as part of this task.
+The seed script itself is a working, executed example of `createCustomer`, `createAccount`, `createDeposit`, `createWithdrawal`, and `createBill`. Here is a smaller example you can run later. **It adds one extra $25 demo deposit** outside the fixed 32-record seed; it has not been run as part of this task.
 
 ```zsh
 node --conditions=react-server --env-file=.env.local --input-type=module <<'JS'
@@ -121,11 +124,11 @@ Observed during this seed: creating completed deposits/withdrawals did **not** c
 
 The [current official OpenAPI spec](https://prod.nessieisreal.com/nessie-openapi-spec.yaml) has no documented purchase creation/list route. The [documentation's withdrawal example](https://prod.nessieisreal.com/docs) supplied the fields used here, and we verified their persisted values with actual POST/GET requests. We therefore created **withdrawals**, not native merchant purchase records. The fixture adapter projects these withdrawals into purchase-shaped examples for the cash-back UI. It does not represent actual card charges or a full credit-card statement.
 
-Nessie's `rewards` field is not a reward-rate schedule or card-product identity. Seed credit-card accounts have zero balance/rewards and a nickname containing the sample library card ID. Product rules, card assignments for spending, goals, income recurrence, and estimated everyday spending are explicitly local demo assumptions. No loans or transfers were needed.
+Nessie's `rewards` field is not a reward-rate schedule or card-product identity. Seed credit-card accounts have zero balance/rewards and a nickname containing the sample library card ID. Product rules, card assignments for spending, goals, income recurrence, and estimated everyday spending are explicitly local demo assumptions. The existing-debt profile also has a verified Nessie loan. Its `amount` represents outstanding principal by this synthetic dataset's convention. Account creation requires a nonnegative balance, so we store cash and the liability separately; future negative calendar balances are computed forecasts, not negative balances posted to Nessie. Interest and amortization are not modeled.
 
 ## Use these records in the features
 
-The read-only [loadNessieDemo](src/lib/nessie-demo.ts) adapter returns:
+**Superseded later on 2026-10-17.** The app no longer uses this adapter or the plan's local assumptions. It reads any customer through [src/lib/nessie-profile.ts](src/lib/nessie-profile.ts) (see the README's "Where the data comes from"); `plan.json` is used only by the seed script and its tests. The description below is kept for the seed's history. The removed `loadNessieDemo` adapter returned:
 
 | Returned field | Intended use |
 | --- | --- |
@@ -136,23 +139,25 @@ The read-only [loadNessieDemo](src/lib/nessie-demo.ts) adapter returns:
 | `history` | The four seeded historical transactions for this person |
 | `isFixture`, `sourceLabel` | Keep these visible in the UI |
 
-The current pages still use their existing demo sources. **Seeding does not switch them automatically.** To connect them:
+The pages are now connected through the active-profile cookie. Open **Profile → Change app user** and choose any of the eight profiles. The dropdown is generated from the plan, so no second hardcoded list is needed. Home, Calendar, Forecast Fund, Swipe and Shine, Storm Solver, and Purchase Advisor refresh their data for that selection. The rewards page and home preview use explicit monthly budgets in `monthlySpendingByCategory`; these are estimates, not annualizations of the sparse transaction history. Card preferences remain separate per profile.
 
-1. Choose a profile on the server and call `await loadNessieDemo('college')` from a Server Component or a read-only route. Teammates can first run the reader to inspect the exact object.
-2. Feed `scenario` to the calendar/big-purchase data-source boundary (`src/data/dataSource.ts`); feed `cashBack` through `src/features/cash-back/data/source.ts`. Keep API access in the server module. The browser receives normalized data, not the key.
-3. Preserve `isFixture: true` and `sourceLabel`. Display API failures instead of silently falling back to fixture values. The reader rejects missing/changed expected transaction records.
-4. Use the separate `goal` to prefill a draft, then test deadline and contribution changes. Editing a hypothetical plan must never create a withdrawal. Historical data is already included in the snapshot.
-5. Decide how users select customers and how the server authorizes access before exposing write endpoints. A shared API key is not individual user authentication.
+The added profiles exercise distinct cases:
 
-Concrete feature checks under the repository's **sample card rules**:
+- **19: small cash cushion** starts with $100 combined cash, receives $140 every two weeks, and pays phone/transit bills. In the first 31 calendar days, nine days are below $100 while the balance remains nonnegative.
+- **21: rent before payday** starts with $250, owes $650 rent on October 22, and receives $550 on October 30. The calendar first goes negative on October 22 and briefly recovers to $25.77 on October 30, dips below zero again on October 31, and recovers after the November 13 payday.
+- **24: existing loan debt** starts with $60 cash and a $1,500 personal loan, giving a cash-minus-debt position of -$1,440. A debt summary appears on the home and feature pages; the $75 loan payment appears once in the calendar on October 22. The cash forecast also shows the effect of rent before payday.
 
-- Student: a $92 Publix trip on `everyday-1` earns $0.92 versus $2.76 on `market-fresh`: **$1.84 potential improvement**. Covered by an offline test.
-- Commuter: $58 Shell gas on `everyday-1` gives $0.58 versus $2.32 on `road-rewards`, before its cap: $1.74 difference.
+Keep `isFixture: true` visible. Posted history is included in the snapshot and is never replayed into the forecast. Hypothetical goal edits never create withdrawals. Missing API records produce visible errors instead of falling back silently. The cookie selects a demo persona; it is not authentication for real users.
+
+Concrete feature checks under the repository's **repository card catalog rules**:
+
+- Student: a $92 Publix trip on `everyday-1` maps to the catalog's 1.5% card and earns $1.38 versus $2.76 on the card mapped from `market-fresh`: **$1.38 potential improvement**. Covered by an offline test.
+- Commuter: the gas purchase and its owned cards exercise category matching; see the current catalog for the mapped benefit rules.
 - Household: $235 groceries offers a comparison between `steady-2` and `grocery-max`; the latter's annual fee still matters in any new-card advice.
 - Big purchase: the student, renter, and commuter need saving time under the supplied scenarios; the household and semi-retired examples can afford the goals while preserving the configured buffers. Tests run these inputs through the existing engine.
 - Use 30/60/90-day cash-back windows to see the sparse history change. Three spending examples per person are not enough for reliable annual savings estimates. A separate larger fixture is needed to test cap exhaustion or infer recurring behavior.
 
-A practical next work session: spend the first hour connecting the labeled server read to one page; the next hour reuse the normalized source for the other pages; then spend 1–2 hours testing profile selection, empty/error states, cents/date handling, deadline changes, and a teammate's setup. Add UI writes only after those reads work.
+A practical next work session: spend the first hour testing the eight profiles across pages; the next hour refine the synthetic schedules and budgets with the team; then spend 1–2 hours testing profile selection, empty/error states, cents/date handling, deadline changes, and a teammate's setup. Add UI writes only after those reads work.
 
 ## Fix for the missing next-themes module
 

@@ -1,8 +1,12 @@
 "use client";
 
+import { DebtSummary } from "@/components/home/DebtSummary";
+
 import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import Link from "next/link";
 import { Database } from "lucide-react";
+import { useActiveCustomerId } from "@/components/layout/ActiveCustomer";
+import { forecastEstimateNote, nessieSourceNote } from "@/lib/data-source";
 import { addDays, formatDate, isISODate } from "@/lib/dates";
 import { formatUSD, parseDollarsToCents } from "@/lib/money";
 import { ROUTES } from "@/lib/navigation";
@@ -26,14 +30,15 @@ const RECOMMENDATION_TONES: Record<BalanceLevel, string> = {
   0: "bg-pos-soft", 1: "bg-pos-soft", 2: "bg-accent-soft", 3: "bg-rain-soft", 4: "bg-neg-soft", 5: "bg-neg-soft",
 };
 
-export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scenario: Scenario; sourceLabel: string; isFixture: boolean }) {
+export function PurchaseAdvisorApp({ scenario }: { scenario: Scenario }) {
+  const customerId = useActiveCustomerId();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(scenario.asOfDate);
   const [accountId, setAccountId] = useState(scenario.accounts[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
-  const purchases = useSyncExternalStore(purchaseStore.subscribe, purchaseStore.getSnapshot, purchaseStore.getServerSnapshot);
+  const purchases = useSyncExternalStore(purchaseStore.subscribe, () => purchaseStore.getSnapshot(customerId), purchaseStore.getServerSnapshot);
   const criticalBalanceCents = useCriticalBalance(defaultCriticalBalanceCents(scenario));
   const entries = useMemo(() => scenarioEntries(scenario), [scenario]);
   const baseline = useMemo(() => buildCalendarModel(scenario, purchases, ALL_ACCOUNTS, entries), [scenario, purchases, entries]);
@@ -60,7 +65,7 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
       setError(`Enter a name, a valid amount, and a date from ${formatDate(scenario.asOfDate, "short")} to ${formatDate(baseline.forecastEnd, "short")}.`);
       return;
     }
-    purchaseStore.add({ label: name.trim(), amountCents, date, accountId });
+    purchaseStore.add(customerId, { label: name.trim(), amountCents, date, accountId });
     setError(null);
     setAdded(true);
   }
@@ -73,8 +78,9 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
       <header className="mb-7">
         <h1 className="text-display font-medium text-primary">Purchase Advisor</h1>
         <p className="mt-1.5 text-caption text-secondary">Try a purchase against your cash forecast before deciding whether to add it to your calendar.</p>
-        {isFixture && <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary"><Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />{sourceLabel}: {scenario.customerName}, {scenario.label.toLowerCase()} scenario. Not live bank data.</p>}
+        <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary"><Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />{nessieSourceNote(scenario.customerName, scenario.asOfDate)}</p>
       </header>
+      <DebtSummary scenario={scenario} />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
         <section aria-labelledby="hypothetical-title" className={panelClass}>
@@ -133,7 +139,7 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
                 <p className="mt-1 text-caption text-primary">{recommendation.detail}</p>
               </div>}
               <AdvisorExplanationPanel state={explanation} />
-              <p className="mt-3 text-micro text-secondary">Forecast includes estimated everyday spending and listed income and bills. This is a demo estimate, not a guarantee.</p>
+              <p className="mt-3 text-micro text-secondary">Forecast includes Nessie bills plus income and everyday spending. {forecastEstimateNote(scenario)} This is an estimate, not a guarantee.</p>
             </>
           )}
         </section>

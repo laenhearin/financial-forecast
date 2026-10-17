@@ -9,30 +9,33 @@ import { formatUSD } from "@/lib/money";
 import { formatDate } from "@/lib/dates";
 import { ROUTES } from "@/lib/navigation";
 
-export function GoalsPreview({ goal, scenario }: { goal: Goal; scenario: Scenario }) {
-  const result = useMemo(() => computeForecast(scenario, goal), [scenario, goal]);
-  const plan = result.ok ? result.forecast.plan : null;
+/** The customer's saved goal, or an invitation to start one; goals are hypothetical and never sent to Nessie. */
+export function GoalsPreview({ goal, scenario }: { goal: Goal | null; scenario: Scenario }) {
+  const result = useMemo(() => (goal ? computeForecast(scenario, goal) : null), [scenario, goal]);
+  const plan = result?.ok ? result.forecast.plan : null;
   const date = plan?.affordableDate;
-  const initial = Array.from(goal.name.trim())[0]?.toLocaleUpperCase("en-US") ?? "G";
+  const initial = goal ? Array.from(goal.name.trim())[0]?.toLocaleUpperCase("en-US") ?? "G" : "G";
 
   return (
     <section aria-labelledby="goals-preview-title" className="flex min-w-0 flex-col gap-2 rounded-panel border border-app bg-card p-3">
       <div className="flex items-center justify-between">
         <h3 id="goals-preview-title" className="text-caption font-medium text-secondary"><Link href={ROUTES.bigPurchase} className="hover:text-primary hover:underline">Goals</Link></h3>
       </div>
-      <Link href={ROUTES.bigPurchase} className="group flex items-center gap-3 rounded-item py-1">
-        <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-full border-4 border-app bg-rain-soft text-xl font-semibold text-accent group-hover:border-accent-line">{initial}</span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-lead font-semibold text-primary">{goal.name || "Your next goal"}</p>
-          <p className="text-micro text-secondary">{goal.status === "active" ? "Active plan" : "Draft plan"}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="text-lg font-semibold tracking-tight text-primary">{formatUSD(goal.costCents)}</p>
-          <p className="text-micro text-secondary">{date ? (plan?.affordableNow ? "Affordable now" : formatDate(date, "short")) : "Not yet projected"}</p>
-          <p className="text-[10px] text-secondary">Projected affordable date</p>
-        </div>
-      </Link>
-      {[1, 2].map(slot => (
+      {goal && (
+        <Link href={ROUTES.bigPurchase} className="group flex items-center gap-3 rounded-item py-1">
+          <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-full border-4 border-app bg-rain-soft text-xl font-semibold text-accent group-hover:border-accent-line">{initial}</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lead font-semibold text-primary">{goal.name || "Your next goal"}</p>
+            <p className="text-micro text-secondary">{goal.status === "active" ? "Active plan" : "Draft plan"}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-lg font-semibold tracking-tight text-primary">{formatUSD(goal.costCents)}</p>
+            <p className="text-micro text-secondary">{date ? (plan?.affordableNow ? "Affordable now" : formatDate(date, "short")) : "Not yet projected"}</p>
+            <p className="text-[10px] text-secondary">Projected affordable date</p>
+          </div>
+        </Link>
+      )}
+      {(goal ? [1, 2] : [1, 2, 3]).map(slot => (
         <Link key={slot} href={ROUTES.bigPurchase} className="ui-transition flex min-h-9 flex-1 items-center justify-center gap-2 rounded-item border border-dashed border-app bg-app weather-tile text-secondary hover:border-accent-line hover:bg-nav-hover">
           <Plus aria-hidden className="size-4 text-accent" />
           <span className="text-micro">Add new goal</span>

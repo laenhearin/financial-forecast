@@ -5,55 +5,36 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CircleUser, Menu, X } from "lucide-react";
-import { APP_NAME, USER_NAME } from "@/lib/config";
+import { Tooltip } from "@base-ui/react/tooltip";
+import { APP_NAME } from "@/lib/config";
 import { getActiveHref, NAV_ITEMS, ROUTES } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { useActiveCustomer } from "./ActiveCustomer";
 import { ThemeToggle } from "./ThemeToggle";
 
 /*
  * Layout by width: 1024px+ full sidebar; 768–1023px a 64px icon rail (md:max-lg:) whose labels
- * turn into hover/focus tooltips but stay readable to screen readers; under 768px (max-md:) a top
+ * stay readable to screen readers and appear in the feature tooltips; under 768px (max-md:) a top
  * bar whose menu button opens the same sidebar as a slide-in drawer.
  */
 const iconButton =
   "ui-transition inline-flex size-8 shrink-0 items-center justify-center rounded-item text-secondary hover:bg-nav-hover hover:text-primary";
 
-const railTooltip =
-  "md:max-lg:pointer-events-none md:max-lg:absolute md:max-lg:top-1/2 md:max-lg:left-full md:max-lg:ml-4 md:max-lg:-translate-y-1/2 md:max-lg:rounded-item md:max-lg:border md:max-lg:border-app md:max-lg:bg-card md:max-lg:px-2.5 md:max-lg:py-1 md:max-lg:text-primary md:max-lg:opacity-0 md:max-lg:group-hover:opacity-100 md:max-lg:group-focus-visible:opacity-100";
+const FEATURE_TOOLTIP_DELAY_MS = 1000;
 
 function LogoMark() {
   return <Image src="/icon.png" alt="" width={32} height={32} className="size-8 shrink-0 rounded-logo object-cover" />;
 }
 
 export function Sidebar() {
+  const profileName = useActiveCustomer()?.name ?? "No Nessie customer";
   const pathname = usePathname();
   const activeHref = getActiveHref(pathname);
-  const [profileName, setProfileName] = useState(USER_NAME);
   // The drawer is open only on the page where it was opened, so any navigation closes it.
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const updateProfileName = async () => {
-      try {
-        const response = await fetch("/api/demo-profiles", { cache: "no-store" });
-        if (!response.ok) return;
-        const data = await response.json() as { activeSlug: string; profiles: { slug: string; label: string }[] };
-        setProfileName(data.profiles.find(profile => profile.slug === data.activeSlug)?.label ?? USER_NAME);
-      } catch {
-        setProfileName(USER_NAME);
-      }
-    };
-    updateProfileName();
-    window.addEventListener("cloudcash-profile-change", updateProfileName);
-    window.addEventListener("storage", updateProfileName);
-    return () => {
-      window.removeEventListener("cloudcash-profile-change", updateProfileName);
-      window.removeEventListener("storage", updateProfileName);
-    };
-  }, []);
 
   const closeDrawer = (returnFocus: boolean) => {
     setOpenOn(null);
@@ -115,22 +96,35 @@ export function Sidebar() {
         <nav ref={navRef} aria-label="Main">
           <p className="mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-secondary md:max-lg:sr-only">Workspace</p>
           <ul className="flex flex-col gap-3">
-            {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+            {NAV_ITEMS.map(({ label, description, href, icon: Icon }) => {
               const active = href === activeHref;
+              const tooltipId = `nav-tooltip-${href === "/" ? "home" : href.slice(1)}`;
               return (
                 <li key={href}>
-                  <Link
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    onClick={() => closeDrawer(false)}
-                    className={cn(
-                      "ui-transition group relative flex h-12 items-center gap-3 rounded-item px-3 text-body md:max-lg:justify-center md:max-lg:px-0",
-                      active ? "bg-nav-active font-medium text-accent" : "text-secondary hover:bg-nav-hover hover:text-primary",
-                    )}
-                  >
-                    <Icon aria-hidden className="size-4.5 shrink-0" strokeWidth={1.75} />
-                    <span className={cn("truncate md:max-lg:overflow-visible", railTooltip)}>{label}</span>
-                  </Link>
+                  {/* Independent roots keep the full hover delay when moving between links. */}
+                  <Tooltip.Root>
+                    <Tooltip.Trigger
+                      delay={FEATURE_TOOLTIP_DELAY_MS}
+                      render={(props, state) => <Link {...props} href={href} aria-describedby={state.open ? tooltipId : undefined} />}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => closeDrawer(false)}
+                      className={cn(
+                        "ui-transition relative flex h-12 items-center gap-3 rounded-item px-3 text-body md:max-lg:justify-center md:max-lg:px-0",
+                        active ? "bg-nav-active font-medium text-accent" : "text-secondary hover:bg-nav-hover hover:text-primary",
+                      )}
+                    >
+                      <Icon aria-hidden className="size-4.5 shrink-0" strokeWidth={1.75} />
+                      <span className="truncate md:max-lg:sr-only">{label}</span>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Positioner side="right" sideOffset={16} collisionPadding={12} className="z-60">
+                        <Tooltip.Popup id={tooltipId} role="tooltip" className="w-64 max-w-[calc(100vw-2rem)] rounded-panel border border-app bg-(--weather-card-solid) p-4 text-caption leading-relaxed text-secondary shadow-lg outline-none motion-safe:transition-[opacity,transform] motion-safe:duration-150 data-starting-style:translate-x-1 data-starting-style:opacity-0 data-ending-style:opacity-0">
+                          <span className="mb-1.5 block text-body font-medium text-primary">{label}</span>
+                          {description}
+                        </Tooltip.Popup>
+                      </Tooltip.Positioner>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
                 </li>
               );
             })}
@@ -155,7 +149,7 @@ export function Sidebar() {
               className={cn("ui-transition group relative flex h-10 min-w-0 flex-1 items-center gap-3 rounded-item px-3 text-body md:max-lg:w-full md:max-lg:justify-center md:max-lg:px-0", pathname === ROUTES.profile ? "bg-nav-active font-medium text-accent" : "text-secondary hover:bg-nav-hover hover:text-primary")}
             >
               <CircleUser aria-hidden className="size-4.5 shrink-0" strokeWidth={1.75} />
-              <span className={cn("truncate md:max-lg:overflow-visible", railTooltip)}>Profile &amp; settings</span>
+              <span className="truncate md:max-lg:sr-only">Profile &amp; settings</span>
             </Link>
             <ThemeToggle className="size-10 shrink-0 md:max-lg:size-8" />
           </div>

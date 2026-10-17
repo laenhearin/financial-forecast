@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { addDays, addMonths } from "../../lib/dates";
-import { generateAdvice } from "../../features/big-purchase/advice/generateAdvice";
-import { projectBase } from "../../features/big-purchase/engine/base";
-import { computeForecast } from "../../features/big-purchase/engine/forecast";
-import { loadDemoScenario } from "../demoDataSource";
+import { addDays, addMonths } from "../lib/dates";
+import { generateAdvice } from "../features/big-purchase/advice/generateAdvice";
+import { projectBase } from "../features/big-purchase/engine/base";
+import { computeForecast } from "../features/big-purchase/engine/forecast";
+import { ScenarioLoadError } from "../data/dataSource";
+import { validateScenario } from "../data/validateScenario";
+import { loadTestScenario, normalizeScenario, scenarios } from "./scenarios";
 
-// Locks the demo's tuning targets. If an edit to scenarios.ts breaks one, retune the numbers there.
-const scenario = loadDemoScenario("tightMonth");
+// Locks the fixture's tuning targets. If an edit to scenarios.ts breaks one, retune the numbers there.
+const scenario = loadTestScenario("tightMonth");
 const laptop = { costCents: 180_000, bufferCents: 27_000, contributionCents: null };
 
-describe("demo lock: tightMonth", () => {
+describe("fixture lock: tightMonth", () => {
   it("never takes base cash below $0", () => {
     expect(Math.min(...projectBase(scenario).days.map(day => day.baseCents))).toBeGreaterThanOrEqual(0);
   });
@@ -37,5 +39,23 @@ describe("demo lock: tightMonth", () => {
     const deadline = addDays(result.forecast.plan.affordableDate!, -30);
     const advice = generateAdvice(scenario, laptop, result.forecast, deadline);
     expect(advice.items.filter(item => (item.daysSooner ?? 0) >= 14).length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("fixture scenarios", () => {
+  it("normalizes dollars to cents once", () => {
+    const normalized = normalizeScenario("tightMonth", scenarios.tightMonth);
+    expect(normalized.bills.find(bill => bill.id === "streaming")?.amountCents).toBe(1_549);
+    expect(normalized.accounts.map(account => account.balanceCents)).toEqual([scenarios.tightMonth.accounts[0].balance * 100, 120_000]);
+  });
+
+  it("reports an unknown scenario as a load error", () => {
+    expect(() => loadTestScenario("missing" as never)).toThrow(ScenarioLoadError);
+  });
+
+  it("loads and validates every registered scenario cleanly", () => {
+    for (const id of Object.keys(scenarios) as (keyof typeof scenarios)[]) {
+      expect(validateScenario(loadTestScenario(id))).toEqual([]);
+    }
   });
 });

@@ -1,14 +1,11 @@
-import { ACTIVE_PROFILE_STORAGE_KEY } from "../../big-purchase/config";
 import { findCard } from "../cards/catalog";
 import { STORAGE_KEY } from "../config";
-import { DEMO_OWNED_CARD_IDS } from "../data/demoProfile";
 import { isValidChoice } from "../engine/rewards";
 import type { OwnershipFilter, SortMode } from "../engine/table";
 import type { CategoryId } from "../types";
 
-/** Every Cash Back preference, saved under one versioned local storage key per demo profile (cashback:v1.<slug>). */
+/** Every Cash Back preference, saved under one versioned local storage key per Nessie customer (cashback:v1.<customerId>). */
 export interface CashBackPrefs {
-  /** Defaults to the demo customer's cards. */
   ownedCardIds: string[];
   /** user_choice picks per card id. */
   selections: Record<string, CategoryId[]>;
@@ -19,15 +16,23 @@ export interface CashBackPrefs {
   showBusiness: boolean;
 }
 
-export function defaultPrefs(): CashBackPrefs {
+/** As saved. ownedCardIds stays null until the user edits their card list, so the cards follow their Nessie credit card accounts. */
+export type SavedCashBackPrefs = Omit<CashBackPrefs, "ownedCardIds"> & { ownedCardIds: string[] | null };
+
+export function defaultPrefs(): SavedCashBackPrefs {
   return {
-    ownedCardIds: [...DEMO_OWNED_CARD_IDS],
+    ownedCardIds: null,
     selections: {},
     dismissedSuggestions: [],
     sort: "issuer",
     ownershipFilter: "all",
     showBusiness: false,
   };
+}
+
+/** A saved card list wins once it exists; until then the owned cards are the customer's Nessie card accounts. */
+export function resolvePrefs(saved: SavedCashBackPrefs, nessieCardIds: readonly string[]): CashBackPrefs {
+  return { ...saved, ownedCardIds: saved.ownedCardIds ?? [...nessieCardIds] };
 }
 
 function knownCardIds(value: unknown): string[] | null {
@@ -47,14 +52,14 @@ function validSelections(value: unknown): Record<string, CategoryId[]> {
 }
 
 /** Tolerant parse: anything unexpected falls back to its default, and card ids no longer in the catalog are dropped. */
-export function parsePrefs(raw: string | null): CashBackPrefs {
+export function parsePrefs(raw: string | null): SavedCashBackPrefs {
   const fallback = defaultPrefs();
   if (!raw) return fallback;
   try {
     const value = JSON.parse(raw) as Record<string, unknown> | null;
     if (typeof value !== "object" || value === null || Array.isArray(value)) return fallback;
     return {
-      ownedCardIds: knownCardIds(value.ownedCardIds) ?? fallback.ownedCardIds,
+      ownedCardIds: knownCardIds(value.ownedCardIds),
       selections: validSelections(value.selections),
       dismissedSuggestions: knownCardIds(value.dismissedSuggestions) ?? [],
       sort: value.sort === "issuer" || value.sort === "popularity" ? value.sort : fallback.sort,
@@ -70,19 +75,15 @@ export function parsePrefs(raw: string | null): CashBackPrefs {
 
 // ---------- Browser store (local storage behind useSyncExternalStore) ----------
 
-let cached: { key: string; value: CashBackPrefs } | null = null;
+let cached: { key: string; value: SavedCashBackPrefs } | null = null;
 const listeners = new Set<() => void>();
 
-function storageKey(): string {
-  try {
-    const slug = window.localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY) ?? "college";
-    return `${STORAGE_KEY}.${slug}`;
-  } catch {
-    return `${STORAGE_KEY}.college`;
-  }
+/** One saved set per Nessie customer id, as resolved by the server. */
+function storageKey(customerId: string): string {
+  return `${STORAGE_KEY}.${customerId}`;
 }
 
-function readStorage(key: string): CashBackPrefs {
+function readStorage(key: string): SavedCashBackPrefs {
   try {
     return parsePrefs(window.localStorage.getItem(key));
   } catch {
@@ -90,32 +91,25 @@ function readStorage(key: string): CashBackPrefs {
   }
 }
 
-if (typeof window !== "undefined") {
-  window.addEventListener("cloudcash-profile-change", () => {
-    cached = null;
-    listeners.forEach(listener => listener());
-  });
-}
-
 export const prefsStore = {
   subscribe(listener: () => void) {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  /** Client only. Reads local storage once per demo profile, then serves the cached value. */
-  getSnapshot(): CashBackPrefs {
-    const key = storageKey();
+  /** Client only. Reads local storage once per customer, then serves the cached value. */
+  getSnapshot(customerId: string): SavedCashBackPrefs {
+    const key = storageKey(customerId);
     if (!cached || cached.key !== key) cached = { key, value: readStorage(key) };
     return cached.value;
   },
   /** null on the server and during hydration, so nothing renders from local storage too early. */
-  getServerSnapshot(): CashBackPrefs | null {
+  getServerSnapshot(): SavedCashBackPrefs | null {
     return null;
   },
-  /** Saves on every change; there is no save button. One saved set per demo profile. */
-  update(change: (current: CashBackPrefs) => CashBackPrefs) {
-    const key = storageKey();
-    const next = change(prefsStore.getSnapshot());
+  /** Saves on every change; there is no save button. One saved set per customer. */
+  update(customerId: string, change: (current: SavedCashBackPrefs) => SavedCashBackPrefs) {
+    const key = storageKey(customerId);
+    const next = change(prefsStore.getSnapshot(customerId));
     cached = { key, value: next };
     try {
       window.localStorage.setItem(key, JSON.stringify(next));

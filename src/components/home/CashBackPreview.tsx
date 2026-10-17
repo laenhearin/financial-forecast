@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { findCard } from "@/features/cash-back/cards/catalog";
+import type { CashBackProfile } from "@/features/cash-back/data/source";
 import { CardArt } from "@/features/cash-back/components/CardArt";
 import { brandedName, formatYearlyGain } from "@/features/cash-back/format";
 import { useCashBack } from "@/features/cash-back/hooks/useCashBack";
 import { ROUTES } from "@/lib/navigation";
 
-export function CashBackPreview() {
-  const { analysis } = useCashBack();
+export function CashBackPreview({ profile }: { profile: CashBackProfile }) {
+  const { analysis } = useCashBack(profile);
 
   return (
     <section aria-labelledby="cash-back-preview-title" className="flex min-w-0 flex-col gap-2 rounded-panel border border-app bg-card p-3">

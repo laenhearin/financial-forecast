@@ -1,16 +1,12 @@
 import { isCents } from "@/lib/money";
-import { ACTIVE_PROFILE_STORAGE_KEY } from "@/features/big-purchase/config";
 
 const STORAGE_KEY = "balance-critical.v1";
 let cached: { key: string; value: number | null } | null = null;
 const listeners = new Set<() => void>();
 
-function storageKey() {
-  try {
-    return `${STORAGE_KEY}.${window.localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY) ?? "college"}`;
-  } catch {
-    return `${STORAGE_KEY}.college`;
-  }
+/** One saved threshold per Nessie customer id, as resolved by the server. */
+function storageKey(customerId: string) {
+  return `${STORAGE_KEY}.${customerId}`;
 }
 
 function read(key: string): number | null {
@@ -22,8 +18,8 @@ function read(key: string): number | null {
   }
 }
 
-function publish(value: number | null) {
-  const key = storageKey();
+function publish(customerId: string, value: number | null) {
+  const key = storageKey(customerId);
   cached = { key, value };
   try {
     if (value === null) window.localStorage.removeItem(key);
@@ -33,10 +29,6 @@ function publish(value: number | null) {
 }
 
 if (typeof window !== "undefined") {
-  window.addEventListener("cloudcash-profile-change", () => {
-    cached = null;
-    listeners.forEach((listener) => listener());
-  });
   window.addEventListener("storage", (event) => {
     if (event.key?.startsWith(STORAGE_KEY)) {
       cached = null;
@@ -50,11 +42,11 @@ export const balanceSettingsStore = {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  getSnapshot(): number | null {
-    const key = storageKey();
+  getSnapshot(customerId: string): number | null {
+    const key = storageKey(customerId);
     if (!cached || cached.key !== key) cached = { key, value: read(key) };
     return cached.value;
   },
   getServerSnapshot(): number | null { return null; },
-  setCriticalBalanceCents(value: number | null) { publish(value); },
+  setCriticalBalanceCents(customerId: string, value: number | null) { publish(customerId, value); },
 };

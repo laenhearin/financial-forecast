@@ -5,14 +5,16 @@ import { addDays, daysBetween } from "@/lib/dates";
 import type { Scenario } from "@/features/big-purchase/types";
 import { ALL_ACCOUNTS } from "@/features/calendar/types";
 import { buildCalendarModel, balanceOn } from "@/features/calendar/engine/model";
+import { useActiveCustomerId } from "@/components/layout/ActiveCustomer";
 import { purchaseStore } from "@/features/calendar/state/purchaseStore";
 import type { ProjectionPoint } from "./types";
 
 /** Rebuild the home projection from the same saved calendar purchases as the calendar page. */
 export function useCalendarAdjustedForecast(scenario: Scenario, baseProjection: ProjectionPoint[]) {
+  const customerId = useActiveCustomerId();
   const purchases = useSyncExternalStore(
     purchaseStore.subscribe,
-    purchaseStore.getSnapshot,
+    () => purchaseStore.getSnapshot(customerId),
     purchaseStore.getServerSnapshot,
   );
   const model = useMemo(
