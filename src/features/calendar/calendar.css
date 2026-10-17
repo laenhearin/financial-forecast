@@ -1,0 +1,27 @@
+/*
+ * Weather-style shading for calendar days: light rain for caution, heavy rain for critical.
+ * Built from the theme tokens, so it follows Clear sky and Midnight. Kept in the components
+ * layer so Tailwind utilities still win.
+ */
+@layer components {
+  .cal-risk-1 { background-color: color-mix(in srgb, var(--rain) 6%, var(--card)); }
+  .cal-risk-2 { background-color: color-mix(in srgb, var(--rain) 11%, var(--card)); }
+  .cal-risk-3 { background-color: color-mix(in srgb, var(--rain) 17%, var(--card)); }
+  .cal-risk-4 { background-color: color-mix(in srgb, var(--rain) 24%, var(--card)); }
+  .cal-risk-5 { background-color: color-mix(in srgb, var(--rain) 32%, var(--card)); }
+
+  .cal-rain::before,
+  .cal-storm::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .cal-rain::before {
+    background: repeating-linear-gradient(115deg, transparent 0 13px, color-mix(in srgb, var(--rain) 22%, transparent) 13px 15px, transparent 15px 25px);
+  }
+  .cal-storm::before {
+    background: repeating-linear-gradient(115deg, transparent 0 11px, color-mix(in srgb, var(--rain) 34%, transparent) 11px 13px, transparent 13px 22px);
+  }
+}
