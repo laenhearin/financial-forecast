@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ArrowRight, ArrowUpRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { computeForecast } from "@/features/big-purchase/engine/forecast";
 import type { Goal, Scenario } from "@/features/big-purchase/types";
 import { formatUSD } from "@/lib/money";
@@ -18,8 +18,7 @@ export function GoalsPreview({ goal, scenario }: { goal: Goal; scenario: Scenari
   return (
     <section aria-labelledby="goals-preview-title" className="flex min-w-0 flex-col gap-2 rounded-panel border border-app bg-card p-3">
       <div className="flex items-center justify-between">
-        <h3 id="goals-preview-title" className="text-caption font-medium text-secondary">Goals</h3>
-        <Link href={ROUTES.bigPurchase} aria-label="Manage purchase goal" className="rounded-item p-1 text-secondary hover:text-accent"><ArrowUpRight aria-hidden className="size-4" /></Link>
+        <h3 id="goals-preview-title" className="text-caption font-medium text-secondary"><Link href={ROUTES.bigPurchase} className="hover:text-primary hover:underline">Goals</Link></h3>
       </div>
       <Link href={ROUTES.bigPurchase} className="group flex items-center gap-3 rounded-item py-1">
         <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-full border-4 border-app bg-rain-soft text-xl font-semibold text-accent group-hover:border-accent-line">{initial}</span>
@@ -39,7 +38,6 @@ export function GoalsPreview({ goal, scenario }: { goal: Goal; scenario: Scenari
           <span className="text-micro">Add new goal</span>
         </Link>
       ))}
-      <Link href={ROUTES.bigPurchase} className="jump-link self-end">Open Forecast Fund <ArrowRight aria-hidden className="size-4" /></Link>
     </section>
   );
 }

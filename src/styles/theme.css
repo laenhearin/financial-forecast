@@ -7,19 +7,19 @@
 .bp-root {
   /* Color */
   --bp-bg: var(--bg);
-  --bp-surface: var(--card);
+  --bp-surface: var(--weather-card-solid);
   --bp-ink: var(--tx);
   --bp-muted: var(--tx2);
   --bp-line: var(--bd);
   --bp-primary: var(--ac);
   --bp-primary-ink: var(--ac);
-  --bp-mint: var(--rain);
-  --bp-sky: var(--ac);
-  --bp-butter: var(--sun);
-  --bp-peach: #F4B942;
-  --bp-rose: var(--neg);
+  --bp-mint: color-mix(in srgb, var(--rain) 22%, var(--weather-card-solid));
+  --bp-sky: color-mix(in srgb, var(--ac) 22%, var(--weather-card-solid));
+  --bp-butter: color-mix(in srgb, var(--sun) 15%, var(--weather-card-solid));
+  --bp-peach: color-mix(in srgb, #F4B942 15%, var(--weather-card-solid));
+  --bp-rose: color-mix(in srgb, var(--neg) 15%, var(--weather-card-solid));
   --bp-lilac: var(--sb);
-  --bp-warn-ink: #8A6415;
+  --bp-warn-ink: var(--sun-ink);
   --bp-danger-ink: var(--neg);
   --bp-hero-gradient: linear-gradient(135deg, color-mix(in srgb, var(--sun) 36%, transparent) 0%, color-mix(in srgb, var(--rain) 44%, transparent) 52%, color-mix(in srgb, var(--ac) 24%, transparent) 100%);
   --bp-shimmer: linear-gradient(90deg, var(--bd) 0%, var(--bg) 50%, var(--bd) 100%);
@@ -49,7 +49,7 @@
   --popover: var(--bp-surface);
   --popover-foreground: var(--bp-ink);
   --primary: var(--bp-primary);
-  --primary-foreground: var(--bp-ink);
+  --primary-foreground: #203858;
   --secondary: var(--bp-bg);
   --secondary-foreground: var(--bp-ink);
   --muted: var(--bp-bg);
@@ -65,7 +65,7 @@
   font-family: var(--bp-font);
   font-size: var(--bp-text-body);
   color: var(--bp-ink);
-  background: var(--bp-bg);
+  background: transparent;
 }
 
 .bp-root svg.lucide {

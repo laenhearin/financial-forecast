@@ -11,7 +11,7 @@ export function AskBox({ className }: { className?: string }) {
   const [answer, setAnswer] = useState<AnswerState | null>(null);
   // A newer question (or closing the card) makes older replies stale.
   const latestRequest = useRef(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,18 +38,24 @@ export function AskBox({ className }: { className?: string }) {
     <div className={className}>
       <form
         onSubmit={handleSubmit}
-        className="flex items-center gap-3 rounded-panel border border-accent-line bg-card px-4 py-3 has-[input:focus]:outline-2 has-[input:focus]:outline-offset-2 has-[input:focus]:outline-accent"
+        className="flex min-h-24 flex-1 items-start gap-3 rounded-panel border border-accent-line bg-card px-4 py-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent"
       >
         <Sparkles aria-hidden className="size-5 shrink-0 text-accent" strokeWidth={1.75} />
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
+          rows={2}
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
           placeholder="Can I afford a $400 flight next Friday?"
           aria-label="Ask a question about your money"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-lead text-primary outline-none placeholder:text-secondary"
+          className="min-w-0 flex-1 resize-none self-stretch bg-transparent text-lead text-primary outline-none placeholder:text-secondary"
         />
         <button
           type="submit"

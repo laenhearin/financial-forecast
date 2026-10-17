@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { findCard } from "@/features/cash-back/cards/catalog";
 import { CardArt } from "@/features/cash-back/components/CardArt";
 import { brandedName, formatYearlyGain } from "@/features/cash-back/format";
@@ -14,8 +13,7 @@ export function CashBackPreview() {
   return (
     <section aria-labelledby="cash-back-preview-title" className="flex min-w-0 flex-col gap-2 rounded-panel border border-app bg-card p-3">
       <div className="flex items-center justify-between">
-        <h3 id="cash-back-preview-title" className="text-caption font-medium text-secondary">Swipe and Shine</h3>
-        <Link href={ROUTES.cashBack} aria-label="Manage cards" className="rounded-item p-1 text-secondary hover:text-accent"><ArrowUpRight aria-hidden className="size-4" /></Link>
+        <h3 id="cash-back-preview-title" className="text-caption font-medium text-secondary"><Link href={ROUTES.cashBack} className="hover:text-primary hover:underline">Swipe and Shine</Link></h3>
       </div>
       {!analysis ? (
         <div aria-busy="true" aria-label="Loading current and recommended cards" className="min-h-32 flex-1 animate-pulse rounded-item bg-skeleton motion-reduce:animate-none" />
@@ -54,7 +52,6 @@ export function CashBackPreview() {
           ) : <p className="rounded-item bg-app p-2 text-micro text-secondary">No additional cards recommended right now.</p>}
         </div>
       </>}
-      <Link href={ROUTES.cashBack} className="jump-link mt-auto self-end">Open Swipe and Shine <ArrowRight aria-hidden className="size-4" /></Link>
     </section>
   );
 }

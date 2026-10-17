@@ -4,7 +4,6 @@ import { AskBox } from "@/components/home/AskBox";
 import { BalanceChart } from "@/components/home/BalanceChart";
 import { FeaturePreviews } from "@/components/home/FeaturePreviews";
 import { HomeHeader } from "@/components/home/HomeHeader";
-import { HomeWeatherShell } from "@/components/home/HomeWeatherShell";
 import { SuggestionChips } from "@/components/home/SuggestionChips";
 import { defaultCriticalBalanceCents, majorBillWithinWeek } from "@/features/calendar/engine/balanceThresholds";
 import { scenarioEntries } from "@/features/calendar/engine/entries";
@@ -46,21 +45,20 @@ export default async function HomePage() {
   const majorBillLabel = upcomingMajorBill ? `${upcomingMajorBill.label} due ${formatDate(upcomingMajorBill.date, "short")}` : null;
 
   return (
-    <HomeWeatherShell todayNetCents={todayNetCents} hasBillToday={homeData.markers.some(marker => marker.day === 0)}>
       <div className="mx-auto grid w-full max-w-400 gap-x-6 gap-y-4 px-4 py-4 md:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(17rem,1fr)]">
         <HomeHeader className="lg:col-start-1" balanceCents={projectedLow.balanceCents} defaultCriticalBalanceCents={defaultCriticalCents} majorBillBalanceCents={majorBillBalance} majorBillLabel={majorBillLabel} nextStormLabel={homeData.nextStormLabel} userName={homeData.userName} />
         <div className="flex min-w-0 flex-col lg:col-start-1 lg:row-start-2">
           <BalanceChart
             asOfDate={homeData.asOfDate}
             todayNetCents={todayNetCents}
-            className="home-forecast flex-1 rounded-3xl border border-app p-4 md:p-5"
+            className="home-forecast shrink-0 rounded-3xl border border-app p-4 md:p-5"
             availableBalanceCents={homeData.availableBalanceCents}
             projection={homeData.projection}
             markers={homeData.markers}
             monthlyTotals={monthlyTotals}
           />
-          <section aria-label="Ask about your money" className="mt-3 rounded-3xl border border-app bg-card p-3">
-            <AskBox />
+          <section aria-label="Ask about your money" className="mt-3 flex flex-1 flex-col rounded-3xl border border-app bg-card p-3">
+            <AskBox className="flex flex-1 flex-col" />
             <SuggestionChips className="mt-3" />
           </section>
         </div>
@@ -69,6 +67,5 @@ export default async function HomePage() {
         </aside>
         <p className="text-micro text-secondary lg:col-span-2">Synthetic Nessie demo data and forecast assumptions.</p>
       </div>
-    </HomeWeatherShell>
   );
 }
