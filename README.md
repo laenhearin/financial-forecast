@@ -25,6 +25,8 @@ The home screen works without credentials and clearly displays fixed demo data. 
 
 Start with the [API quick reference](API-quick-reference.md) and [detailed team API guide](API-guide.md). They cover setup, endpoint schemas and gaps, shared keys, live testing, and connecting the two pages. The current production API base is `https://prod-api.nessieisreal.com`; the documentation website is a different host.
 
+Five synthetic profiles have now been seeded into the shared Nessie sandbox with 20 historical transactions and 10 future bill schedules. See [seeded data, terminal commands, and UI examples](NESSIE-DEMO-DATA.md). Read a profile with `node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts college`. The new server-only adapter supplies the existing feature contracts; the pages still use their current demo sources until that adapter is connected.
+
 Run `node --env-file=.env.local scripts/nessie-smoke.mts accounts` from the repo root for a read-only connectivity test, after following the quick reference's environment setup. This script is separate from the app: `/api/dashboard` still does not contact Nessie. Confirm the fields and units needed for each feature before implementing reads in `src/lib/nessie.ts`. That module is server-only. Use `src/app/api/dashboard/route.ts` to expose only the data needed by the UI. Configure `NESSIE_ACCOUNT_ID` to your mock account. Never return API keys or raw upstream error URLs. Keep historical posted activity out of future balance calculations.
 
 ## Team workflow
