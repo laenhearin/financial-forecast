@@ -1,23 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { defaultPrefs, parsePrefs, sameSelection, toggleCard } from "./prefsStore";
+import { DEMO_OWNED_CARD_IDS } from "../data/demoProfile";
+import { defaultPrefs, parsePrefs } from "./prefsStore";
 
 describe("cash back prefs", () => {
-  it("defaults to the owned cards, 90 days, and the suggestion shown", () => {
-    expect(parsePrefs(null)).toEqual({ version: 1, selectedCardIds: null, windowDays: 90, showSuggestion: true });
+  it("defaults to the demo customer's cards, issuer sort, all cards, and no business cards", () => {
+    expect(parsePrefs(null)).toEqual({
+      ownedCardIds: [...DEMO_OWNED_CARD_IDS],
+      selections: {},
+      dismissedSuggestions: [],
+      sort: "issuer",
+      ownershipFilter: "all",
+      showBusiness: false,
+    });
     expect(parsePrefs("not json")).toEqual(defaultPrefs());
-    expect(parsePrefs(JSON.stringify({ version: 2 }))).toEqual(defaultPrefs());
+    expect(parsePrefs("[1, 2]")).toEqual(defaultPrefs());
+    expect(parsePrefs("null")).toEqual(defaultPrefs());
   });
 
-  it("keeps valid fields and drops unknown or duplicate card ids", () => {
-    const raw = JSON.stringify({ version: 1, selectedCardIds: ["steady-2", "nope", 7, "steady-2"], windowDays: 30, showSuggestion: false });
-    expect(parsePrefs(raw)).toEqual({ version: 1, selectedCardIds: ["steady-2"], windowDays: 30, showSuggestion: false });
-    expect(parsePrefs(JSON.stringify({ version: 1, windowDays: 60, showSuggestion: "yes" }))).toMatchObject({ windowDays: 90, showSuggestion: true });
+  it("keeps a saved card list, even an empty one, and drops ids no longer in the catalog", () => {
+    const raw = JSON.stringify({ ownedCardIds: ["citi-double-cash", "everyday-1", 7, "citi-double-cash"], dismissedSuggestions: ["citi-custom-cash", "gone"] });
+    expect(parsePrefs(raw)).toMatchObject({ ownedCardIds: ["citi-double-cash"], dismissedSuggestions: ["citi-custom-cash"] });
+    expect(parsePrefs(JSON.stringify({ ownedCardIds: [] })).ownedCardIds).toEqual([]);
   });
 
-  it("toggles cards and compares selections ignoring order", () => {
-    expect(toggleCard(["a", "b"], "b")).toEqual(["a"]);
-    expect(toggleCard(["a"], "c")).toEqual(["a", "c"]);
-    expect(sameSelection(["a", "b"], ["b", "a"])).toBe(true);
-    expect(sameSelection(["a"], ["a", "b"])).toBe(false);
+  it("keeps only complete, valid picks for user-choice cards", () => {
+    const raw = JSON.stringify({
+      selections: {
+        "bofa-customized-cash": ["gas"],
+        "us-bank-cash-plus": ["utilities"],
+        "citi-custom-cash": ["groceries"],
+        "capital-one-savor": ["dining"],
+        nope: ["dining"],
+      },
+    });
+    expect(parsePrefs(raw).selections).toEqual({ "bofa-customized-cash": ["gas"] });
+  });
+
+  it("falls back per field on bad values", () => {
+    const raw = JSON.stringify({ sort: "random", ownershipFilter: "mine", showBusiness: "yes" });
+    expect(parsePrefs(raw)).toMatchObject({ sort: "issuer", ownershipFilter: "mine", showBusiness: false });
   });
 });

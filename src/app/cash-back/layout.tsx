@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { bpRootClass } from "@/features/big-purchase/fonts";
-import "@/styles/theme.css";
 
 export const metadata: Metadata = {
   title: "Change of Weather",
-  description: "Which card to use for each category, and how much cash back you missed.",
+  description: "Which of your cards to use for each kind of purchase, and which card is worth adding.",
 };
 
-/** Reuses the Big Purchase design tokens so both feature screens look alike. */
+/** Uses the app's Clear Skies and Heavy Rain tokens directly, like the homepage. */
 export default function CashBackLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={`${bpRootClass} min-h-screen`}>
-      <TooltipProvider>{children}</TooltipProvider>
-    </div>
-  );
+  return <TooltipProvider>{children}</TooltipProvider>;
 }

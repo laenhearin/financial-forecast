@@ -1,9 +1,9 @@
 import { MAX_AI_MERCHANTS, MAX_MERCHANT_LENGTH } from "../config";
-import { isCategory, type Category } from "../types";
+import { isCategoryId, type CategoryId } from "../types";
 
 /** Response shapes shared by the AI routes and the browser. */
 export type CategorizeResponse =
-  | { status: "ok"; categories: Record<string, Category> }
+  | { status: "ok"; categories: Record<string, CategoryId> }
   | { status: "unavailable"; message: string }
   | { status: "error"; message: string };
 
@@ -31,16 +31,16 @@ export function parseMerchantList(value: unknown): string[] | null {
  * Keeps only results for merchants that were asked about, with a known category.
  * Model output is untrusted, so anything else is dropped.
  */
-export function sanitizeClassifications(requested: readonly string[], results: unknown): Record<string, Category> {
+export function sanitizeClassifications(requested: readonly string[], results: unknown): Record<string, CategoryId> {
   // No prototype, so a merchant named "__proto__" or "constructor" is just a key.
-  const out: Record<string, Category> = Object.create(null);
+  const out: Record<string, CategoryId> = Object.create(null);
   if (!Array.isArray(results)) return out;
   const wanted = new Set(requested);
   for (const item of results) {
     if (typeof item !== "object" || item === null) continue;
     const { merchant, category } = item as { merchant?: unknown; category?: unknown };
     if (typeof merchant !== "string" || !wanted.has(merchant)) continue;
-    if (!isCategory(category)) continue;
+    if (!isCategoryId(category)) continue;
     out[merchant] = category;
   }
   return out;

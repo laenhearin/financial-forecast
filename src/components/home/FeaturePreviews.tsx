@@ -8,10 +8,10 @@ import { ROUTES } from "@/lib/navigation";
 import type { HomeData } from "./types";
 import type { Goal } from "@/features/big-purchase/types";
 import { goalStore } from "@/features/big-purchase/state/goalStore";
-import { analyzeCashBack } from "@/features/cash-back/engine/analyze";
-import { categorize } from "@/features/cash-back/engine/categorize";
+import { cn } from "@/lib/utils";
 import type { CashBackData } from "@/features/cash-back/data/source";
-import { prefsStore } from "@/features/cash-back/state/prefsStore";
+import { homeMessage } from "@/features/cash-back/engine/homeMessage";
+import { useCashBack } from "@/features/cash-back/hooks/useCashBack";
 
 type Feature = {
   title: string;
@@ -54,32 +54,28 @@ const TONES = {
   slate: "bg-secondary text-secondary",
 } as const;
 
-export function FeaturePreviews({ homeData, cashBackData, demoGoal }: { homeData: HomeData; cashBackData: CashBackData; demoGoal: Goal }) {
+export function FeaturePreviews({ homeData, demoGoal }: { homeData: HomeData; cashBackData: CashBackData; demoGoal: Goal }) {
   const storedGoal = useSyncExternalStore(goalStore.subscribe, goalStore.getSnapshot, goalStore.getServerSnapshot);
-  const cashPrefs = useSyncExternalStore(prefsStore.subscribe, prefsStore.getSnapshot, prefsStore.getServerSnapshot);
-  const cashBackProgress = useMemo(() => {
-    const data = cashBackData;
-    const analysis = analyzeCashBack({
-      purchases: categorize(data.purchases),
-      selectedCardIds: cashPrefs?.selectedCardIds ?? data.ownedCardIds,
-      asOfDate: data.asOfDate,
-      windowDays: cashPrefs?.windowDays ?? 90,
-    });
-    return analysis;
-  }, [cashPrefs, cashBackData]);
+  // Same functions as the Cash Back page; null until local storage has been read on the client.
+  // The seeded profile's purchases (cashBackData) are too sparse to price cards, so the tile uses the demo spending profile.
+  const { analysis: cashBackAnalysis } = useCashBack();
+  const cashBack = useMemo(() => (cashBackAnalysis ? homeMessage(cashBackAnalysis) : null), [cashBackAnalysis]);
 
   const projectionLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
   const goal = storedGoal?.goals[0] ?? demoGoal;
-  const progressByTitle: Record<string, { label: string; detail: string; percent?: number }> = {
+  const progressByTitle: Record<string, { label: string; detail: string; percent?: number; figure?: string; href?: string; loading?: boolean; gold?: boolean }> = {
     "Purchase Forecasting": {
       label: goal ? `${goal.name || "Untitled goal"} · ${formatUSD(goal.costCents)}` : "No saved goal yet",
       detail: goal ? `${goal.status === "active" ? "Active" : "Draft"} · ${goal.contributionCents === null ? "Suggested contribution" : `${formatUSD(goal.contributionCents)} per paycheck`}` : "Open Purchase Forecasting to start a goal.",
       percent: goal ? (Number(Boolean(goal.name.trim())) + Number(goal.costCents > 0)) * 50 : 0,
     },
     "Change of Weather": {
-      label: `${formatUSD(cashBackProgress.rewards.actualCents)} rewards earned`,
-      detail: `${cashBackProgress.purchaseCount} purchases · ${formatUSD(cashBackProgress.rewards.missedCents)} potential rewards missed`,
-      percent: cashBackProgress.rewards.bestCents > 0 ? Math.round((cashBackProgress.rewards.actualCents / cashBackProgress.rewards.bestCents) * 100) : 0,
+      label: cashBack?.title ?? "",
+      detail: cashBack?.body ?? "",
+      figure: cashBack?.figure,
+      href: cashBack?.kind === "suggestion" ? `${ROUTES.cashBack}?suggest=${cashBack.cardId}` : undefined,
+      loading: cashBack === null,
+      gold: true,
     },
     "Storm solver": {
       label: `Next tight spot · ${homeData.nextStormLabel ?? "No date flagged"}`,
@@ -104,7 +100,7 @@ export function FeaturePreviews({ homeData, cashBackData, demoGoal }: { homeData
           return (
             <Link
               key={title}
-              href={href}
+              href={progress.href ?? href}
               className="ui-transition group flex min-w-0 flex-col rounded-panel border border-app bg-card p-3 hover:border-accent-line hover:shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
@@ -119,22 +115,27 @@ export function FeaturePreviews({ homeData, cashBackData, demoGoal }: { homeData
               </div>
               <h3 className="mt-2 text-body font-medium text-primary">{title}</h3>
               <p className="mt-1 text-caption text-secondary">{description}</p>
-              <div className="mt-2 rounded-item bg-app px-3 py-2">
-                <p className="text-caption font-medium wrap-break-word text-primary">{progress.label}</p>
-                <p className="mt-0.5 text-micro wrap-break-word text-secondary">{progress.detail}</p>
-                {progress.percent !== undefined && (
-                  <div
-                    className="mt-2 h-1.5 overflow-hidden rounded-full bg-border"
-                    role="progressbar"
-                    aria-label={`${title} progress`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={progress.percent}
-                  >
-                    <span className={`block h-full rounded-full ${tone === "yellow" ? "bg-sun" : "bg-accent"}`} style={{ width: `${progress.percent}%` }} />
-                  </div>
-                )}
-              </div>
+              {progress.loading ? (
+                <div aria-busy="true" aria-label={`Loading ${title}`} className="mt-2 h-17 animate-pulse rounded-item bg-skeleton motion-reduce:animate-none" />
+              ) : (
+                <div className={cn("mt-2 rounded-item bg-app px-3 py-2.5", progress.gold && "border-l-2 border-gold")}>
+                  <p className="wrap-break-word text-caption font-medium text-primary">{progress.label}</p>
+                  <p className={cn("mt-0.5 text-micro text-secondary", "wrap-break-word")}>{progress.detail}</p>
+                  {progress.figure && <p className="mt-1 text-caption font-semibold text-gold-ink">{progress.figure}</p>}
+                  {progress.percent !== undefined && (
+                    <div
+                      className="mt-2 h-1.5 overflow-hidden rounded-full bg-border"
+                      role="progressbar"
+                      aria-label={`${title} progress`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={progress.percent}
+                    >
+                      <span className={`block h-full rounded-full ${tone === "yellow" ? "bg-sun" : "bg-accent"}`} style={{ width: `${progress.percent}%` }} />
+                    </div>
+                  )}
+                </div>
+              )}
               <span className="jump-link mt-2 self-start">
                 {tag ? "Preview feature" : `Open ${title}`}
                 <ArrowRight aria-hidden className="size-4" />

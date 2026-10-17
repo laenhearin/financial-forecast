@@ -1,42 +1,46 @@
-import { addDays } from "../../../lib/dates";
-import { CARD_LIBRARY, cardsByIds, findCard } from "../cards/library";
-import type { CashBackAnalysis, CategorizedPurchase, ISODate, WindowDays } from "../types";
-import { buildPlaybook } from "./playbook";
-import { actualCapLedger, annualizeCents, computeRewards, flagWrongCardPurchases } from "./rewards";
-import { suggestNewCard } from "./suggest";
+import { CARD_CATALOG, cardsByIds } from "../cards/catalog";
+import type { CreditCard, ISODate, Selections, SpendProfile } from "../types";
+import {
+  bestCardsByCategory, evaluateCandidates, goldCards, projectWalletRewards, rankSuggestions,
+  type CardCandidate, type CategoryWinner, type GoldCard, type WalletProjection,
+} from "./rewards";
 
-export interface AnalyzeInput {
-  /** All loaded purchases, already categorized. Purchases before the window still warm up cap ledgers. */
-  purchases: readonly CategorizedPurchase[];
-  selectedCardIds: readonly string[];
-  asOfDate: ISODate;
-  windowDays: WindowDays;
+export interface WalletInput {
+  ownedCardIds: readonly string[];
+  spendProfile: SpendProfile;
+  today: ISODate;
+  selections?: Selections;
+  /** Suggestions the user said "Not interested" to. */
+  dismissedSuggestions?: readonly string[];
+  catalog?: readonly CreditCard[];
 }
 
-/** First day of a window that ends on (and includes) the as-of date. */
-export function windowStartDate(asOfDate: ISODate, windowDays: WindowDays): ISODate {
-  return addDays(asOfDate, -(windowDays - 1));
+export interface WalletAnalysis {
+  owned: CreditCard[];
+  projection: WalletProjection;
+  winners: CategoryWinner[];
+  /** Owned cards that win a category with spend, by the monthly spend they win. */
+  gold: GoldCard[];
+  /** What each card the user doesn't own would add, by card id. */
+  candidates: ReadonlyMap<string, CardCandidate>;
+  /** Up to 3 suggestions, best first, without dismissed cards. */
+  suggestions: CardCandidate[];
 }
 
-/** Runs the whole engine for one set of inputs. Pure and deterministic. */
-export function analyzeCashBack({ purchases, selectedCardIds, asOfDate, windowDays }: AnalyzeInput): CashBackAnalysis {
-  const selected = cardsByIds(selectedCardIds);
-  const windowStart = windowStartDate(asOfDate, windowDays);
-  const history = purchases.filter(purchase => purchase.date <= asOfDate);
-  const inWindow = history.filter(purchase => purchase.date >= windowStart);
+export const SUGGESTION_LIMIT = 3;
 
-  const rewards = computeRewards(history, selected, { from: windowStart, findCard });
-  const ledger = actualCapLedger(history, findCard);
+/** Everything the Cash Back page and the homepage card show, from one set of inputs. Pure and deterministic. */
+export function analyzeWallet({ ownedCardIds, spendProfile, today, selections, dismissedSuggestions = [], catalog = CARD_CATALOG }: WalletInput): WalletAnalysis {
+  const owned = cardsByIds(ownedCardIds);
+  const options = { selections };
+  const winners = bestCardsByCategory(owned, spendProfile, today, options);
+  const candidates = evaluateCandidates(owned, catalog, spendProfile, today, options);
   return {
-    asOfDate,
-    windowDays,
-    windowStart,
-    purchaseCount: inWindow.length,
-    spendCents: inWindow.reduce((sum, purchase) => sum + purchase.amountCents, 0),
-    rewards,
-    missedAnnualCents: annualizeCents(Math.max(0, rewards.missedCents), windowDays),
-    flags: flagWrongCardPurchases(rewards),
-    playbook: buildPlaybook(selected, inWindow, asOfDate, ledger),
-    suggestion: suggestNewCard(history, selected, CARD_LIBRARY, { from: windowStart, windowDays, findCard }),
+    owned,
+    projection: projectWalletRewards(owned, spendProfile, today, options),
+    winners,
+    gold: goldCards(winners),
+    candidates: new Map(candidates.map(candidate => [candidate.cardId, candidate])),
+    suggestions: rankSuggestions(candidates, catalog, SUGGESTION_LIMIT, dismissedSuggestions),
   };
 }
