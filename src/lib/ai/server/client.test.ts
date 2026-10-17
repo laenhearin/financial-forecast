@@ -36,8 +36,19 @@ describe("normalizeLlmError", () => {
     expect(normalizeLlmError(new LlmError("bad_output")).kind).toBe("bad_output");
   });
 
-  it("keeps no upstream text", () => {
-    expect(normalizeLlmError({ status: 500, message: "secret upstream detail" }).message).not.toContain("secret");
+  it("keeps upstream text out of the message, but keeps Google's reason as a log detail", () => {
+    const error = normalizeLlmError({ status: 500, body: '{"error":{"message":"Backend overloaded.\\nTry later."}}' });
+    expect(error.message).not.toContain("overloaded");
+    expect(error.detail).toBe("Backend overloaded. Try later.");
+  });
+
+  it("separates depleted prepaid credits (402) and per-model denials (403) from a bad key", () => {
+    // The shape the live API returned for a project whose prepaid credits ran out.
+    const billing = normalizeLlmError({ name: "APIError", status: 402, body: '[{ "error": { "code": 402, "message": "Your prepayment credits are depleted. Please go to AI Studio.", "status": "RESOURCE_EXHAUSTED" } } ]' });
+    expect(billing.kind).toBe("billing");
+    expect(billing.detail).toBe("Your prepayment credits are depleted. Please go to AI Studio.");
+    expect(normalizeLlmError({ name: "PermissionDeniedError", status: 403 }).kind).toBe("unavailable");
+    expect(normalizeLlmError({ status: 429, body: '{"error":{"message":"You exceeded your current quota, please check your plan and billing details."}}' }).kind).toBe("rate_limited");
   });
 });
 

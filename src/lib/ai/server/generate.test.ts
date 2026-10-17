@@ -87,6 +87,16 @@ describe("generateStructured policy", () => {
     expect(jsonCalls).toHaveLength(0);
   });
 
+  it("does not retry when the project's billing is the problem, and logs Google's reason", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client, jsonCalls } = fakeClient({ json: [() => { throw new LlmError("billing", 402, "Your prepayment credits are depleted."); }] });
+    const result = await generateStructured(spec(), testRuntime(client, env));
+    expect(result.meta).toMatchObject({ source: "template", fallbackReason: "billing" });
+    expect(jsonCalls).toHaveLength(1);
+    expect(error.mock.calls[0][0]).toMatch(/billing problem.*prepayment credits are depleted/);
+    error.mockRestore();
+  });
+
   it("does not retry an invalid key", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const { client, jsonCalls } = fakeClient({ json: [fail("auth")] });

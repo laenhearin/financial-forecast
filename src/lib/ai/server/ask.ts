@@ -93,7 +93,7 @@ export async function runAsk(request: AskRequest, context: FinanceContext, runti
     } catch (error) {
       const failure = normalizeLlmError(error, signal);
       reason = failure.kind;
-      logFailure(id, "ask", model, failure.kind, failure.status);
+      logFailure(id, "ask", model, failure);
       if (sentText || !RETRYABLE.has(failure.kind)) break;
     }
   }

@@ -26,6 +26,7 @@ export class AiError extends Error {
 const MESSAGES: Record<LlmErrorKind, [string, number]> = {
   auth: ["The AI service rejected the API key.", 502],
   rate_limited: ["The AI service is busy. Try again in a minute.", 503],
+  billing: ["The AI service's billing needs attention.", 503],
   timeout: ["The AI service took too long to answer.", 504],
   unavailable: ["Couldn't reach the AI service.", 502],
   bad_output: ["The AI returned an unreadable answer.", 502],
@@ -85,7 +86,7 @@ export async function classifyMerchants(runtime: AiRuntime, merchants: readonly 
       return sanitizeClassifications(merchants, (data as { results?: unknown } | null)?.results);
     } catch (error) {
       failure = normalizeLlmError(error, signal);
-      logFailure(id, "cash-back-classify", model, failure.kind, failure.status);
+      logFailure(id, "cash-back-classify", model, failure);
       if (failure.kind !== "rate_limited" && failure.kind !== "unavailable" && failure.kind !== "bad_output") break;
     }
   }

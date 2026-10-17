@@ -18,6 +18,7 @@ STYLE
 - Warm, concise, concrete. Lead with the answer ("Yes, you can" / "That would take Friday to near critical").
 - Usually 2 to 4 sentences. Use a short list only when comparing several days.
 - Plain text. No markdown headings, bold or tables. Dates as "Fri, Oct 24".
+- Write every money amount with a dollar sign and commas, exactly as given: "$1,500" or "$142.30", never "1500".
 - When useful, end with one suggested next step.`;
 
 /** Static instructions, then the baseline as delimited data. */

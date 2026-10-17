@@ -80,6 +80,20 @@ Both scripts call the running app over HTTP. Start it first (`npm run dev`, or `
   interactions. The one-shot surfaces send `store: false`.
 - The cache and rate limiter are in memory, so on Vercel each serverless instance has its own.
 
+## Troubleshooting
+
+When an answer says "From template" (or the ask box says it couldn't reach the assistant), the
+server log has a line starting with `[ai <id>]` that includes Google's own reason.
+
+- **Billing problem / HTTP 402 "Your prepayment credits are depleted":** the key's project uses
+  prepaid billing and has no credit left. Every model fails, so the fallback model can't help. Add
+  credit at https://ai.studio/projects, or use a key from a project on the free tier.
+- **Rate limited / HTTP 429:** free-tier quota for that model is used up. The app retries once on
+  `GEMINI_MODEL_FALLBACK`; quota resets at midnight Pacific.
+- **HTTP 403:** the project can't use that model. The app retries on the fallback model; set
+  `GEMINI_MODEL_MAIN` to a model the project can use.
+- **"Gemini rejected the API key":** the key is wrong or revoked. Check `GEMINI_API_KEY` and restart.
+
 ## Adding a surface
 
 Add a prompt in `src/lib/ai/prompts/`, a facts builder in `src/lib/ai/facts/`, a schema and

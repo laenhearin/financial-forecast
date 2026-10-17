@@ -71,14 +71,14 @@ export async function generateStructured<T>(spec: StructuredSpec<T>, runtime: Ai
     } catch (error) {
       const failure = normalizeLlmError(error, signal);
       reason = failure.kind;
-      logFailure(id, spec.surface, model, failure.kind, failure.status);
+      logFailure(id, spec.surface, model, failure);
       if (RETRYABLE.has(failure.kind)) continue;
       break;
     }
     const value = spec.validate(data);
     if (value === null) {
       reason = "bad_output";
-      logFailure(id, spec.surface, model, "bad_output");
+      logFailure(id, spec.surface, model, { kind: "bad_output" });
       continue;
     }
     if (spec.auditText) {
@@ -94,7 +94,10 @@ export async function generateStructured<T>(spec: StructuredSpec<T>, runtime: Ai
   return template(reason);
 }
 
-export function logFailure(id: string, surface: string, model: string, kind: string, status?: number): void {
-  if (kind === "auth") console.error(`[ai ${id}] Gemini rejected the API key for ${surface} (${model}). Check GEMINI_API_KEY.`);
-  else console.warn(`[ai ${id}] ${surface} on ${model} failed: ${kind}${status ? ` (${status})` : ""}`);
+/** Server log line for a failed call. `detail` is Google's short reason; never the key or prompt. */
+export function logFailure(id: string, surface: string, model: string, failure: { kind: string; status?: number; detail?: string }): void {
+  const reason = failure.detail ? ` Google says: "${failure.detail}"` : "";
+  if (failure.kind === "auth") console.error(`[ai ${id}] Gemini rejected the API key for ${surface} (${model}). Check GEMINI_API_KEY.${reason}`);
+  else if (failure.kind === "billing") console.error(`[ai ${id}] Gemini billing problem for ${surface} (${model}); every model on this key will fail until it is fixed in AI Studio.${reason}`);
+  else console.warn(`[ai ${id}] ${surface} on ${model} failed: ${failure.kind}${failure.status ? ` (${failure.status})` : ""}.${reason}`);
 }

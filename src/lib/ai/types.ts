@@ -15,7 +15,7 @@ export type AiSource = "model" | "cache" | "template";
 /** Why a surface answered from a template. Never includes upstream error text. */
 export type AiFallbackReason =
   | "disabled" | "forced" | "no-key"
-  | "rate_limited" | "unavailable" | "timeout" | "bad_output" | "auth" | "other"
+  | "rate_limited" | "billing" | "unavailable" | "timeout" | "bad_output" | "auth" | "other"
   | "audit";
 
 export interface AiMeta {

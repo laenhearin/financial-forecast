@@ -9,10 +9,14 @@ import { GoogleGenAI, type Interactions } from "@google/genai";
  */
 
 export type ThinkingLevel = "minimal" | "low" | "medium" | "high";
-export type LlmErrorKind = "rate_limited" | "unavailable" | "timeout" | "bad_output" | "auth" | "other";
+export type LlmErrorKind = "rate_limited" | "billing" | "unavailable" | "timeout" | "bad_output" | "auth" | "other";
 
 export class LlmError extends Error {
-  constructor(readonly kind: LlmErrorKind, readonly status?: number) {
+  /**
+   * `detail` is Google's own short reason (for example "Your prepayment credits are depleted"), kept
+   * for server logs only. The message stays generic so nothing upstream can reach the browser.
+   */
+  constructor(readonly kind: LlmErrorKind, readonly status?: number, readonly detail?: string) {
     super(`LLM request failed: ${kind}${status ? ` (${status})` : ""}`);
     this.name = "LlmError";
   }
@@ -214,13 +218,16 @@ function parseArgs(text: string): unknown {
 }
 
 function errorFromCode(code: string | undefined): LlmError {
-  if (code && /RESOURCE_EXHAUSTED|429/i.test(code)) return new LlmError("rate_limited", 429);
-  if (code && /UNAVAILABLE|INTERNAL|50\d/i.test(code)) return new LlmError("unavailable");
-  if (code && /PERMISSION_DENIED|UNAUTHENTICATED/i.test(code)) return new LlmError("auth");
-  return new LlmError("other");
+  if (code && /RESOURCE_EXHAUSTED|429/i.test(code)) return new LlmError("rate_limited", 429, code);
+  if (code && /UNAVAILABLE|INTERNAL|PERMISSION_DENIED|50\d/i.test(code)) return new LlmError("unavailable", undefined, code);
+  if (code && /UNAUTHENTICATED/i.test(code)) return new LlmError("auth", undefined, code);
+  return new LlmError("other", undefined, code);
 }
 
-/** Maps SDK and network errors to a small, safe set. Never keeps upstream text. */
+/**
+ * Maps SDK and network errors to a small, safe set. Google's short reason is kept as `detail` for
+ * server logs; nothing upstream is ever returned to the browser.
+ */
 export function normalizeLlmError(error: unknown, signal?: AbortSignal): LlmError {
   if (error instanceof LlmError) return error;
   if (signal?.aborted) return new LlmError("timeout");
@@ -228,13 +235,24 @@ export function normalizeLlmError(error: unknown, signal?: AbortSignal): LlmErro
   const status = typeof info.status === "number" ? info.status : typeof info.statusCode === "number" ? info.statusCode : undefined;
   const name = typeof info.name === "string" ? info.name : "";
   // The Interactions client puts Google's error (for example API_KEY_INVALID) in `body`, not `message`.
-  // Read only to classify; it is never logged or returned.
   const message = [info.message, info.body].map((part) => (typeof part === "string" ? part : part ? safeJson(part) : "")).join(" ");
-  if (/Timeout/i.test(name) || name === "AbortError" || name === "APIUserAbortError") return new LlmError("timeout", status);
-  if (status === 429 || /RESOURCE_EXHAUSTED/.test(message)) return new LlmError("rate_limited", 429);
-  if (status === 401 || status === 403 || /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED/i.test(message)) return new LlmError("auth", status);
-  if ((status !== undefined && status >= 500) || /Connection/i.test(name)) return new LlmError("unavailable", status);
-  return new LlmError("other", status);
+  const detail = upstreamReason(message);
+  if (/Timeout/i.test(name) || name === "AbortError" || name === "APIUserAbortError") return new LlmError("timeout", status, detail);
+  // 402: the project's prepaid credits are used up. Every model on the key fails, so no retry helps.
+  if (status === 402 || /prepayment credits/i.test(detail ?? "")) return new LlmError("billing", status, detail);
+  if (status === 429 || /RESOURCE_EXHAUSTED/.test(message)) return new LlmError("rate_limited", 429, detail);
+  if (status === 401 || /API_KEY_INVALID|API key not valid|UNAUTHENTICATED/i.test(message)) return new LlmError("auth", status, detail);
+  // 403 is usually one model the project can't use; the fallback model may still work.
+  if (status === 403 || /PERMISSION_DENIED/.test(message)) return new LlmError("unavailable", status, detail);
+  if ((status !== undefined && status >= 500) || /Connection/i.test(name)) return new LlmError("unavailable", status, detail);
+  return new LlmError("other", status, detail);
+}
+
+/** Google's "message" field from an error body, as one short line. */
+function upstreamReason(text: string): string | undefined {
+  const match = /"message"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(text);
+  const reason = (match ? match[1].replace(/\\n/g, " ") : "").replace(/\s+/g, " ").trim();
+  return reason ? reason.slice(0, 200) : undefined;
 }
 
 function safeJson(value: unknown): string {
