@@ -2,6 +2,7 @@
 
 import { Database, TriangleAlert } from "lucide-react";
 import { useState } from "react";
+import { DebtSummary } from "@/components/home/DebtSummary";
 import { useBigPurchase } from "../hooks/useBigPurchase";
 import { canReset } from "../state/goalStore";
 import { AdvicePanel } from "./AdvicePanel";
@@ -47,6 +48,7 @@ export function BigPurchaseApp({ seedDemoGoal }: { seedDemoGoal: boolean }) {
         )}
       </header>
 
+      {scenario && <DebtSummary scenario={scenario} />}
       {scenarioState.status === "error" ? (
         <ErrorCard title="We couldn't load your data" message={scenarioState.message} details={scenarioState.details} />
       ) : scenarioState.status === "loading" || !model.hydrated ? (

@@ -3,6 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Database } from "lucide-react";
 import { isISODate } from "@/lib/dates";
+import { DebtSummary } from "@/components/home/DebtSummary";
 import type { Scenario } from "../../big-purchase/types";
 import { forecastEndDate, scenarioEntries } from "../engine/entries";
 import { monthStartOf } from "../engine/grid";
@@ -88,6 +89,7 @@ export function CalendarApp({ scenario, sourceLabel, isFixture, initialDate }: C
       </header>
 
       <StatsRow model={model} viewName={viewName} criticalBalanceCents={criticalBalanceCents} />
+      <DebtSummary scenario={scenario} />
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)] xl:items-start">
         <div className="flex min-w-0 flex-col gap-5">

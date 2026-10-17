@@ -4,13 +4,13 @@ import { validateCashBackData } from "../features/cash-back/data/source";
 import { getEffectiveRate, rankCards } from "../features/cash-back/engine/rewards";
 import { cardsByIds, findCard, resolveCardId } from "../features/cash-back/cards/catalog";
 
-describe("five-person Nessie seed", () => {
-  it("contains 20 unique, dated transactions across five profiles, all within the 90-day window", () => {
-    expect(plan.profiles).toHaveLength(5);
+describe("eight-person Nessie seed", () => {
+  it("contains 32 unique, dated transactions across eight profiles, all within the 90-day window", () => {
+    expect(plan.profiles).toHaveLength(8);
     expect((Date.parse(plan.asOfDate) - Date.parse(plan.windowStart)) / 86400000).toBe(89);
     const transactions = plan.profiles.flatMap(profile => profile.transactions);
-    expect(transactions).toHaveLength(20);
-    expect(new Set(transactions.map(tx => tx.key)).size).toBe(20);
+    expect(transactions).toHaveLength(32);
+    expect(new Set(transactions.map(tx => tx.key)).size).toBe(32);
     for (const transaction of transactions) {
       expect(transaction.date >= plan.windowStart && transaction.date <= plan.asOfDate).toBe(true);
       expect(Number.isSafeInteger(transaction.amountCents) && transaction.amountCents > 0).toBe(true);
@@ -25,6 +25,7 @@ describe("five-person Nessie seed", () => {
       expect(validateCashBackData({ customerName: profile.label, asOfDate: plan.asOfDate,
         ownedCardIds: profile.ownedCardIds, purchases })).toEqual([]);
       expect(profile.goal.preferredDeadline > plan.asOfDate).toBe(true);
+      expect(Object.values(profile.monthlySpendingByCategory).reduce((sum, cents) => sum + (cents ?? 0), 0)).toBe(profile.estimatedMonthlySpendingCents);
       for (const bill of profile.bills) expect(bill.paymentDate > plan.asOfDate).toBe(true);
     }
   });

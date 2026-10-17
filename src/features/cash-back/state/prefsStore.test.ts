@@ -1,8 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEMO_OWNED_CARD_IDS } from "../data/demoProfile";
-import { defaultPrefs, parsePrefs } from "./prefsStore";
+import { defaultPrefs, parsePrefs, prefsStore } from "./prefsStore";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("cash back prefs", () => {
+  it("uses the selected profile's cards and keeps edits isolated across profiles", () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal("window", { localStorage: { getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value) } });
+    expect(prefsStore.getSnapshot("test-teen", ["capital-one-quicksilver"]).ownedCardIds).toEqual(["capital-one-quicksilver"]);
+    prefsStore.update(current => ({ ...current, ownedCardIds: [] }), "test-teen", ["capital-one-quicksilver"]);
+    expect(prefsStore.getSnapshot("test-college", ["citi-double-cash"]).ownedCardIds).toEqual(["citi-double-cash"]);
+    expect(prefsStore.getSnapshot("test-teen", ["capital-one-quicksilver"]).ownedCardIds).toEqual([]);
+  });
   it("defaults to the demo customer's cards, issuer sort, all cards, and no business cards", () => {
     expect(parsePrefs(null)).toEqual({
       ownedCardIds: [...DEMO_OWNED_CARD_IDS],

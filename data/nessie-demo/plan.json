@@ -75,7 +75,13 @@
           "label": "Chipotle dinner with friends",
           "cardId": "everyday-1"
         }
-      ]
+      ],
+      "monthlySpendingByCategory": {
+        "groceries": 18000,
+        "dining": 6000,
+        "transit": 4000,
+        "other": 4000
+      }
     },
     {
       "slug": "twenties-a",
@@ -147,7 +153,13 @@
           "label": "Cinema tickets",
           "cardId": "steady-2"
         }
-      ]
+      ],
+      "monthlySpendingByCategory": {
+        "groceries": 30000,
+        "dining": 20000,
+        "entertainment": 8000,
+        "transit": 7000
+      }
     },
     {
       "slug": "twenties-b",
@@ -219,7 +231,12 @@
           "label": "Auto service tires",
           "cardId": "everyday-1"
         }
-      ]
+      ],
+      "monthlySpendingByCategory": {
+        "groceries": 26000,
+        "gas": 18000,
+        "other": 16000
+      }
     },
     {
       "slug": "midlife",
@@ -291,7 +308,12 @@
           "label": "Home Depot repair supplies",
           "cardId": "steady-2"
         }
-      ]
+      ],
+      "monthlySpendingByCategory": {
+        "groceries": 65000,
+        "gas": 20000,
+        "other": 25000
+      }
     },
     {
       "slug": "older",
@@ -363,7 +385,268 @@
           "label": "Local restaurant family lunch",
           "cardId": "steady-2"
         }
+      ],
+      "monthlySpendingByCategory": {
+        "groceries": 40000,
+        "dining": 15000,
+        "drugstores": 10000,
+        "other": 10000
+      }
+    },
+    {
+      "slug": "teen-low-cash",
+      "label": "19: small cash cushion",
+      "createNewCustomer": true,
+      "checkingCents": 8500,
+      "savingsCents": 1500,
+      "ownedCardIds": [
+        "everyday-1"
+      ],
+      "income": {
+        "label": "Part-time paycheck",
+        "amountCents": 14000,
+        "frequency": "biweekly",
+        "anchorDate": "2026-10-23"
+      },
+      "bills": [
+        {
+          "label": "Phone",
+          "payee": "Demo mobile provider",
+          "amountCents": 3500,
+          "paymentDate": "2026-10-20",
+          "recurringDay": 20,
+          "category": "utilities"
+        },
+        {
+          "label": "Transit pass",
+          "payee": "Demo transit provider",
+          "amountCents": 2500,
+          "paymentDate": "2026-10-28",
+          "recurringDay": 28,
+          "category": "transport"
+        }
+      ],
+      "estimatedMonthlySpendingCents": 20000,
+      "monthlySpendingByCategory": {
+        "groceries": 11000,
+        "dining": 3000,
+        "other": 6000
+      },
+      "goal": {
+        "name": "Replacement school headphones",
+        "costCents": 12000,
+        "bufferCents": 10000,
+        "preferredDeadline": "2026-12-18"
+      },
+      "transactions": [
+        {
+          "key": "teen-low-cash-1",
+          "kind": "deposit",
+          "date": "2026-07-31",
+          "amountCents": 14000,
+          "label": "Weekend cafe paycheck"
+        },
+        {
+          "key": "teen-low-cash-2",
+          "kind": "withdrawal",
+          "date": "2026-08-18",
+          "amountCents": 2200,
+          "label": "Aldi groceries",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "teen-low-cash-3",
+          "kind": "withdrawal",
+          "date": "2026-09-21",
+          "amountCents": 1800,
+          "label": "School supplies",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "teen-low-cash-4",
+          "kind": "withdrawal",
+          "date": "2026-10-15",
+          "amountCents": 900,
+          "label": "Chipotle lunch",
+          "cardId": "everyday-1"
+        }
       ]
+    },
+    {
+      "slug": "college-shortfall",
+      "label": "21: rent before payday",
+      "createNewCustomer": true,
+      "checkingCents": 22000,
+      "savingsCents": 3000,
+      "ownedCardIds": [
+        "everyday-1"
+      ],
+      "income": {
+        "label": "Part-time paycheck",
+        "amountCents": 55000,
+        "frequency": "biweekly",
+        "anchorDate": "2026-10-30"
+      },
+      "bills": [
+        {
+          "label": "Rent",
+          "payee": "Demo shared apartment",
+          "amountCents": 65000,
+          "paymentDate": "2026-10-22",
+          "recurringDay": 22,
+          "category": "housing"
+        },
+        {
+          "label": "Phone and internet",
+          "payee": "Demo mobile provider",
+          "amountCents": 5500,
+          "paymentDate": "2026-10-25",
+          "recurringDay": 25,
+          "category": "utilities"
+        }
+      ],
+      "estimatedMonthlySpendingCents": 30000,
+      "monthlySpendingByCategory": {
+        "groceries": 20000,
+        "transit": 5000,
+        "dining": 3000,
+        "other": 2000
+      },
+      "goal": {
+        "name": "Refurbished laptop",
+        "costCents": 45000,
+        "bufferCents": 10000,
+        "preferredDeadline": "2027-01-15"
+      },
+      "transactions": [
+        {
+          "key": "college-shortfall-1",
+          "kind": "deposit",
+          "date": "2026-08-07",
+          "amountCents": 55000,
+          "label": "Campus dining paycheck"
+        },
+        {
+          "key": "college-shortfall-2",
+          "kind": "withdrawal",
+          "date": "2026-08-23",
+          "amountCents": 4700,
+          "label": "Publix groceries",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "college-shortfall-3",
+          "kind": "withdrawal",
+          "date": "2026-09-12",
+          "amountCents": 8500,
+          "label": "Used college textbooks",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "college-shortfall-4",
+          "kind": "withdrawal",
+          "date": "2026-10-16",
+          "amountCents": 2000,
+          "label": "Transit fare",
+          "cardId": "everyday-1"
+        }
+      ]
+    },
+    {
+      "slug": "existing-debt",
+      "label": "24: existing loan debt",
+      "createNewCustomer": true,
+      "checkingCents": 6000,
+      "savingsCents": 0,
+      "ownedCardIds": [
+        "everyday-1"
+      ],
+      "income": {
+        "label": "Retail paycheck",
+        "amountCents": 70000,
+        "frequency": "biweekly",
+        "anchorDate": "2026-10-30"
+      },
+      "bills": [
+        {
+          "label": "Rent",
+          "payee": "Demo shared apartment",
+          "amountCents": 60000,
+          "paymentDate": "2026-10-21",
+          "recurringDay": 21,
+          "category": "housing"
+        },
+        {
+          "label": "Phone and internet",
+          "payee": "Demo mobile provider",
+          "amountCents": 4500,
+          "paymentDate": "2026-10-25",
+          "recurringDay": 25,
+          "category": "utilities"
+        },
+        {
+          "label": "Loan payment",
+          "payee": "Demo personal loan",
+          "amountCents": 7500,
+          "paymentDate": "2026-10-22",
+          "recurringDay": 22,
+          "category": "debt"
+        }
+      ],
+      "estimatedMonthlySpendingCents": 35000,
+      "monthlySpendingByCategory": {
+        "groceries": 23000,
+        "transit": 6000,
+        "dining": 3000,
+        "other": 3000
+      },
+      "goal": {
+        "name": "Replacement work shoes",
+        "costCents": 9000,
+        "bufferCents": 10000,
+        "preferredDeadline": "2027-01-15"
+      },
+      "transactions": [
+        {
+          "key": "existing-debt-1",
+          "kind": "deposit",
+          "date": "2026-08-14",
+          "amountCents": 70000,
+          "label": "Retail paycheck"
+        },
+        {
+          "key": "existing-debt-2",
+          "kind": "withdrawal",
+          "date": "2026-09-04",
+          "amountCents": 3800,
+          "label": "Aldi groceries",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "existing-debt-3",
+          "kind": "withdrawal",
+          "date": "2026-09-27",
+          "amountCents": 2600,
+          "label": "CVS essentials",
+          "cardId": "everyday-1"
+        },
+        {
+          "key": "existing-debt-4",
+          "kind": "withdrawal",
+          "date": "2026-10-16",
+          "amountCents": 1800,
+          "label": "Transit fare",
+          "cardId": "everyday-1"
+        }
+      ],
+      "loan": {
+        "label": "Existing personal loan",
+        "amountCents": 150000,
+        "monthlyPaymentCents": 7500,
+        "creditScore": 620,
+        "type": "personal",
+        "paymentBillLabel": "Loan payment"
+      }
     }
   ]
 }
