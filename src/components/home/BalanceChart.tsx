@@ -108,10 +108,12 @@ export function BalanceChart({ asOfDate, availableBalanceCents, projection, mark
                 </g>;
               })}
               {tooltipVisible && selectedPoint && <g pointerEvents="none" transform={`translate(${Math.max(100, Math.min(600, selectedPoint.x))}, ${Math.max(2, selectedPoint.y - (selectedDay.netCents === 0 ? 62 : 80))})`}>
+                <g key={selectedDay.day} className="forecast-tooltip-enter">
                 <rect x="-98" width="196" height={selectedDay.netCents === 0 ? 49 : 67} rx="10" fill="var(--card)" stroke="var(--bd)" />
                 <text y="17" textAnchor="middle" className="fill-secondary" fontSize="10">{formatDate(forecastDate(asOfDate, selectedDay.day).date, "full")}</text>
                 <text y="35" textAnchor="middle" className="fill-primary" fontSize="13" fontWeight="600">{formatUSD(selectedDay.balanceCents)}</text>
                 {selectedDay.netCents !== 0 && <text y="53" textAnchor="middle" className="fill-secondary" fontSize="10">{`${selectedDay.netCents > 0 ? "+" : ""}${formatUSD(selectedDay.netCents)} from previous day`}</text>}
+                </g>
               </g>}
             </svg>
             <div className="grid grid-cols-7 gap-1.5">
