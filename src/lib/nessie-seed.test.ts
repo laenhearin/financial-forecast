@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import plan from "../../data/nessie-demo/plan.json";
 import { validateCashBackData } from "../features/cash-back/data/source";
-import { bestCardForPurchase, CapLedger, scoreCard } from "../features/cash-back/engine/rewards";
-import { cardsByIds, findCard } from "../features/cash-back/cards/library";
+import { getEffectiveRate, rankCards } from "../features/cash-back/engine/rewards";
+import { cardsByIds, findCard, resolveCardId } from "../features/cash-back/cards/catalog";
 
 describe("five-person Nessie seed", () => {
   it("contains 20 unique, dated transactions across five profiles, all within the 90-day window", () => {
@@ -28,16 +28,18 @@ describe("five-person Nessie seed", () => {
       for (const bill of profile.bills) expect(bill.paymentDate > plan.asOfDate).toBe(true);
     }
   });
-  it("gives the student a concrete $1.84 grocery reward improvement under the sample rules", () => {
+  it("gives the student a concrete $1.38 grocery reward improvement under the catalog rules", () => {
+    // The seed keeps its old sample-card ids; each maps to a real catalog card.
     const profile = plan.profiles[0];
     const transaction = profile.transactions[1];
-    const query = { category: "groceries" as const, amountCents: transaction.amountCents, date: transaction.date };
-    const ledger = new CapLedger();
-    const best = bestCardForPurchase(query, cardsByIds(profile.ownedCardIds), ledger)[0];
-    const used = scoreCard(findCard("everyday-1")!, query.category, query.amountCents, query.date, ledger);
-    expect(best.cardId).toBe("market-fresh");
-    expect(best.rewardCents).toBe(276);
-    expect(used.rewardCents).toBe(92);
-    expect(best.rewardCents - used.rewardCents).toBe(184);
+    const owned = cardsByIds(profile.ownedCardIds.map(id => resolveCardId(id)!));
+    const ctx = { today: transaction.date };
+    const best = rankCards(owned, "groceries", ctx)[0];
+    const used = getEffectiveRate(findCard(resolveCardId(transaction.cardId!)!)!, "groceries", ctx);
+    const reward = (rateBps: number) => Math.round((transaction.amountCents * rateBps) / 10_000);
+    expect(best.cardId).toBe("amex-blue-cash-everyday");
+    expect(reward(best.rateBps)).toBe(276);
+    expect(reward(used.rateBps)).toBe(138);
+    expect(reward(best.rateBps) - reward(used.rateBps)).toBe(138);
   });
 });

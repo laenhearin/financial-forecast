@@ -6,11 +6,10 @@ import { ArrowRight, ArrowUpRight, CalendarDays, CreditCard, ShoppingCart, Targe
 import { formatUSD } from "@/lib/money";
 import { ROUTES } from "@/lib/navigation";
 import { homeData } from "@/lib/mock/homeData";
+import { cn } from "@/lib/utils";
 import { goalStore } from "@/features/big-purchase/state/goalStore";
-import { analyzeCashBack } from "@/features/cash-back/engine/analyze";
-import { categorize } from "@/features/cash-back/engine/categorize";
-import { loadDemoCashBackData } from "@/features/cash-back/data/source";
-import { prefsStore } from "@/features/cash-back/state/prefsStore";
+import { homeMessage } from "@/features/cash-back/engine/homeMessage";
+import { useCashBack } from "@/features/cash-back/hooks/useCashBack";
 
 type Feature = {
   title: string;
@@ -69,21 +68,13 @@ const TONES = {
 
 export function FeaturePreviews({ placement }: { placement: "side" | "below" }) {
   const storedGoal = useSyncExternalStore(goalStore.subscribe, goalStore.getSnapshot, goalStore.getServerSnapshot);
-  const cashPrefs = useSyncExternalStore(prefsStore.subscribe, prefsStore.getSnapshot, prefsStore.getServerSnapshot);
-  const cashBackProgress = useMemo(() => {
-    const data = loadDemoCashBackData();
-    const analysis = analyzeCashBack({
-      purchases: categorize(data.purchases),
-      selectedCardIds: cashPrefs?.selectedCardIds ?? data.ownedCardIds,
-      asOfDate: data.asOfDate,
-      windowDays: cashPrefs?.windowDays ?? 90,
-    });
-    return analysis;
-  }, [cashPrefs]);
+  // Same functions as the Cash Back page; null until local storage has been read on the client.
+  const { analysis: cashBackAnalysis } = useCashBack();
+  const cashBack = useMemo(() => (cashBackAnalysis ? homeMessage(cashBackAnalysis) : null), [cashBackAnalysis]);
 
   const projectionLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
   const goal = storedGoal?.goals[0] ?? null;
-  const progressByTitle: Record<string, { label: string; detail: string; percent?: number }> = {
+  const progressByTitle: Record<string, { label: string; detail: string; percent?: number; figure?: string; href?: string; loading?: boolean; gold?: boolean }> = {
     "Weather Calendar": {
       label: `${homeData.projection.at(-1)?.day ?? 30}-day balance outlook`,
       detail: `${homeData.markers.length} upcoming events · low ${formatUSD(projectionLow.balanceCents)}`,
@@ -94,9 +85,12 @@ export function FeaturePreviews({ placement }: { placement: "side" | "below" }) 
       percent: goal ? (Number(Boolean(goal.name.trim())) + Number(goal.costCents > 0)) * 50 : 0,
     },
     "Change of Weather": {
-      label: `${formatUSD(cashBackProgress.rewards.actualCents)} rewards earned`,
-      detail: `${cashBackProgress.purchaseCount} purchases · ${formatUSD(cashBackProgress.rewards.missedCents)} potential rewards missed`,
-      percent: cashBackProgress.rewards.bestCents > 0 ? Math.round((cashBackProgress.rewards.actualCents / cashBackProgress.rewards.bestCents) * 100) : 0,
+      label: cashBack?.title ?? "",
+      detail: cashBack?.body ?? "",
+      figure: cashBack?.figure,
+      href: cashBack?.kind === "suggestion" ? `${ROUTES.cashBack}?suggest=${cashBack.cardId}` : undefined,
+      loading: cashBack === null,
+      gold: true,
     },
     "Storm solver": {
       label: `Next tight spot · ${homeData.nextStormLabel ?? "No date flagged"}`,
@@ -133,7 +127,7 @@ export function FeaturePreviews({ placement }: { placement: "side" | "below" }) 
           return (
             <Link
               key={title}
-              href={href}
+              href={progress.href ?? href}
               className="ui-transition group flex min-h-42 flex-col rounded-panel border border-app bg-card p-4 hover:border-accent-line hover:shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
@@ -148,22 +142,27 @@ export function FeaturePreviews({ placement }: { placement: "side" | "below" }) 
               </div>
               <h3 className="mt-3 text-body font-medium text-primary">{title}</h3>
               <p className="mt-1 min-h-10 text-caption text-secondary">{description}</p>
-              <div className="mt-auto rounded-item bg-app px-3 py-2.5">
-                <p className="truncate text-caption font-medium text-primary">{progress.label}</p>
-                <p className="mt-0.5 truncate text-micro text-secondary">{progress.detail}</p>
-                {progress.percent !== undefined && (
-                  <div
-                    className="mt-2 h-1.5 overflow-hidden rounded-full bg-border"
-                    role="progressbar"
-                    aria-label={`${title} progress`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={progress.percent}
-                  >
-                    <span className={`block h-full rounded-full ${tone === "yellow" ? "bg-sun" : "bg-accent"}`} style={{ width: `${progress.percent}%` }} />
-                  </div>
-                )}
-              </div>
+              {progress.loading ? (
+                <div aria-busy="true" aria-label={`Loading ${title}`} className="mt-auto h-17 animate-pulse rounded-item bg-skeleton motion-reduce:animate-none" />
+              ) : (
+                <div className={cn("mt-auto rounded-item bg-app px-3 py-2.5", progress.gold && "border-l-2 border-gold")}>
+                  <p className="truncate text-caption font-medium text-primary">{progress.label}</p>
+                  <p className={cn("mt-0.5 text-micro text-secondary", !progress.figure && "truncate")}>{progress.detail}</p>
+                  {progress.figure && <p className="mt-1 text-caption font-semibold text-gold-ink">{progress.figure}</p>}
+                  {progress.percent !== undefined && (
+                    <div
+                      className="mt-2 h-1.5 overflow-hidden rounded-full bg-border"
+                      role="progressbar"
+                      aria-label={`${title} progress`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={progress.percent}
+                    >
+                      <span className={`block h-full rounded-full ${tone === "yellow" ? "bg-sun" : "bg-accent"}`} style={{ width: `${progress.percent}%` }} />
+                    </div>
+                  )}
+                </div>
+              )}
               <span className="jump-link mt-3 self-start">
                 {tag ? "Preview feature" : `Open ${title}`}
                 <ArrowRight aria-hidden className="size-4" />
