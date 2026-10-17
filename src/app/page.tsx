@@ -9,18 +9,20 @@ import { riskLevel } from "@/features/calendar/engine/model";
 import type { HomeData } from "@/components/home/types";
 import { loadActiveDemo } from "@/lib/active-demo";
 import type { CashBackData } from "@/features/cash-back/data/source";
-import type { Goal } from "@/features/big-purchase/types";
+import type { Goal, Scenario } from "@/features/big-purchase/types";
 
 export default async function HomePage() {
   let homeData: HomeData;
   let cashBackData: CashBackData;
   let demoGoal: Goal;
+  let scenario: Scenario;
   let monthlyTotals: ReturnType<typeof monthlyActivity>;
   try {
     const demo = await loadActiveDemo();
     homeData = buildHomeForecast(demo.scenario);
     cashBackData = demo.cashBack;
     demoGoal = demo.goal;
+    scenario = demo.scenario;
     monthlyTotals = monthlyActivity(demo.history, demo.asOfDate);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The selected demo profile could not be loaded.";
@@ -50,7 +52,7 @@ export default async function HomePage() {
           </section>
         </div>
         <aside className="min-w-0 lg:col-start-2 lg:row-start-2">
-          <FeaturePreviews homeData={homeData} cashBackData={cashBackData} demoGoal={demoGoal} />
+          <FeaturePreviews homeData={homeData} cashBackData={cashBackData} demoGoal={demoGoal} scenario={scenario} />
         </aside>
         <p className="text-micro text-secondary lg:col-span-2">Synthetic Nessie demo data and forecast assumptions.</p>
       </div>
