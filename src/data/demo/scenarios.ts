@@ -1,5 +1,7 @@
 // EDIT HERE. Amounts are in dollars; they are converted to cents on load.
 // This is fixture data for the demo, not a real customer or live bank data.
+// tightMonth is tuned so the demo-lock test passes (checking $500, paycheck $2,250; the first
+// draft of $2,450 and $1,650 was too comfortable). Run npm test after editing.
 import type { ScenarioInput } from "../scenarioInput";
 
 export const ACTIVE_SCENARIO_ID: ScenarioId = "tightMonth";
@@ -11,11 +13,11 @@ const tightMonth: ScenarioInput = {
   customerName: "Alex Rivera",
   asOfDate: "2026-10-17",
   accounts: [
-    { id: "checking", nickname: "Everyday Checking", type: "checking", balance: 2450, includeInForecast: true },
+    { id: "checking", nickname: "Everyday Checking", type: "checking", balance: 500, includeInForecast: true },
     { id: "savings", nickname: "Savings", type: "savings", balance: 1200, includeInForecast: false },
   ],
   income: [
-    { id: "paycheck", label: "Paycheck", amount: 1650, schedule: { frequency: "biweekly", anchorDate: "2026-10-23" }, isPaycheck: true },
+    { id: "paycheck", label: "Paycheck", amount: 2250, schedule: { frequency: "biweekly", anchorDate: "2026-10-23" }, isPaycheck: true },
   ],
   bills: [
     { id: "rent", label: "Rent", amount: 1200, schedule: { frequency: "monthly", dayOfMonth: 1 }, category: "housing", cancellable: false, shiftable: false },
@@ -43,7 +45,7 @@ const tightMonth: ScenarioInput = {
 const comfortable: ScenarioInput = {
   ...tightMonth,
   label: "Comfortable",
-  income: tightMonth.income.map(income => ({ ...income, amount: 2100 })),
+  income: tightMonth.income.map(income => ({ ...income, amount: 2700 })),
   oneOffs: [],
 };
 
