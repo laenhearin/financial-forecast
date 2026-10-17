@@ -1,0 +1,166 @@
+.sky {
+  --bg: #527faf;
+  --card: #467fbd;
+  --tx: #ffffff;
+  --tx2: #e5f2ff;
+  --bd: rgb(231 241 255 / 35%);
+  --ac: #c5e9ff;
+  --rain: #b8e5ff;
+  --sun: #ffdc75;
+  --sun-ink: #ffe38e;
+  --pos: #a7f3d0;
+  --neg: #ffc1b7;
+  --gold-ink: #ffe4a0;
+  --sky-image: url("/weather/sunny.jpg");
+  --sky-exposure: 1.35;
+  --sky-contrast: 0.72;
+  position: relative;
+  isolation: isolate;
+  color: var(--tx);
+  background-color: #86abd1;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sky::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: var(--sky-image);
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+  filter: brightness(var(--sky-exposure)) contrast(var(--sky-contrast)) saturate(0.72) blur(2px);
+  /* A soft daylight base lifts the shadows without a colored overlay. */
+  opacity: 0.88;
+}
+
+.sky[data-weather="cloudy"],
+.sky[data-weather="rainy"] {
+  --sky-image: url("/weather/cloudy.jpg");
+  --sky-exposure: 2.1;
+  --sky-contrast: 0.58;
+}
+
+.sky[data-weather="sunny"] {
+  --sky-image: url("/weather/sunny-daylight.jpg");
+  --sky-exposure: 1.12;
+  --sky-contrast: 0.94;
+  overflow: clip;
+}
+
+.sky[data-weather="sunny"]::before {
+  /* Frame the photographed sun above the right-hand cards. */
+  transform: scale(2) translate(17%, -20%);
+  filter: brightness(var(--sky-exposure)) contrast(var(--sky-contrast)) saturate(0.9);
+  opacity: 1;
+}
+
+.sky :global(.home-weather-heading) {
+  text-shadow: 0 1px 3px rgb(8 29 56 / 85%), 0 3px 12px rgb(8 29 56 / 65%);
+}
+
+.sky :global(.home-weather-heading) svg {
+  filter: drop-shadow(0 1px 3px rgb(8 29 56 / 75%));
+}
+
+.rain {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sky[data-weather="rainy"] .rain {
+  display: block;
+}
+
+.rain::before,
+.rain::after {
+  content: "";
+  position: absolute;
+  inset: -180px 0;
+  background-image: repeating-linear-gradient(103deg, transparent 0 24px, rgb(218 238 255 / 40%) 25px 26px, transparent 27px 72px);
+  mask-image: repeating-linear-gradient(to bottom, #000 0 18px, transparent 20px 90px);
+  animation: rainfall 800ms linear infinite;
+  opacity: 0.5;
+}
+
+.rain::after {
+  background-size: 140px 180px;
+  animation-duration: 1200ms;
+  animation-delay: -400ms;
+  opacity: 0.25;
+}
+
+@keyframes rainfall {
+  from { transform: translate(0, -90px); }
+  to { transform: translate(-20px, 90px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rain::before, .rain::after { animation: none; }
+}
+
+.sky :global(.home-forecast),
+.sky section:global(.border.bg-card) {
+  border-radius: 24px;
+  border-color: rgb(255 255 255 / 30%);
+  background: linear-gradient(145deg, rgb(69 130 198 / 78%), rgb(60 116 181 / 72%));
+  backdrop-filter: blur(36px) saturate(145%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 10px 30px rgb(20 38 75 / 8%);
+}
+
+.sky :global(.home-forecast) h2,
+.sky section > div > h3 {
+  color: var(--tx2);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sky :global(.jump-link) {
+  color: #f0f8ff;
+  background: rgb(207 231 255 / 19%);
+  border-color: rgb(225 241 255 / 22%);
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.sky :global(.jump-link):hover {
+  background: rgb(207 231 255 / 29%);
+  border-color: rgb(225 241 255 / 40%);
+}
+
+.sky :global(.forecast-tooltip-enter) > rect {
+  fill: #3973b1;
+  stroke: rgb(231 241 255 / 35%);
+}
+
+.sky :global(.home-forecast) button[aria-pressed],
+.sky :global(.weather-tile) {
+  background: rgb(164 209 255 / 13%);
+  border-radius: 16px;
+  border-color: transparent;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.sky :global(.home-forecast) button[aria-pressed="true"],
+.sky :global(.weather-tile):hover,
+.sky :global(.weather-tile):focus-visible {
+  background: rgb(190 224 255 / 28%);
+  border-color: rgb(235 245 255 / 40%);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .sky :global(.home-forecast),
+  .sky section:global(.border.bg-card) {
+    background: #467fbd;
+    backdrop-filter: none;
+  }
+}

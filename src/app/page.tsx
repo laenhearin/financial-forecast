@@ -19,6 +19,7 @@ export default async function HomePage() {
   let scenario: Scenario;
   let defaultCriticalCents: number;
   let monthlyTotals: ReturnType<typeof monthlyActivity>;
+  let todayNetCents: number;
   try {
     const demo = await loadActiveDemo();
     homeData = buildHomeForecast(demo.scenario);
@@ -27,6 +28,8 @@ export default async function HomePage() {
     scenario = demo.scenario;
     defaultCriticalCents = defaultCriticalBalanceCents(demo.scenario);
     monthlyTotals = monthlyActivity(demo.history, demo.asOfDate);
+    const today = monthlyActivity(demo.history.filter(record => record.date === demo.asOfDate), demo.asOfDate);
+    todayNetCents = today.incomeCents - today.spendingCents;
   } catch (error) {
     const message = error instanceof Error ? error.message : "The selected demo profile could not be loaded.";
     return <div className="mx-auto max-w-180 px-5 py-16 text-body text-neg">CloudCash could not load this demo profile: {message}</div>;
@@ -35,12 +38,13 @@ export default async function HomePage() {
   const projectedLow = homeData.projection.reduce((lowest, point) => point.balanceCents < lowest.balanceCents ? point : lowest);
 
   return (
-    <HomeWeatherShell balanceCents={projectedLow.balanceCents} defaultCriticalBalanceCents={defaultCriticalCents}>
+    <HomeWeatherShell todayNetCents={todayNetCents} hasBillToday={homeData.markers.some(marker => marker.day === 0)}>
       <div className="mx-auto grid w-full max-w-400 gap-x-6 gap-y-4 px-4 py-4 md:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(17rem,1fr)]">
         <HomeHeader className="lg:col-start-1" balanceCents={projectedLow.balanceCents} defaultCriticalBalanceCents={defaultCriticalCents} nextStormLabel={homeData.nextStormLabel} userName={homeData.userName} />
         <div className="flex min-w-0 flex-col lg:col-start-1 lg:row-start-2">
           <BalanceChart
             asOfDate={homeData.asOfDate}
+            todayNetCents={todayNetCents}
             className="home-forecast flex-1 rounded-3xl border border-app p-4 md:p-5"
             availableBalanceCents={homeData.availableBalanceCents}
             projection={homeData.projection}

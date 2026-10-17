@@ -25,7 +25,7 @@ export function CashBackPreview() {
           {analysis.owned.length ? (
             <ul aria-label="Current cards" className="flex gap-2 overflow-x-auto pb-1">
               {analysis.owned.map(card => <li key={card.id} className="min-w-36 flex-1">
-                <Link href={ROUTES.cashBack} className="flex h-full items-center gap-2 rounded-item border border-app bg-app p-2 hover:border-accent-line">
+                <Link href={ROUTES.cashBack} className="flex h-full items-center gap-2 rounded-item border border-app bg-app weather-tile p-2 hover:border-accent-line">
                   <CardArt card={card} />
                   <span className="text-micro font-medium text-primary">{brandedName(card)}</span>
                 </Link>
@@ -41,7 +41,7 @@ export function CashBackPreview() {
                 const card = findCard(suggestion.cardId);
                 if (!card) return null;
                 return <li key={card.id} className="min-w-44 flex-1">
-                  <Link href={`${ROUTES.cashBack}?suggest=${encodeURIComponent(card.id)}`} className="flex h-full items-center gap-2 rounded-item border border-app bg-app p-2 hover:border-accent-line">
+                  <Link href={`${ROUTES.cashBack}?suggest=${encodeURIComponent(card.id)}`} className="flex h-full items-center gap-2 rounded-item border border-app bg-app weather-tile p-2 hover:border-accent-line">
                     <CardArt card={card} />
                     <span className="flex flex-col gap-0.5">
                       <span className="text-micro font-medium text-primary">{brandedName(card)}</span>

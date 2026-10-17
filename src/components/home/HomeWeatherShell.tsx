@@ -1,17 +1,11 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { balanceLevel } from "@/features/calendar/engine/balanceThresholds";
-import { useCriticalBalance } from "@/features/calendar/state/useCriticalBalance";
-import type { Weather } from "./types";
+import styles from "./HomeWeatherShell.module.css";
+import { dailyWeather } from "./weeklyForecast";
 
-export function HomeWeatherShell({ balanceCents, defaultCriticalBalanceCents, children }: {
-  balanceCents: number;
-  defaultCriticalBalanceCents: number;
-  children: ReactNode;
-}) {
-  const criticalBalanceCents = useCriticalBalance(defaultCriticalBalanceCents);
-  const level = balanceLevel(balanceCents, criticalBalanceCents);
-  const weather: Weather = level >= 4 ? "downpour" : level >= 2 ? "rainy" : level === 1 ? "cloudy" : "sunny";
-  return <div data-weather={weather} className="home-weather min-h-screen">{children}</div>;
+/** The sky reflects today's cash flow, independently of forecast interactions. */
+export function HomeWeatherShell({ children, todayNetCents, hasBillToday }: { children: ReactNode; todayNetCents: number; hasBillToday: boolean }) {
+  return <div data-weather={dailyWeather(todayNetCents, hasBillToday)} className={`${styles.sky} min-h-screen`}>
+    <div aria-hidden="true" className={styles.rain} />
+    {children}
+  </div>;
 }

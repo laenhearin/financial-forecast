@@ -34,10 +34,10 @@ export function GoalsPreview({ goal, scenario }: { goal: Goal; scenario: Scenari
         </div>
       </Link>
       {[1, 2].map(slot => (
-        <div key={slot} aria-label={`Additional goal slot ${slot}, coming soon`} className="flex min-h-9 flex-1 items-center justify-center gap-2 rounded-item border border-dashed border-app bg-app text-secondary">
+        <Link key={slot} href={ROUTES.bigPurchase} className="ui-transition flex min-h-9 flex-1 items-center justify-center gap-2 rounded-item border border-dashed border-app bg-app weather-tile text-secondary hover:border-accent-line hover:bg-nav-hover">
           <Plus aria-hidden className="size-4 text-accent" />
-          <span className="text-micro">More goals coming soon</span>
-        </div>
+          <span className="text-micro">Add new goal</span>
+        </Link>
       ))}
       <Link href={ROUTES.bigPurchase} className="jump-link self-end">Open Forecast Fund <ArrowRight aria-hidden className="size-4" /></Link>
     </section>
