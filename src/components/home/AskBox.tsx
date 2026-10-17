@@ -2,35 +2,35 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { askQuestion } from "@/lib/ai/ask";
-import { AnswerCard, type AnswerState } from "./AnswerCard";
+import { MAX_QUESTION_LENGTH } from "@/lib/ai/validate";
+import { AnswerCard } from "./AnswerCard";
+import { useAsk } from "./useAsk";
 
-/** The AI question box. It only ever talks to askQuestion(); the answer shows inline below. */
-export function AskBox({ className }: { className?: string }) {
+/** Example questions shown before the first one is asked; they double as the demo script. */
+const PROMPT_CHIPS = ["Can I afford $300 this Friday?", "What does my week look like?", "How long to save for a $1,200 laptop?"];
+
+/** The AI question box. The answer streams in inline below. */
+export function AskBox({ className, defaultCriticalBalanceCents = 0 }: { className?: string; defaultCriticalBalanceCents?: number }) {
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<AnswerState | null>(null);
-  // A newer question (or closing the card) makes older replies stale.
-  const latestRequest = useRef(0);
+  const [asked, setAsked] = useState(false);
+  const { state, ask, close, busy } = useAsk(defaultCriticalBalanceCents);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const asked = question.trim();
-    if (!asked) return;
-    const request = ++latestRequest.current;
-    setAnswer({ status: "loading", question: asked });
+  function submit(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || busy) return;
+    setAsked(true);
     setQuestion("");
-    try {
-      const result = await askQuestion(asked);
-      if (request === latestRequest.current) setAnswer({ status: "answered", question: asked, answer: result });
-    } catch {
-      if (request === latestRequest.current) setAnswer({ status: "error", question: asked });
-    }
+    void ask(trimmed);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    submit(question);
   }
 
   function closeAnswer() {
-    latestRequest.current++;
-    setAnswer(null);
+    close();
     inputRef.current?.focus();
   }
 
@@ -46,6 +46,7 @@ export function AskBox({ className }: { className?: string }) {
           type="text"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
+          maxLength={MAX_QUESTION_LENGTH}
           placeholder="Can I afford a $400 flight next Friday?"
           aria-label="Ask a question about your money"
           autoComplete="off"
@@ -54,12 +55,22 @@ export function AskBox({ className }: { className?: string }) {
         <button
           type="submit"
           aria-label="Ask"
-          className="ui-transition -my-1.5 -mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-item text-accent hover:bg-nav-hover"
+          disabled={busy}
+          className="ui-transition -my-1.5 -mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-item text-accent hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ArrowRight aria-hidden className="size-5" strokeWidth={1.75} />
         </button>
       </form>
-      <div aria-live="polite">{answer && <AnswerCard state={answer} onClose={closeAnswer} />}</div>
+      {!asked && (
+        <ul aria-label="Example questions" className="mt-3 flex flex-wrap justify-center gap-2.5">
+          {PROMPT_CHIPS.map((prompt) => (
+            <li key={prompt}>
+              <button type="button" onClick={() => submit(prompt)} className="jump-link rounded-full">{prompt}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div aria-live="polite">{state && <AnswerCard state={state} onClose={closeAnswer} />}</div>
     </div>
   );
 }

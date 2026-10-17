@@ -1,17 +1,15 @@
 import Link from "next/link";
-import { X } from "lucide-react";
-import type { AskAnswer } from "@/lib/ai/ask";
+import { Sparkles, X } from "lucide-react";
 import { ROUTES } from "@/lib/navigation";
-
-export type AnswerState =
-  | { status: "loading"; question: string }
-  | { status: "answered"; question: string; answer: AskAnswer }
-  | { status: "error"; question: string };
+import type { AskState } from "./useAsk";
 
 const DOT_DELAYS_MS = [0, 200, 400];
+/** Questions with an amount get a shortcut to the Advisor's full what-if. */
+const MENTIONS_AMOUNT = /\$\s?\d|\d+\s?(dollars|bucks)/i;
 
 /** Inline answer under the ask box. Not in the wireframes yet; needs design review. */
-export function AnswerCard({ state, onClose }: { state: AnswerState; onClose: () => void }) {
+export function AnswerCard({ state, onClose }: { state: AskState; onClose: () => void }) {
+  const fromTemplate = state.status !== "loading" && state.meta?.source === "template";
   return (
     <div className="relative mt-4 rounded-panel border border-app bg-card px-6 py-5">
       <button
@@ -25,30 +23,34 @@ export function AnswerCard({ state, onClose }: { state: AnswerState; onClose: ()
 
       <p className="truncate pr-8 text-caption text-secondary">{state.question}</p>
 
-      {state.status === "loading" && (
+      {state.status === "loading" ? (
         <p className="mt-2 flex items-center gap-1.5 text-lead text-primary">
-          Thinking
+          {state.checking ? "Checking your forecast" : "Thinking"}
           <span aria-hidden className="inline-flex gap-1">
             {DOT_DELAYS_MS.map((delay) => (
               <span key={delay} className="size-1 animate-pulse rounded-full bg-current motion-reduce:animate-none" style={{ animationDelay: `${delay}ms` }} />
             ))}
           </span>
         </p>
-      )}
-
-      {state.status === "answered" && (
+      ) : (
         <>
-          <p className="mt-2 text-lead text-primary">{state.answer.text}</p>
-          <Link
-            href={{ pathname: ROUTES.purchaseAdvisor, query: { q: state.question } }}
-            className="jump-link mt-3"
-          >
-            Open in Purchase advisor <span aria-hidden>→</span>
-          </Link>
+          {state.notice && <p className="mt-2 text-caption text-secondary">{state.notice}</p>}
+          <p className="mt-2 whitespace-pre-line text-lead text-primary">{state.text}</p>
+          {state.status === "answered" && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="inline-flex items-center gap-1 text-micro text-secondary">
+                <Sparkles aria-hidden className="size-3.5 text-accent" strokeWidth={1.75} />
+                {fromTemplate ? "From template, using your forecast" : state.meta ? "AI answer from your forecast" : "Assistant unavailable"}
+              </span>
+              {MENTIONS_AMOUNT.test(state.question) && (
+                <Link href={{ pathname: ROUTES.purchaseAdvisor, query: { q: state.question } }} className="jump-link">
+                  Open in Purchase advisor <span aria-hidden>→</span>
+                </Link>
+              )}
+            </div>
+          )}
         </>
       )}
-
-      {state.status === "error" && <p className="mt-2 text-lead text-primary">Something went wrong. Try again.</p>}
     </div>
   );
 }

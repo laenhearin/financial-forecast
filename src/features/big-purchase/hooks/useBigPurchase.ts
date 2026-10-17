@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { generateAdvice } from "../advice/generateAdvice";
-import { getNarrator } from "../ai/narrator";
+import { narrateWithAi, type Narration } from "../ai/narrator";
 import { ADVICE_SHIMMER_MS, INPUT_DEBOUNCE_MS } from "../config";
 import { computeForecast, type ForecastGoal } from "../engine/forecast";
 import { createGoal, goalStore, isGoalValid, resetGoal, setGoalStatus, updateGoal, withGoal, type GoalPatch } from "../state/goalStore";
@@ -103,15 +103,14 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
     return () => clearTimeout(timer);
   }, [adviceOpen, adviceFresh, adviceLoading, scenario, forecast, forecastGoal, deadline]);
 
-  const [narration, setNarration] = useState<{ text: string; for: AdviceResult } | null>(null);
+  const [narration, setNarration] = useState<{ value: Narration; for: AdviceResult } | null>(null);
   const adviceResult = advice.status === "ready" ? advice.result : null;
   useEffect(() => {
     if (!adviceResult || !goal || !forecast) return;
-    let live = true;
-    getNarrator()
-      .narrate({ goal: { ...goal, preferredDeadline: deadline }, forecast, advice: adviceResult })
-      .then(text => { if (live) setNarration({ text, for: adviceResult }); }, () => { if (live) setNarration(null); });
-    return () => { live = false; };
+    const controller = new AbortController();
+    narrateWithAi({ goal: { ...goal, preferredDeadline: deadline }, forecast, advice: adviceResult }, controller.signal)
+      .then(value => { if (!controller.signal.aborted) setNarration({ value, for: adviceResult }); }, () => { if (!controller.signal.aborted) setNarration(null); });
+    return () => controller.abort();
   }, [adviceResult, goal, forecast, deadline]);
 
   const save = useCallback((next: Goal) => {
@@ -166,7 +165,8 @@ export function useBigPurchase({ seedDemoGoal = false }: { seedDemoGoal?: boolea
     deadline,
     needsHelp,
     advice,
-    narration: narration && narration.for === adviceResult ? narration.text : null,
+    narration: narration && narration.for === adviceResult ? narration.value.text : null,
+    narrationSource: narration && narration.for === adviceResult ? narration.value.source : null,
     actions,
   };
 }
