@@ -1,5 +1,6 @@
-import { addDays } from "../../../lib/dates";
+import { addDays, dateParts, maxDate } from "../../../lib/dates";
 import { buildEvents } from "../../big-purchase/engine/events";
+import { occurrences } from "../../big-purchase/engine/schedule";
 import type { Bill, Scenario } from "../../big-purchase/types";
 import { ESSENTIAL_CATEGORIES, FORECAST_DAYS } from "../config";
 import type { BillPriority, CalendarEntry, ISODate, UserPurchase } from "../types";
@@ -88,8 +89,19 @@ export function purchaseEntry(purchase: UserPurchase): CalendarEntry {
     label: purchase.label,
     amountCents: purchase.amountCents,
     accountId: purchase.accountId,
-    recurring: false,
+    recurring: purchase.recurring ?? false,
   };
+}
+
+/** Expands a monthly user purchase into dated forecast entries. */
+export function purchaseEntries(purchase: UserPurchase, fromDate: ISODate, toDate: ISODate): CalendarEntry[] {
+  if (!purchase.recurring) return [purchaseEntry(purchase)];
+  const dayOfMonth = dateParts(purchase.date).day;
+  const dates = occurrences({ frequency: "monthly", dayOfMonth }, maxDate(purchase.date, fromDate), toDate);
+  const skipped = new Set(purchase.skippedDates ?? []);
+  return dates
+    .filter((date) => (!purchase.cancelFromDate || date < purchase.cancelFromDate) && !skipped.has(date))
+    .map((date) => ({ ...purchaseEntry({ ...purchase, id: `${purchase.id}:${date}`, date }), sourceId: purchase.id }));
 }
 
 /** Signed change to the balance. */

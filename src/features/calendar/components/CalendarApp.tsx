@@ -85,7 +85,7 @@ export function CalendarApp({ scenario, sourceLabel, isFixture, initialDate }: C
             date={selected}
             accountNames={accountNames}
             criticalBalanceCents={criticalBalanceCents}
-            onRemovePurchase={purchaseStore.remove}
+            onRemovePurchase={purchaseStore.removeOccurrence}
           />
           <AddPurchasePanel accounts={scenario.accounts} date={purchaseDate} onDateChange={setPurchaseDate} view={view} onViewChange={changeView} onAdd={addPurchase} />
         </div>

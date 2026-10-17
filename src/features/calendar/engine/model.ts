@@ -4,7 +4,7 @@ import type { Scenario } from "../../big-purchase/types";
 import { FORECAST_DAYS } from "../config";
 import { balanceLevel, BALANCE_LABELS, majorBillImpact } from "./balanceThresholds";
 import { ALL_ACCOUNTS, type AccountView, type CalendarEntry, type Cents, type DayBalance, type ISODate, type UserPurchase } from "../types";
-import { forecastEndDate, purchaseEntry, scenarioEntries, signedCents, sortEntries } from "./entries";
+import { forecastEndDate, purchaseEntries, scenarioEntries, signedCents, sortEntries } from "./entries";
 
 export interface CalendarModel {
   asOfDate: ISODate;
@@ -39,7 +39,8 @@ export function buildCalendarModel(
   const accountIds = viewAccountIds(scenario, view);
   const inView = new Set(accountIds);
 
-  const entries = sortEntries([...baseEntries, ...purchases.map(purchaseEntry)].filter((entry) => inView.has(entry.accountId)));
+  const purchaseRows = purchases.flatMap((purchase) => purchaseEntries(purchase, asOfDate, forecastEnd));
+  const entries = sortEntries([...baseEntries, ...purchaseRows].filter((entry) => inView.has(entry.accountId)));
   const entriesByDate = new Map<ISODate, CalendarEntry[]>();
   for (const entry of entries) entriesByDate.set(entry.date, [...(entriesByDate.get(entry.date) ?? []), entry]);
 

@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { formatDate } from "@/lib/dates";
 import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { FORECAST_DAYS } from "../config";
 import { balanceOn, dayAlert, type CalendarModel, type DayAlert } from "../engine/model";
 import { balanceLevel } from "../engine/balanceThresholds";
@@ -30,10 +34,11 @@ interface SelectedDayPanelProps {
   date: ISODate;
   accountNames: Record<string, string>;
   criticalBalanceCents: number;
-  onRemovePurchase: (id: string) => void;
+  onRemovePurchase: (id: string, date: ISODate, deleteFuturePayments: boolean) => void;
 }
 
 export function SelectedDayPanel({ model, date, accountNames, criticalBalanceCents, onRemovePurchase }: SelectedDayPanelProps) {
+  const [pendingDelete, setPendingDelete] = useState<CalendarEntry | null>(null);
   const entries = model.entriesByDate.get(date) ?? [];
   const balance = balanceOn(model, date);
   const alert = dayAlert(model, date, criticalBalanceCents);
@@ -79,8 +84,13 @@ export function SelectedDayPanel({ model, date, accountNames, criticalBalanceCen
                   {formatUSD(entry.amountCents)}
                 </p>
                 {entry.kind === "purchase" && (
-                  <button type="button" onClick={() => onRemovePurchase(entry.id)} aria-label={`Remove ${entry.label}`} className={cn(removeButtonClass, "mt-1")}>
-                    Remove
+                  <button
+                    type="button"
+                    onClick={() => entry.recurring ? setPendingDelete(entry) : onRemovePurchase(entry.sourceId, entry.date, true)}
+                    aria-label={`Delete ${entry.label}`}
+                    className={cn(removeButtonClass, "mt-1")}
+                  >
+                    Delete
                   </button>
                 )}
               </div>
@@ -88,6 +98,33 @@ export function SelectedDayPanel({ model, date, accountNames, criticalBalanceCen
           ))}
         </ul>
       )}
+      <Dialog open={pendingDelete !== null} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+        <DialogContent showCloseButton={false} className="gap-5 border border-app bg-card text-primary sm:max-w-md">
+          <div className="flex flex-col gap-2">
+            <DialogTitle className="text-body font-semibold">Delete future payments?</DialogTitle>
+            <DialogDescription className="text-caption text-secondary">
+              {pendingDelete ? `${pendingDelete.label} is a monthly purchase. Choose whether to delete only this payment or this and all later payments.` : "Choose which payments to delete."}
+            </DialogDescription>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={() => setPendingDelete(null)} className="rounded-item border border-app bg-card px-3 py-2 text-caption text-primary hover:bg-nav-hover">Cancel</button>
+            <button
+              type="button"
+              onClick={() => { if (pendingDelete) onRemovePurchase(pendingDelete.sourceId, pendingDelete.date, false); setPendingDelete(null); }}
+              className="rounded-item border border-app bg-card px-3 py-2 text-caption text-primary hover:bg-nav-hover"
+            >
+              Delete this payment
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (pendingDelete) onRemovePurchase(pendingDelete.sourceId, pendingDelete.date, true); setPendingDelete(null); }}
+              className="rounded-item border border-neg bg-neg-soft px-3 py-2 text-caption font-medium text-neg hover:opacity-80"
+            >
+              Delete this and future payments
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
