@@ -39,6 +39,12 @@ function publish(next: UserPurchase[]) {
   listeners.forEach((listener) => listener());
 }
 
+function getSnapshot(): UserPurchase[] {
+  const key = storageKey();
+  if (!cached || cached.key !== key) cached = { key, value: read(key) };
+  return cached.value;
+}
+
 if (typeof window !== "undefined") {
   window.addEventListener("cloudcash-profile-change", () => {
     cached = null;
@@ -57,16 +63,12 @@ export const purchaseStore = {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  getSnapshot(): UserPurchase[] {
-    const key = storageKey();
-    if (!cached || cached.key !== key) cached = { key, value: read(key) };
-    return cached.value;
-  },
+  getSnapshot,
   getServerSnapshot(): UserPurchase[] { return EMPTY_PURCHASES; },
   add(purchase: Omit<UserPurchase, "id">) {
-    publish([...this.getSnapshot(), { ...purchase, id: crypto.randomUUID() }]);
+    publish([...getSnapshot(), { ...purchase, id: crypto.randomUUID() }]);
   },
   remove(id: string) {
-    publish(this.getSnapshot().filter((purchase) => purchase.id !== id));
+    publish(getSnapshot().filter((purchase) => purchase.id !== id));
   },
 };

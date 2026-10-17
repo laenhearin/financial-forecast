@@ -11,7 +11,7 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 export const metadata: Metadata = {
   title: { default: "CloudCash", template: "%s · CloudCash" },
   description: "Your money, a little clearer.",
-  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
+  icons: { icon: "/icon.png", shortcut: "/icon.png", apple: "/icon.png" },
 };
 
 /** The shared shell: every page renders inside <main>, next to the one Sidebar. */

@@ -1,8 +1,8 @@
-import { addDays } from "../../../lib/dates";
+import { addDays, formatDate } from "../../../lib/dates";
 import { formatUSD } from "../../../lib/money";
 import type { Scenario } from "../../big-purchase/types";
 import { FORECAST_DAYS } from "../config";
-import { balanceLevel, BALANCE_LABELS } from "./balanceThresholds";
+import { balanceLevel, BALANCE_LABELS, majorBillImpact } from "./balanceThresholds";
 import { ALL_ACCOUNTS, type AccountView, type CalendarEntry, type Cents, type DayBalance, type ISODate, type UserPurchase } from "../types";
 import { forecastEndDate, purchaseEntry, scenarioEntries, signedCents, sortEntries } from "./entries";
 
@@ -127,6 +127,11 @@ export function dayAlert(model: CalendarModel, date: ISODate, criticalCents = 0)
   const level = balanceLevel(balance, criticalCents);
   if (level === 5) return { tone: "danger", text: `⚠️ Danger: your projected balance is ${formatUSD(-balance)} below zero.` };
   if (level === 4) return { tone: "danger", text: `⚠️ Critical: projected balance ${formatUSD(balance)} is at or below your ${formatUSD(criticalCents)} critical threshold.` };
+  const majorBill = majorBillImpact(model.entries, date, criticalCents, (billDate) => balanceOn(model, billDate));
+  if (majorBill) {
+    const warning = majorBill.level >= 4 ? "CRITICAL" : "CAUTION";
+    return { tone: majorBill.level >= 4 ? "danger" : "caution", text: `${warning}: ${majorBill.entry.label} for ${formatUSD(majorBill.entry.amountCents)} is due ${formatDate(majorBill.entry.date, "short")} and will leave a projected balance of ${formatUSD(majorBill.balanceCents)}.` };
+  }
   if (level >= 2) return { tone: "caution", text: `Heads up: projected balance is ${BALANCE_LABELS[level].toLowerCase()} at ${formatUSD(balance)}.` };
   return { tone: "safe", text: `✓ Your projected balance is ${BALANCE_LABELS[level].toLowerCase()} at ${formatUSD(balance)}.` };
 }

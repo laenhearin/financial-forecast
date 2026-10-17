@@ -165,7 +165,7 @@ export default function ProfilePage() {
           </div>
           {criticalBalanceError && <p role="alert" className="mt-2 text-caption text-neg">{criticalBalanceError}</p>}
           <p className="mt-3 text-micro text-secondary">
-            Current threshold: {formatUSD(savedCriticalBalance ?? selectedProfile?.criticalBalanceDefaultCents ?? 0)}. At or below is critical; +$200 is above critical, +$700 is okay, and +$1,200 is great.
+            Current threshold: {formatUSD(savedCriticalBalance ?? selectedProfile?.criticalBalanceDefaultCents ?? 0)}. At or below is CRITICAL; +$200 is CAUTION, +$700 is STABLE, and +$1,200 is THRIVING.
           </p>
         </form>
       </section>
