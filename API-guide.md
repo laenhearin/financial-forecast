@@ -245,15 +245,17 @@ The source material contains gaps. These are implementation tasks, not reasons t
 
 Meaningful forecast/adapter tests include unit conversion, invalid dates, month-end recurrence, a completed payment already in the balance, a duplicate bill occurrence, empty schedules, upstream errors, and a hypothetical purchase leaving the base forecast unchanged.
 
-## 8. Connecting the two pages when they are ready
+## 8. Connecting the imported pages
 
-Their source is not available yet. Use the following plan after import; route names are suggestions and do not claim to describe the unfinished pages.
+The combined branch now contains `/big-purchase` and `/cash-back`, including their components, engines, and tests. Both use labeled demo data. `src/data/nessieDataSource.ts` and `src/features/cash-back/data/source.ts` contain unconnected Nessie adapters; importing the pages has not connected them to Nessie. Use their existing data contracts when planning the server integration below.
 
 ### Current repository responsibilities
 
 | File / owner from TEAM.md | Current behavior | Next change |
 | --- | --- | --- |
 | `src/app/page.tsx` / integrator | Fixed seven-day sample dashboard | Import page layouts, connect navigation, replace hardcoded data at the agreed boundary |
+| `src/app/big-purchase/page.tsx` / feature owner | Imported big-purchase planning page | Connect a normalized `Scenario` through its existing data-source boundary |
+| `src/app/cash-back/page.tsx` / feature owner | Imported cash-back analysis page | Connect normalized `CashBackData` only after confirming purchase-history access |
 | Shared layout, deployment, package files / integrator | One Next.js app | Keep one app and dependency lockfile; configure deployment secrets |
 | `src/lib/nessie.ts` / Nessie teammate | `server-only` configuration check | Implement validated GETs, safe errors, and normalization |
 | `src/app/api/dashboard/route.ts` / Nessie teammate | `{ mode: 'demo', nessie: ... }`; no upstream request | Return the agreed dashboard data and meaningful HTTP status |
@@ -264,7 +266,7 @@ Their source is not available yet. Use the following plan after import; route na
 
 ### Recommended sequence with visible completion checks
 
-1. **Import the page source.** Integrator copies React components and assets into this app, assigns routes such as `/` and `/calendar` if appropriate, and replaces external project aliases/router assumptions. Preserve the existing root layout and styles deliberately. Keep interactive components client-side only where needed. Use `next/link` for navigation. Completion: both pages render and links work using labeled fixture data.
+1. **Verify the imported pages.** The source is now at `/big-purchase` and `/cash-back`. Integrator verifies the routes, styles, and assets, and connects navigation with `next/link`. Preserve the existing root layout and each feature's data-source boundary. Completion: both pages render and links work using labeled fixture data.
 2. **Agree on one shared data contract.** Page owners list their actual data needs. Start with sanitized account ID/name/balance, forecast dates, daily closing balances, events, source labels, warnings, and an observation time. Completion: both pages can render the same small fixture object without independent hardcoded balances.
 3. **Verify one account end to end.** Nessie owner runs the smoke script, selects the demo account, resolves money units, and implements a server loader. Keep `import 'server-only'` in `nessie.ts`. Use an approved host, encoded path IDs, GET, timeout, no redirects, and `cache: 'no-store'` initially. Parse JSON as `unknown`, validate it, and return only needed fields. Completion: a sanitized account can be loaded on the server and errors remain understandable without revealing a key.
 4. **Connect one card through `/api/dashboard`.** The route calls the loader. An interactive page requests the relative URL; a Server Component can call the loader directly. Remove the corresponding hardcoded value. Completion: the card shows `Nessie sandbox` with a fetch time; missing config, network failure, and an invalid response show an explicit error, not a fake success.
@@ -331,7 +333,7 @@ Run the live smoke test separately when deliberately verifying connectivity. For
 
 The PDFs and key were enough to write these docs and verify reads. To finish the application integration we need:
 
-- The two pages' source and assets, their intended routes, and which fields/actions each needs.
+- Agreement with the owners of the imported `/big-purchase` and `/cash-back` pages on which fields/actions to connect first, using their existing data-source contracts.
 - Agreement on the demo account (one Checking account is currently available) and who owns data writes.
 - Confirmation of upstream monetary units and balance/posting semantics; populated examples for any collections we implement.
 - A deliberate future schedule: paydays/bills, dates, and whether each is API-backed, user-confirmed, or a labeled example.

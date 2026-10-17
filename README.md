@@ -35,7 +35,7 @@ Read TEAM.md and AGENTS.md first. One person owns dependencies and integration. 
 
 ## Publish and deploy
 
-No GitHub repository or Vercel project has been created automatically.
+The GitHub repository is [laenhearin/financial-forecast](https://github.com/laenhearin/financial-forecast). The publishing steps below also describe setup for a new clone or fork; check the team's hosting project before creating another deployment.
 
 1. In GitHub Desktop, add this folder as an existing local repository; review files and commit.
 2. Publish to GitHub and invite teammates. Teammates clone, then follow Start locally.
@@ -46,6 +46,8 @@ No GitHub repository or Vercel project has been created automatically.
 ## Current scope
 
 Included: responsive sample dashboard, seven-day pure forecast, shared types, server-only integration placeholder, six UI components, and tests.
+
+The combined branch also includes `/big-purchase` and `/cash-back`, with their feature engines, tests, and labeled demo data. Their Nessie data sources remain placeholders; merging the pages does not establish a live API integration.
 
 Next: verified Nessie reads, user-confirmed schedules, 30-day calendar, purchase simulator, and optional local storage. No separate database is needed for the initial demo. Forecasts currently report end-of-day balances; they do not model same-day posting order or bank fees.
 

@@ -80,7 +80,7 @@ Additional documented resources: customers, merchants, ATMs, branches, purchases
 
 Teammates using the same key access the same sandbox permissions and data. Git branches do not isolate that data. Share the key privately, keep separate ignored `.env.local` files, choose one demo account, and give one person responsibility for any seed/reset writes. Use separate keys for independent experiments when needed; account IDs are not automatically portable between keys.
 
-1. Integrator imports the two pages into this Next.js app and connects navigation.
+1. Integrator verifies the imported `/big-purchase` and `/cash-back` pages and connects navigation.
 2. Nessie owner verifies the account, units, and response shapes; implements server-only reads.
 3. Team agrees on the shared dashboard contract before editing `src/lib/types.ts`.
 4. Connect one balance card, including loading/error/fixture labels.
