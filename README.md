@@ -27,6 +27,8 @@ Confirm the current base URL, authentication method, account endpoint, and respo
 
 ## Team workflow
 
+New to GitHub? Follow [the step-by-step teammate setup and branches guide](GETTING_STARTED.md).
+
 Read TEAM.md and AGENTS.md first. One person owns dependencies and integration. Create a feature branch, make a small change, run checks, push, and request review. Merge frequently. Commit package-lock.json. Never commit .env.local.
 
 ## Publish and deploy
