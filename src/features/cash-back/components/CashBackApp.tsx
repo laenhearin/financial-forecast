@@ -3,6 +3,9 @@
 import { useRef, useState } from "react";
 import { Database } from "lucide-react";
 import { formatDate } from "@/lib/dates";
+import { DebtSummary } from "@/components/home/DebtSummary";
+import type { Scenario } from "../../big-purchase/types";
+import type { CashBackProfile } from "../data/source";
 import { findCard } from "../cards/catalog";
 import { useCashBack } from "../hooks/useCashBack";
 import { CardDrawer } from "./CardDrawer";
@@ -15,8 +18,8 @@ import { SuggestionPanel } from "./SuggestionPanel";
  * Summary strip, the user's card lineup beside one suggestion, and a card table that scrolls inside
  * its own box (about ten rows tall).
  */
-export function CashBackApp({ initialCardId }: { initialCardId: string | null }) {
-  const { profile, prefs, analysis, actions } = useCashBack();
+export function CashBackApp({ initialCardId, profile, profileSlug, scenario }: { initialCardId: string | null; profile: CashBackProfile; profileSlug: string; scenario: Scenario }) {
+  const { prefs, analysis, actions } = useCashBack(profile, profileSlug);
   const [drawerCardId, setDrawerCardId] = useState<string | null>(initialCardId && findCard(initialCardId) ? initialCardId : null);
   const suggestionRef = useRef<HTMLElement>(null);
 
@@ -40,6 +43,7 @@ export function CashBackApp({ initialCardId }: { initialCardId: string | null })
           </p>
         )}
       </header>
+      <DebtSummary scenario={scenario} />
 
       {!prefs || !analysis ? (
         <div aria-busy="true" aria-label="Loading" className="flex flex-col gap-4">

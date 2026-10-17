@@ -1,6 +1,6 @@
 # Nessie API team guide
 
-**2026-10-17 update:** See [the seeded-data guide](NESSIE-DEMO-DATA.md) for the five synthetic profiles now stored in Nessie, 20 historical transactions, 10 recurring bills, terminal commands, and code examples. Empty transaction counts described in earlier verification notes refer to the pre-seed state. The new server-only fixture adapter has not replaced the pages' existing data sources.
+**2026-10-17 update:** Eight synthetic profiles, 32 historical transactions, 17 recurring bills, and one loan are now seeded. The Profile dropdown selects the API-backed data used across the home, calendar, forecast, rewards, and advisor pages. See [the seeded-data guide](NESSIE-DEMO-DATA.md) for commands and the three low-balance/debt scenarios. Earlier empty-data observations and connection plans below describe the pre-integration state.
 
 For the Financial Forecast team. Verified against the supplied PDF exports, the current official documentation, the installed Next.js documentation, and limited live GET requests on **October 17, 2026**. For everyday commands, use [the quick reference](API-quick-reference.md).
 
@@ -249,7 +249,7 @@ Meaningful forecast/adapter tests include unit conversion, invalid dates, month-
 
 ## 8. Connecting the imported pages
 
-The combined branch now contains `/big-purchase` and `/cash-back`, including their components, engines, and tests. Both use labeled demo data. `src/data/nessieDataSource.ts` and `src/features/cash-back/data/source.ts` contain unconnected Nessie adapters; importing the pages has not connected them to Nessie. Use their existing data contracts when planning the server integration below.
+The combined branch now contains `/big-purchase` and `/cash-back`, including their components, engines, and tests. Both use labeled synthetic data through `src/lib/active-demo.ts` and the selected-profile API. The original `src/data/nessieDataSource.ts` stub remains unused. The integration plan below records the initial design; the current implementation is described in NESSIE-DEMO-DATA.md.
 
 ### Current repository responsibilities
 

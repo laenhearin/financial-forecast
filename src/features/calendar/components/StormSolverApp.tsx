@@ -1,5 +1,7 @@
 "use client";
 
+import { DebtSummary } from "@/components/home/DebtSummary";
+
 import { useMemo, useState } from "react";
 import { Database } from "lucide-react";
 import { parseDollarsToCents } from "@/lib/money";
@@ -47,6 +49,7 @@ export function StormSolverApp({ scenario, sourceLabel, isFixture }: { scenario:
           </p>
         )}
       </header>
+      <DebtSummary scenario={scenario} />
       <div className="max-w-3xl">
         <StormSolverPanel storm={storm} onAnalyze={analyze} />
       </div>

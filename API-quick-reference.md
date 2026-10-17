@@ -1,6 +1,6 @@
 # Nessie API quick reference
 
-**2026-10-17 update:** Five synthetic customer profiles, 20 historical transactions, and 10 recurring bills are now seeded. For terminal `curl` commands, IDs, reproducible seed scripts, and the read-only UI adapter, see [the seeded-data guide](NESSIE-DEMO-DATA.md). Earlier empty-data observations below describe the pre-seed state. The app pages are not automatically switched to this new dataset.
+**2026-10-17 update:** Eight synthetic profiles, 32 historical transactions, 17 recurring bills, and one loan are now seeded. The Profile dropdown selects the API-backed data used across the home, calendar, forecast, rewards, and advisor pages. See [the seeded-data guide](NESSIE-DEMO-DATA.md) for commands and the three low-balance/debt scenarios. Earlier empty-data observations and connection plans below describe the pre-integration state.
 
 Checked October 17, 2026. Start here; use [API-guide.md](API-guide.md) for explanations, schemas, team workflow, and page integration.
 
@@ -25,7 +25,7 @@ Checked October 17, 2026. Start here; use [API-guide.md](API-guide.md) for expla
 
 Read-only checks with the supplied key returned HTTP 200: **3 customers, 1 Checking account**, and **0 bills, deposits, withdrawals, or loans** for that account. The single-account read also succeeded. This is a dated observation, not a promise that the data will stay unchanged. No records were created, changed, or deleted.
 
-The web app **still uses fixtures**. Its existing `/api/dashboard` only reports configuration and `connected: false`; the successful standalone test does not connect the UI. Local setup was subsequently corrected to use HTTPS and the verified Checking account. Teammates must configure their own ignored environment files.
+The web app uses **API-backed synthetic fixtures** through `/api/demo-data`. Its older `/api/dashboard` only reports configuration and `connected: false`; use the selected-profile route to check the current integration. Local setup was subsequently corrected to use HTTPS and the verified Checking account. Teammates must configure their own ignored environment files.
 
 ## Run a safe API test
 

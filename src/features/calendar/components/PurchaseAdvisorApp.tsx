@@ -1,5 +1,7 @@
 "use client";
 
+import { DebtSummary } from "@/components/home/DebtSummary";
+
 import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import Link from "next/link";
 import { Database } from "lucide-react";
@@ -75,6 +77,7 @@ export function PurchaseAdvisorApp({ scenario, sourceLabel, isFixture }: { scena
         <p className="mt-1.5 text-caption text-secondary">Try a purchase against your cash forecast before deciding whether to add it to your calendar.</p>
         {isFixture && <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary"><Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />{sourceLabel}: {scenario.customerName}, {scenario.label.toLowerCase()} scenario. Not live bank data.</p>}
       </header>
+      <DebtSummary scenario={scenario} />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
         <section aria-labelledby="hypothetical-title" className={panelClass}>

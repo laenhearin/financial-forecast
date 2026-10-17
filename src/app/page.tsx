@@ -1,4 +1,5 @@
 import { buildHomeForecast } from "@/lib/home-forecast";
+import { DebtSummary } from "@/components/home/DebtSummary";
 import { monthlyActivity } from "@/lib/monthly-activity";
 import { AskBox } from "@/components/home/AskBox";
 import { BalanceChart } from "@/components/home/BalanceChart";
@@ -48,6 +49,7 @@ export default async function HomePage() {
       <div className="mx-auto grid w-full max-w-400 gap-x-6 gap-y-4 px-4 py-4 md:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(17rem,1fr)]">
         <HomeHeader className="lg:col-start-1" scenario={scenario} projection={homeData.projection} balanceCents={projectedLow.balanceCents} defaultCriticalBalanceCents={defaultCriticalCents} majorBillBalanceCents={majorBillBalance} majorBillDate={upcomingMajorBill?.date} majorBillLabel={majorBillLabel} nextStormLabel={homeData.nextStormLabel} userName={homeData.userName} />
         <div className="flex min-w-0 flex-col lg:col-start-1 lg:row-start-2">
+          <DebtSummary scenario={scenario} />
           <BalanceChart
             asOfDate={homeData.asOfDate}
             scenario={scenario}

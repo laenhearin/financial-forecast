@@ -32,7 +32,7 @@ export function loadDemoProfile(): CashBackProfile {
 
 /**
  * Purchase history in cents, as produced by the seeded Nessie adapter (src/lib/nessie-demo.ts).
- * The page doesn't read it yet: the current Nessie API (checked 2026-10-17 against
+ * The current Nessie API (checked 2026-10-17 against
  * https://prod.nessieisreal.com/nessie-openapi-spec.yaml) has no endpoint that lists an account's
  * purchases, and the seed has only a few withdrawals per profile, too sparse for a spending profile.
  */
@@ -43,6 +43,20 @@ export interface CashBackData {
   /** Cards the customer owns. Old sample-card ids from the seed are accepted. */
   ownedCardIds: string[];
   purchases: Purchase[];
+  /** Explicit synthetic monthly budget; never inferred from the sparse history. */
+  spendProfile?: SpendProfile;
+}
+
+export function seededCashBackProfile(data: CashBackData): CashBackProfile {
+  const problems = validateCashBackData(data);
+  if (problems.length || !data.spendProfile || Object.values(data.spendProfile).some(amount => !isCents(amount) || amount < 0)) {
+    throw new Error("The selected profile needs valid cards and a monthly spending budget.");
+  }
+  return {
+    customerName: data.customerName, asOfDate: data.asOfDate,
+    ownedCardIds: data.ownedCardIds.map(id => resolveCardId(id)!), spendProfile: data.spendProfile,
+    sourceLabel: "Synthetic Nessie profile with an estimated monthly budget", isFixture: true,
+  };
 }
 
 /** Returns one message per problem; an empty list means the data is usable. */

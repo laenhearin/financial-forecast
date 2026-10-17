@@ -10,7 +10,7 @@ SwampHacks XII starter: Next.js App Router, TypeScript, Tailwind, shadcn/ui, and
 4. Copy `.env.example` to `.env.local` using your editor. Fill in credentials only when available.
 5. Run `npm run dev`, then open http://localhost:3000.
 
-The home screen works without credentials and clearly displays fixed demo data. `/api/dashboard` reports configuration status. It does NOT contact Nessie yet. No real bank connection or transfer is implemented.
+The home screen and feature pages load the selected synthetic Nessie profile through server-only code. Configure your local Nessie key before opening them. `/api/dashboard` is an older configuration-only route; `/api/demo-data` serves the selected profile. No real bank connection or transfer is implemented.
 
 ## Commands
 
@@ -25,7 +25,7 @@ The home screen works without credentials and clearly displays fixed demo data. 
 
 Start with the [API quick reference](API-quick-reference.md) and [detailed team API guide](API-guide.md). They cover setup, endpoint schemas and gaps, shared keys, live testing, and connecting the two pages. The current production API base is `https://prod-api.nessieisreal.com`; the documentation website is a different host.
 
-Five synthetic profiles have now been seeded into the shared Nessie sandbox with 20 historical transactions and 10 future bill schedules. See [seeded data, terminal commands, and UI examples](NESSIE-DEMO-DATA.md). Read a profile with `node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts college`. The new server-only adapter supplies the existing feature contracts; the pages still use their current demo sources until that adapter is connected.
+Eight synthetic profiles have now been seeded into the shared Nessie sandbox with 32 historical transactions, 17 future bill schedules, and one existing loan. See [seeded data, terminal commands, and UI examples](NESSIE-DEMO-DATA.md). Read a profile with `node --conditions=react-server --env-file=.env.local scripts/read-nessie-demo.mts college`. Choose a user in the Profile dropdown. Home, Calendar, Forecast Fund, Swipe and Shine, Storm Solver, and Purchase Advisor use the selected profile. The added scenarios cover a small cash cushion, a future cash shortfall, and existing debt; debt is displayed separately from available cash.
 
 Run `node --env-file=.env.local scripts/nessie-smoke.mts accounts` from the repo root for a read-only connectivity test, after following the quick reference's environment setup. This script is separate from the app: `/api/dashboard` still does not contact Nessie. Confirm the fields and units needed for each feature before implementing reads in `src/lib/nessie.ts`. That module is server-only. Use `src/app/api/dashboard/route.ts` to expose only the data needed by the UI. Configure `NESSIE_ACCOUNT_ID` to your mock account. Never return API keys or raw upstream error URLs. Keep historical posted activity out of future balance calculations.
 
@@ -53,7 +53,7 @@ The ask box, Purchase Advisor explanation, Big Purchase summary, and Cash Back m
 
 Included: responsive sample dashboard, seven-day pure forecast, shared types, server-only integration placeholder, six UI components, and tests.
 
-The combined branch also includes `/big-purchase` and `/cash-back`, with their feature engines, tests, and labeled demo data. Their Nessie data sources remain placeholders; merging the pages does not establish a live API integration.
+The combined branch also includes `/big-purchase` and `/cash-back`, with their feature engines, tests, and labeled demo data. Their active data source is the selected synthetic Nessie profile, with local forecast assumptions and explicitly estimated monthly rewards budgets.
 
 Next: verified Nessie reads, user-confirmed schedules, 30-day calendar, purchase simulator, and optional local storage. No separate database is needed for the initial demo. Forecasts currently report end-of-day balances; they do not model same-day posting order or bank fees.
 
