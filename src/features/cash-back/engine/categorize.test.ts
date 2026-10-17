@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { Purchase } from "../types";
 import { categorize, categorizeByKeyword, normalizeMerchant, unmatchedMerchants } from "./categorize";
 
-const purchase = (id: string, merchant: string): Purchase => ({ id, date: "2026-10-01", merchant, amountCents: 1000, cardId: "everyday-1" });
+const purchase = (id: string, merchant: string): Purchase => ({ id, date: "2026-10-01", merchant, amountCents: 1000, cardId: "capital-one-savor" });
 
 describe("keyword categorization", () => {
   it("normalizes punctuation and case", () => {
     expect(normalizeMerchant("Trader Joe's #512")).toBe("trader joes 512");
     expect(normalizeMerchant("  CHICK-FIL-A  ")).toBe("chick fil a");
+    expect(normalizeMerchant("AT&T Wireless")).toBe("att wireless");
   });
 
   it("matches common merchants", () => {
@@ -19,19 +20,36 @@ describe("keyword categorization", () => {
     expect(categorizeByKeyword("Satchel's Pizza")).toBe("dining");
     expect(categorizeByKeyword("CVS Pharmacy")).toBe("drugstores");
     expect(categorizeByKeyword("Netflix.com")).toBe("streaming");
+    expect(categorizeByKeyword("Etsy")).toBe("online_shopping");
+  });
+
+  it("uses the newer categories", () => {
+    expect(categorizeByKeyword("AMAZON.COM*2K4")).toBe("amazon");
+    expect(categorizeByKeyword("Whole Foods Market")).toBe("amazon");
+    expect(categorizeByKeyword("Costco Wholesale")).toBe("wholesale");
+    expect(categorizeByKeyword("Costco Gas #112")).toBe("gas");
+    expect(categorizeByKeyword("Sam's Club")).toBe("wholesale");
+    expect(categorizeByKeyword("Duke Energy")).toBe("utilities");
+    expect(categorizeByKeyword("AT&T Wireless")).toBe("utilities");
+    expect(categorizeByKeyword("Lyft Ride")).toBe("transit");
+    expect(categorizeByKeyword("Capital One Travel")).toBe("travel_portal");
+    expect(categorizeByKeyword("Marriott")).toBe("travel");
+    expect(categorizeByKeyword("ChargePoint")).toBe("gas");
   });
 
   it("checks specific phrases before general ones", () => {
     expect(categorizeByKeyword("Uber Eats")).toBe("dining");
-    expect(categorizeByKeyword("Uber Trip")).toBe("travel");
+    expect(categorizeByKeyword("Uber Trip")).toBe("transit");
   });
 
   it("matches whole words only", () => {
     expect(categorizeByKeyword("BPX Outfitters")).toBeNull();
     expect(categorizeByKeyword("Shells Seafood Restaurant")).toBe("dining");
+    expect(categorizeByKeyword("Oak Street Barbers")).toBeNull();
   });
 
-  it("returns null for merchants it doesn't know", () => {
+  it("leaves superstores and unknown merchants alone", () => {
+    expect(categorizeByKeyword("Walmart Supercenter")).toBeNull();
     expect(categorizeByKeyword("Lakeside Bowl")).toBeNull();
     expect(categorizeByKeyword("Home Depot")).toBeNull();
   });
