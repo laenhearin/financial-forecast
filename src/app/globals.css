@@ -117,6 +117,111 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/*
+ * App shell themes. next-themes sets data-theme on <html>; Clear sky is the default.
+ * Components never use these hex values directly; they use the semantic Tailwind names below.
+ * Feature roots such as .bp-root (Big purchase, Cash back) define their own palette.
+ */
+:root,
+[data-theme="clear-sky"] {
+  --bg: #F7FAFD;
+  --sb: #EBF2FA;
+  --card: #FFFFFF;
+  --tx: #12263F;
+  --tx2: #5B6F86;
+  --bd: #D8E3EF;
+  --ac: #2E7BE6;
+  --sun: #F5B63A;
+  --rain: #5B6FD6;
+  color-scheme: light;
+}
+
+[data-theme="midnight"] {
+  --bg: #0F1623;
+  --sb: #141C2D;
+  --card: #1A2438;
+  --tx: #EAF0FA;
+  --tx2: #8FA0BA;
+  --bd: #27334B;
+  --ac: #6AA9FF;
+  --sun: #F5B63A;
+  --rain: #4FC3F7;
+  color-scheme: dark;
+}
+
+:root {
+  /* shadcn base tokens follow the app theme (--card is shared by name). */
+  --background: var(--bg);
+  --foreground: var(--tx);
+  --card-foreground: var(--tx);
+  --border: var(--bd);
+  --sidebar: var(--sb);
+  --sidebar-width: 15rem;
+}
+
+@media (width >= 48rem) and (width < 64rem) {
+  :root {
+    --sidebar-width: 4rem;
+  }
+}
+
+/*
+ * Semantic Tailwind names for the app tokens. shadcn already owns --color-primary, -secondary
+ * and -accent, so these use Tailwind's per-utility namespaces (text-primary is --tx, while
+ * bg-primary stays shadcn's). bg-card and bg-sidebar come from the shadcn colors above.
+ */
+@theme inline {
+  --background-color-app: var(--bg);
+  --background-color-logo: var(--ac);
+  --background-color-nav-hover: color-mix(in srgb, var(--ac) 8%, transparent);
+  --background-color-nav-active: color-mix(in srgb, var(--ac) 14%, transparent);
+  --background-color-accent-soft: color-mix(in srgb, var(--ac) 16%, transparent);
+  --background-color-rain-soft: color-mix(in srgb, var(--rain) 16%, transparent);
+  --background-color-sun-soft: color-mix(in srgb, var(--sun) 22%, transparent);
+  --background-color-skeleton: var(--bd);
+  --background-color-scrim: color-mix(in srgb, var(--bg) 70%, transparent);
+  --text-color-primary: var(--tx);
+  --text-color-secondary: var(--tx2);
+  --text-color-accent: var(--ac);
+  --border-color-app: var(--bd);
+  --border-color-accent-line: color-mix(in srgb, var(--ac) 40%, var(--bd));
+  --outline-color-accent: var(--ac);
+  --stroke-accent: var(--ac);
+  --stroke-app: var(--bd);
+  --fill-chart-area: color-mix(in srgb, var(--ac) 10%, transparent);
+  --fill-secondary: var(--tx2);
+  --color-sun: var(--sun);
+  --color-rain: var(--rain);
+
+  --text-display: 1.75rem;
+  --text-display--line-height: 1.3;
+  --text-figure: 1.375rem;
+  --text-figure--line-height: 1.3;
+  --text-lead: 0.9375rem;
+  --text-lead--line-height: 1.6;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.125rem;
+  --text-micro: 0.75rem;
+  --text-micro--line-height: 1rem;
+
+  --radius-panel: 1rem;
+  --radius-item: 0.625rem;
+  --radius-logo: 0.5rem;
+}
+
+/* Color, background and border changes on interactive elements. */
+@utility ui-transition {
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -126,5 +231,10 @@
   }
   html {
     @apply font-sans;
+  }
+  /* App-wide keyboard focus ring; .bp-root keeps its own. */
+  :focus-visible {
+    outline: 2px solid var(--ac);
+    outline-offset: 2px;
   }
 }
