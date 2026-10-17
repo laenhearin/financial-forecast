@@ -1,103 +1,86 @@
 import { describe, expect, it } from "vitest";
-import { analyzeCashBack, windowStartDate } from "../engine/analyze";
-import { categorize } from "../engine/categorize";
-import { loadDemoCashBackData, validateCashBackData, type CashBackData } from "./source";
+import { CARD_CATALOG } from "../cards/catalog";
+import { analyzeWallet } from "../engine/analyze";
+import { homeMessage } from "../engine/homeMessage";
+import { buildTable } from "../engine/table";
+import { DEMO_OWNED_CARD_IDS } from "./demoProfile";
+import { loadDemoProfile, validateCashBackData } from "./source";
 
-// Locks the demo story. If an edit to demoPurchases.ts or the card library breaks one, retune the data.
-const data = loadDemoCashBackData();
-const purchases = categorize(data.purchases);
-const run = (windowDays: 30 | 90, selectedCardIds = data.ownedCardIds) =>
-  analyzeCashBack({ purchases, selectedCardIds, asOfDate: data.asOfDate, windowDays });
+// Locks the demo story. If an edit to demoProfile.ts or the catalog breaks one of these, retune the data.
+const profile = loadDemoProfile();
+const run = (ownedCardIds: readonly string[] = profile.ownedCardIds, dismissedSuggestions: string[] = []) =>
+  analyzeWallet({ ownedCardIds, spendProfile: profile.spendProfile, today: profile.asOfDate, dismissedSuggestions });
+const analysis = run();
 
 describe("demo lock: cash back", () => {
-  it("loads valid demo data for Alex Rivera", () => {
-    expect(data.customerName).toBe("Alex Rivera");
-    expect(validateCashBackData(data)).toEqual([]);
-    expect(windowStartDate(data.asOfDate, 30)).toBe("2026-09-18");
-    expect(windowStartDate(data.asOfDate, 90)).toBe("2026-07-20");
+  it("starts Alex Rivera with Savor, Quicksilver, Discover it, and Blue Cash Everyday on Oct 17, 2026", () => {
+    expect(profile).toMatchObject({ customerName: "Alex Rivera", asOfDate: "2026-10-17", isFixture: true, sourceLabel: "Demo data" });
+    expect(analysis.owned.map(card => card.id).sort()).toEqual([...DEMO_OWNED_CARD_IDS].sort());
+    expect(analysis.owned.every(card => card.annualFeeCents === 0)).toBe(true);
   });
 
-  it("flags several gas and grocery purchases on the wrong card in the last 30 days", () => {
-    const { flags } = run(30);
-    expect(flags.filter(flag => flag.category === "gas").length).toBeGreaterThanOrEqual(3);
-    expect(flags.filter(flag => flag.category === "groceries").length).toBeGreaterThanOrEqual(3);
-    expect(flags.every(flag => flag.category === "gas" || flag.category === "groceries")).toBe(true);
+  it("earns about $598 a year with the demo cards", () => {
+    expect(analysis.projection.totalCents).toBe(59_820);
   });
 
-  it("shows a clear amount left on the table", () => {
-    const thirty = run(30);
-    expect(thirty.rewards.missedCents).toBeGreaterThanOrEqual(800);
-    expect(thirty.missedAnnualCents).toBeGreaterThanOrEqual(10_000);
-    const ninety = run(90);
-    expect(ninety.rewards.missedCents).toBeGreaterThan(thirty.rewards.missedCents);
-    expect(ninety.purchaseCount).toBe(data.purchases.length);
-  });
-
-  it("reconciles flags with the total in both windows", () => {
-    for (const windowDays of [30, 90] as const) {
-      const { flags, rewards } = run(windowDays);
-      const flagged = flags.reduce((sum, flag) => sum + flag.missedCents, 0);
-      expect(flagged + rewards.capAdjustmentCents).toBe(rewards.missedCents);
-    }
-  });
-
-  it("puts gas on Road Rewards and groceries on Market Fresh, with Market Fresh's cap room shown", () => {
-    const { playbook } = run(30);
-    expect(playbook.find(entry => entry.category === "gas")?.primary.cardId).toBe("road-rewards");
-    const groceries = playbook.find(entry => entry.category === "groceries");
-    expect(groceries?.primary.cardId).toBe("market-fresh");
-    expect(groceries?.cap).toMatchObject({ amountCents: 30_000, period: "monthly", remainingCents: 20_060 });
-  });
-
-  it("suggests a modest-fee card and skips Premium Gold", () => {
-    const { suggestion } = run(30);
-    expect(suggestion.suggestion).not.toBeNull();
-    expect(suggestion.suggestion!.isHighFee).toBe(false);
-    expect(suggestion.suggestion!.netAnnualCents).toBeGreaterThan(0);
-    expect(suggestion.suggestion!.cardId).not.toBe("premium-gold");
-    expect(suggestion.skippedHighFee.map(item => item.cardId)).toContain("premium-gold");
-  });
-
-  it("drops the gas flags when Road Rewards is removed", () => {
-    const { flags } = run(30, ["everyday-1", "market-fresh"]);
-    expect(flags.some(flag => flag.category === "gas")).toBe(false);
-  });
-
-  it("stops suggesting a card once the user adds it", () => {
-    const first = run(30).suggestion.suggestion!;
-    const after = run(30, [...data.ownedCardIds, first.cardId]);
-    expect(after.suggestion.suggestion?.cardId).not.toBe(first.cardId);
-    expect(after.rewards.bestCents).toBeGreaterThan(run(30).rewards.bestCents);
-  });
-
-  it("is deterministic", () => {
-    expect(run(90)).toEqual(run(90));
-  });
-});
-
-describe("validateCashBackData", () => {
-  const base: CashBackData = { customerName: "Test", asOfDate: "2026-10-17", ownedCardIds: ["everyday-1"], purchases: [] };
-
-  it("reports each problem", () => {
-    const problems = validateCashBackData({
-      ...base,
-      ownedCardIds: ["everyday-1", "nope"],
-      purchases: [
-        { id: "a", date: "2026-10-18", merchant: "Shell", amountCents: 100, cardId: "everyday-1" },
-        { id: "a", date: "2026-02-30", merchant: " ", amountCents: 0, cardId: "road-rewards" },
-        { id: "b", date: "2026-10-01", merchant: "Shell", amountCents: 1.5, cardId: "mystery" },
-      ],
-    });
-    expect(problems).toEqual([
-      `Owned card "nope" is not in the card library.`,
-      "Purchase a (Shell) is dated after the as-of date.",
-      "Purchase a ( ) has a duplicate id.",
-      `Purchase a ( ) has an invalid date "2026-02-30".`,
-      "Purchase a ( ) needs a positive amount.",
-      "Purchase a ( ) has no merchant name.",
-      `Purchase a ( ) uses card "road-rewards", which the customer does not own.`,
-      "Purchase b (Shell) needs a positive amount.",
-      `Purchase b (Shell) uses card "mystery", which is not in the card library.`,
+  it("gives each card the categories in the story", () => {
+    const winnerOf = (category: string) => analysis.winners.find(item => item.category === category)?.winner?.cardId;
+    expect(["dining", "entertainment", "utilities"].map(winnerOf)).toEqual(Array(3).fill("discover-it-cash-back"));
+    expect(["groceries", "streaming"].map(winnerOf)).toEqual(Array(2).fill("capital-one-savor"));
+    expect(["other", "transit", "drugstores"].map(winnerOf)).toEqual(Array(3).fill("capital-one-quicksilver"));
+    expect(["gas", "online_shopping", "amazon"].map(winnerOf)).toEqual(Array(3).fill("amex-blue-cash-everyday"));
+    expect(analysis.gold.map(gold => gold.cardId)).toEqual([
+      "discover-it-cash-back", "capital-one-savor", "capital-one-quicksilver", "amex-blue-cash-everyday",
     ]);
+  });
+
+  it("suggests Citi Custom Cash, then Blue Cash Preferred and U.S. Bank Cash+", () => {
+    expect(analysis.suggestions.map(item => [item.cardId, item.netGainCents, item.takesOver])).toEqual([
+      ["citi-custom-cash", 10_800, ["groceries"]],
+      ["amex-blue-cash-preferred", 9_040, ["groceries", "streaming", "transit"]],
+      ["us-bank-cash-plus", 8_780, ["utilities", "streaming"]],
+    ]);
+    expect(run(undefined, ["citi-custom-cash"]).suggestions[0].cardId).toBe("amex-blue-cash-preferred");
+  });
+
+  it("shows the Discover rotating bonus on the homepage card", () => {
+    expect(homeMessage(analysis)).toEqual({
+      kind: "rotating",
+      cardId: "discover-it-cash-back",
+      category: "dining",
+      title: "Use Discover it for dining",
+      body: "5% back through Dec 31. Bonus room left this quarter shown below.",
+      figure: "$1,165 left at 5%",
+    });
+  });
+
+  it("falls back to the suggestion, then the yearly total, on the homepage card", () => {
+    const withoutDiscover = run(DEMO_OWNED_CARD_IDS.filter(id => id !== "discover-it-cash-back"));
+    expect(homeMessage(withoutDiscover)).toEqual({
+      kind: "suggestion", cardId: "citi-custom-cash", title: "Add Citi Custom Cash?", body: "Takes over Groceries.", figure: "+$108/yr",
+    });
+    const everything = run(DEMO_OWNED_CARD_IDS, CARD_CATALOG.map(card => card.id));
+    expect(homeMessage({ ...everything, winners: everything.winners.map(item => ({ ...item, winner: item.winner && { ...item.winner, source: "category" } })) }))
+      .toEqual({ kind: "working", title: "Your cards are working", body: "Best card set for 11 categories.", figure: "$598/yr" });
+  });
+
+  it("pins the gold cards above the Capital One group", () => {
+    const groups = buildTable(CARD_CATALOG, new Set(DEMO_OWNED_CARD_IDS), analysis.gold, { search: "", sort: "issuer", ownership: "all", showBusiness: false });
+    expect(groups.map(group => group.label)).toEqual([
+      "Your best cards", "Capital One", "Chase", "American Express", "Citi", "Wells Fargo", "Bank of America", "U.S. Bank", "Apple",
+    ]);
+    // Spark Cash Plus is a business card, hidden until asked for.
+    expect(groups[1].cards.map(card => card.id)).not.toContain("capital-one-spark-cash-plus");
+    expect(groups[0].cards.map(card => card.id)).toEqual(analysis.gold.map(gold => gold.cardId));
+    // Discover's only card is owned and pinned, so its group is empty and hidden.
+    expect(groups.find(group => group.id === "Discover")).toBeUndefined();
+  });
+
+  it("still accepts the seeded Nessie purchase contract with old sample-card ids", () => {
+    const seeded = { customerName: "Seed", asOfDate: "2026-10-17", ownedCardIds: ["steady-2", "dine-play"], purchases: [
+      { id: "p1", date: "2026-10-01", merchant: "Kroger", amountCents: 14_500, cardId: "steady-2" },
+    ] };
+    expect(validateCashBackData(seeded)).toEqual([]);
+    expect(validateCashBackData({ ...seeded, ownedCardIds: ["nope"], purchases: [] })).toEqual(['Owned card "nope" is not in the card catalog.']);
   });
 });

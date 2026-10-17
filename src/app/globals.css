@@ -137,6 +137,10 @@
   /* Money coming in, and balances below zero. */
   --pos: #1F7A50;
   --neg: #C0392B;
+  /* Cash Back "best card" highlight: outline, row tint, and badge text (6:1 on the tint). */
+  --gold: #C8962A;
+  --gold-tint: #FFF7E6;
+  --gold-ink: #7A5A12;
   --chart-1: #5DA9E9;
   --chart-2: #BFE6FF;
   --chart-3: #FFD966;
@@ -158,6 +162,9 @@
   --rain: #2DD4BF;
   --pos: #8CF2ED;
   --neg: #F19A8C;
+  --gold: #F2C14E;
+  --gold-tint: rgba(242, 193, 78, 0.08);
+  --gold-ink: #F5CD6B;
   --chart-1: #3B82F6;
   --chart-2: #2DD4BF;
   --chart-3: #94A3B8;
@@ -234,6 +241,9 @@
   --color-rain: var(--rain);
   --color-pos: var(--pos);
   --color-neg: var(--neg);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --background-color-gold-tint: var(--gold-tint);
 
   --text-display: 1.75rem;
   --text-display--line-height: 1.3;
@@ -266,6 +276,26 @@
 }
 
 @layer components {
+  .forecast-tooltip-enter {
+    animation: forecast-tooltip-enter 140ms ease-out both;
+  }
+
+  @keyframes forecast-tooltip-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast-tooltip-enter { animation: none; }
+  }
+
+  .home-forecast {
+    background:
+      radial-gradient(ellipse at 75% 0%, color-mix(in srgb, var(--ac) 28%, transparent), transparent 65%),
+      linear-gradient(160deg, var(--card), color-mix(in srgb, var(--rain) 32%, var(--card)));
+    box-shadow: 0 12px 40px color-mix(in srgb, var(--ac) 8%, transparent);
+  }
+
   .home-weather {
     --weather-glow: #FFD966;
     --weather-wash: #BFE6FF;

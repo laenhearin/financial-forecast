@@ -14,6 +14,7 @@ const CONDITIONS: Record<Weather, { icon: LucideIcon; label: string }> = {
 };
 
 interface HomeHeaderProps {
+  userName: string;
   balanceCents: number;
   defaultCriticalBalanceCents: number;
   /** Day of the next tight spot, such as "Thursday"; null hides the second half of the status line. */
@@ -21,14 +22,14 @@ interface HomeHeaderProps {
   className?: string;
 }
 
-export function HomeHeader({ balanceCents, defaultCriticalBalanceCents, nextStormLabel, className }: HomeHeaderProps) {
+export function HomeHeader({ balanceCents, defaultCriticalBalanceCents, nextStormLabel, userName, className }: HomeHeaderProps) {
   const criticalBalanceCents = useCriticalBalance(defaultCriticalBalanceCents);
   const level = balanceLevel(balanceCents, criticalBalanceCents);
   const weather: Weather = level >= 4 ? "downpour" : level >= 2 ? "rainy" : level === 1 ? "cloudy" : "sunny";
   const { icon: TodayIcon, label } = CONDITIONS[weather];
   return (
     <div className={cn("text-center", className)}>
-      <h1 className="mx-auto max-w-120 text-display font-medium text-balance text-primary">What do you want to know about your money?</h1>
+      <h1 className="text-3xl font-medium tracking-tight text-balance text-primary md:text-3xl 2xl:text-4xl">Welcome back, {userName}</h1>
       <p className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-body text-secondary">
         <span className="inline-flex items-center gap-1.5">
           <TodayIcon aria-hidden className={cn("size-4", weather === "sunny" ? "text-sun" : weather === "downpour" ? "text-neg" : "text-rain")} strokeWidth={1.75} />

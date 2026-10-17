@@ -33,6 +33,7 @@ const PROJECTION_KEYFRAMES: ProjectionPoint[] = [
 ];
 
 export const homeData: HomeData = {
+  asOfDate: "2026-10-17",
   isSampleData: true,
   userName: USER_NAME,
   nextStormLabel: "Thursday",

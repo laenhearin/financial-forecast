@@ -1,37 +1,142 @@
+// Types for the Cash Back feature: spending categories, the real-card catalog, and purchases.
+// No UI imports here, so the engine and its tests can use these directly.
+
 export type ISODate = string;   // "YYYY-MM-DD", always treated as UTC
 export type Cents = number;     // integer cents
-/** Basis points: 100 = 1%. Points cards use the same scale because 1 point = 1 cent. */
+/** Basis points: 100 = 1%. Effective (cash-equivalent) rates use this scale. */
 export type Bps = number;
 
-export const CATEGORIES = [
-  "gas", "groceries", "dining", "streaming", "travel", "drugstores", "online", "entertainment", "other",
+// ---------- Spending categories ----------
+
+/** The 14 standardized categories, used everywhere. Anything unmapped is "other". */
+export const CATEGORY_IDS = [
+  "dining", "groceries", "gas", "travel", "travel_portal", "transit",
+  "streaming", "entertainment", "online_shopping", "amazon",
+  "drugstores", "wholesale", "utilities", "other",
 ] as const;
-export type Category = (typeof CATEGORIES)[number];
+export type CategoryId = (typeof CATEGORY_IDS)[number];
 
-export function isCategory(value: unknown): value is Category {
-  return typeof value === "string" && (CATEGORIES as readonly string[]).includes(value);
+export function isCategoryId(value: unknown): value is CategoryId {
+  return typeof value === "string" && (CATEGORY_IDS as readonly string[]).includes(value);
 }
 
-export type CapPeriod = "monthly" | "quarterly";
+// ---------- Card catalog ----------
 
-/** A bonus rate on one or more categories, optionally with a spending cap shared by those categories. */
-export interface BonusTier {
-  categories: Category[];
-  rateBps: Bps;
-  /** Above the cap the card earns its base rate until the period resets. */
-  cap?: { amountCents: Cents; period: CapPeriod };
+/** Issuer display and sort order: Capital One first, then Discover (a Capital One company). */
+export const ISSUERS = [
+  "Capital One", "Discover", "Chase", "American Express", "Citi", "Wells Fargo", "Bank of America", "U.S. Bank", "Apple",
+] as const;
+export type Issuer = (typeof ISSUERS)[number];
+
+/** Display only; never used in calculations. */
+export type Network = "Visa" | "Mastercard" | "Amex" | "Discover";
+
+export type RewardCurrency = "cash" | "points" | "miles";
+
+export type CapPeriod = "month" | "quarter" | "year";
+
+/**
+ * A spending limit on a bonus rate. Calendar periods: quarters start in Jan, Apr, Jul, and Oct.
+ * Caps on one card share one limit when they cover the same set of categories (the rule's own
+ * categories plus sharedWith); the catalog test checks that shared caps match.
+ */
+export interface SpendCap {
+  /** Spend at the bonus rate per period. */
+  amountCents: Cents;
+  period: CapPeriod;
+  /** Other categories that share this same cap. */
+  sharedWith?: CategoryId[];
+  /** Rate once the cap is used up. Omitted: the card's next-best rate for that category. */
+  rateAfterCap?: number;
 }
 
-export interface CardDefinition {
+export interface CategoryRule {
+  category: CategoryId;
+  /** Earn rate in the card's own currency: 3 means 3x points or 3% cash. */
+  rate: number;
+  cap?: SpendCap;
+  /** Short human note, e.g. "U.S. supermarkets". */
+  note?: string;
+}
+
+export interface RotatingCategories {
+  quarter: string;                              // "Q4 2026"
+  startDate: ISODate;
+  endDate: ISODate;
+  /** Total rate per category while active. */
+  rates: Partial<Record<CategoryId, number>>;
+  /** What the issuer calls them. */
+  label: string;
+  /** One cap shared across all rotating categories. */
+  cap: SpendCap;
+  requiresActivation: boolean;
+}
+
+/** User-chosen (BofA, U.S. Bank) or automatic top-spend (Citi Custom Cash) bonus categories. */
+export interface SelectableCategory {
+  mode: "user_choice" | "auto_top_spend";
+  /** How many categories get the bonus. */
+  picks: number;
+  options: CategoryId[];
+  rate: number;
+  /** Used until the user picks; length === picks. */
+  defaultChoices: CategoryId[];
+  /** Shared across every option (and sharedWith). */
+  cap?: SpendCap;
+}
+
+/** Merchant-specific earning that doesn't fit a category. Display only, never used in category math. */
+export interface MerchantRule {
+  merchant: string;
+  rate: number;
+}
+
+/** Original gradients loosely evoking each card. No real card art or logos. */
+export interface CardVisual {
+  gradientFrom: string;  // #rrggbb
+  gradientTo: string;    // #rrggbb
+  textColor: string;     // #rrggbb, readable on the gradient
+}
+
+export interface CreditCard {
+  /** kebab-case, e.g. "capital-one-savor" */
   id: string;
+  /** Short name shown in the table, e.g. "Savor". */
   name: string;
-  /** Points are treated as cash back: 1 point = 1 cent. */
-  rewardType: "cashback" | "points";
-  baseRateBps: Bps;
-  tiers: BonusTier[];
+  /** "Capital One Savor Cash Rewards" */
+  fullName: string;
+  issuer: Issuer;
+  network: Network;
+  isBusiness: boolean;
+  isStudent: boolean;
   annualFeeCents: Cents;
-  blurb: string;
+  currency: RewardCurrency;
+  /** Cents per point or mile, for comparison (cash = 1). A fixed, conservative config value. */
+  pointValueCents: number;
+  /** Earn rate on "other" and any category without a rule. */
+  baseRate: number;
+  categoryRules: CategoryRule[];
+  rotating?: RotatingCategories;
+  selectable?: SelectableCategory;
+  merchantRules?: MerchantRule[];
+  /** e.g. "Amazon Prime", "Costco membership" */
+  requiresMembership?: string;
+  /** 1 to 3 short, neutral perks for the detail drawer. No sign-up bonus amounts. */
+  highlights: string[];
+  /** 1 = most popular; unique across the catalog. */
+  popularityRank: number;
+  visual: CardVisual;
+  /** ISO date the reward data was checked. */
+  lastVerified: ISODate;
 }
+
+// ---------- Spending ----------
+
+/** Monthly spend per category. Missing categories count as zero. */
+export type SpendProfile = Partial<Record<CategoryId, Cents>>;
+
+/** Chosen bonus categories for user_choice cards, keyed by card id. */
+export type Selections = Readonly<Record<string, readonly CategoryId[]>>;
 
 export interface Purchase {
   id: string;
@@ -46,101 +151,6 @@ export interface Purchase {
 export type CategorySource = "keyword" | "ai" | "fallback";
 
 export interface CategorizedPurchase extends Purchase {
-  category: Category;
+  category: CategoryId;
   categorySource: CategorySource;
-}
-
-export type WindowDays = 30 | 90;
-
-// ---------- Engine outputs ----------
-
-export interface CardOption {
-  cardId: string;
-  cardName: string;
-  rewardCents: Cents;
-  /** The card's advertised rate for this category, before any cap. */
-  rateBps: Bps;
-  /** True when some or all of this purchase falls above the cap and earns the base rate. */
-  capped: boolean;
-  /** Cap room left before this purchase; null when the category has no cap on this card. */
-  capRemainingCents: Cents | null;
-  capPeriod: CapPeriod | null;
-}
-
-export interface ScoredPurchase {
-  purchase: CategorizedPurchase;
-  actual: CardOption;
-  best: CardOption;
-  /** best minus actual. Can be negative only in rare cap interactions; flags ignore those. */
-  missedCents: Cents;
-}
-
-export interface RewardsResult {
-  scored: ScoredPurchase[];
-  actualCents: Cents;
-  bestCents: Cents;
-  /** bestCents minus actualCents. Equals the sum of positive misses plus capAdjustmentCents. */
-  missedCents: Cents;
-  /**
-   * Zero or negative. Following the playbook earlier can use up a card's cap, so a later purchase that
-   * really did get the bonus would have earned less. This is the sum of those differences.
-   */
-  capAdjustmentCents: Cents;
-}
-
-export interface WrongCardFlag {
-  purchaseId: string;
-  date: ISODate;
-  merchant: string;
-  category: Category;
-  amountCents: Cents;
-  usedCardId: string;
-  usedCardName: string;
-  usedRateBps: Bps;
-  betterCardId: string;
-  betterCardName: string;
-  betterRateBps: Bps;
-  missedCents: Cents;
-}
-
-export interface PlaybookEntry {
-  category: Category;
-  spendCents: Cents;
-  primary: { cardId: string; cardName: string; rateBps: Bps };
-  /** Present when the primary card's rate for this category is capped. */
-  cap: { amountCents: Cents; period: CapPeriod; remainingCents: Cents; afterCapRateBps: Bps } | null;
-  /** The card that takes over once the cap is reached; null when no cap or the same card stays best. */
-  fallback: { cardId: string; cardName: string; rateBps: Bps } | null;
-}
-
-export interface NewCardSuggestion {
-  cardId: string;
-  cardName: string;
-  annualFeeCents: Cents;
-  isHighFee: boolean;
-  gainWindowCents: Cents;
-  gainAnnualCents: Cents;
-  /** gainAnnualCents minus the annual fee. */
-  netAnnualCents: Cents;
-  /** Categories where the new card adds the most, largest first. */
-  topCategories: { category: Category; gainWindowCents: Cents }[];
-}
-
-export interface SuggestionResult {
-  suggestion: NewCardSuggestion | null;
-  /** High-fee cards that would add rewards but were not suggested (fee too high or not a clear win). */
-  skippedHighFee: { cardId: string; cardName: string; annualFeeCents: Cents; gainAnnualCents: Cents; netAnnualCents: Cents }[];
-}
-
-export interface CashBackAnalysis {
-  asOfDate: ISODate;
-  windowDays: WindowDays;
-  windowStart: ISODate;
-  purchaseCount: number;
-  spendCents: Cents;
-  rewards: RewardsResult;
-  missedAnnualCents: Cents;
-  flags: WrongCardFlag[];
-  playbook: PlaybookEntry[];
-  suggestion: SuggestionResult;
 }
