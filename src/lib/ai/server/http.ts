@@ -3,6 +3,8 @@ import { clientKeyFor, type TokenBucketLimiter } from "./ratelimit";
 
 /** Request bodies for the AI routes are small; anything larger is rejected before parsing. */
 export const MAX_AI_BODY_BYTES = 8_192;
+/** The ask route also carries Nimbus's 20-message window (up to 500 characters a turn). */
+export const MAX_ASK_BODY_BYTES = 24_576;
 
 export function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });

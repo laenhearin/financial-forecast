@@ -10,6 +10,8 @@ import type { AdvisorRequest, AskRequest, AskTurn, GoalSummaryRequest, PurchaseI
 
 export const MAX_QUESTION_LENGTH = 500;
 export const MAX_HISTORY_TURNS = 4;
+/** Nimbus sends its last 20 messages: up to 19 earlier turns plus the question. */
+export const MAX_MASCOT_HISTORY_TURNS = 19;
 export const MAX_TURN_LENGTH = 500;
 export const MAX_SAVED_PURCHASES = 40;
 /** $1,000,000 */
@@ -115,18 +117,20 @@ export function parseGoalSummaryRequest(value: unknown): GoalSummaryRequest | nu
 }
 
 export function parseAskRequest(value: unknown): AskRequest | null {
-  const body = object(value, ["question"], ["history", "criticalBalanceCents", "purchases"]);
+  const body = object(value, ["question"], ["history", "criticalBalanceCents", "purchases", "source"]);
   if (!body) return null;
+  if (body.source !== undefined && body.source !== "mascot") return null;
+  const mascot = body.source === "mascot";
   const question = text(body.question, MAX_QUESTION_LENGTH);
   const criticalBalanceCents = optionalCents(body.criticalBalanceCents, MAX_PURCHASE_CENTS);
   const purchases = parseSavedPurchases(body.purchases);
-  const history = parseHistory(body.history);
+  const history = parseHistory(body.history, mascot ? MAX_MASCOT_HISTORY_TURNS : MAX_HISTORY_TURNS);
   if (!question || criticalBalanceCents === undefined || !purchases || !history) return null;
-  return { question, history, criticalBalanceCents, purchases };
+  return { question, history, criticalBalanceCents, purchases, ...(mascot ? { source: "mascot" as const } : {}) };
 }
 
 /** Keeps the last turns, each cut to a bounded length. */
-function parseHistory(value: unknown): AskTurn[] | null {
+function parseHistory(value: unknown, maxTurns: number): AskTurn[] | null {
   if (value === undefined) return [];
   if (!Array.isArray(value) || value.length > 20) return null;
   const turns: AskTurn[] = [];
@@ -136,5 +140,5 @@ function parseHistory(value: unknown): AskTurn[] | null {
     const trimmed = turn.text.trim().slice(0, MAX_TURN_LENGTH);
     if (trimmed) turns.push({ role: turn.role, text: trimmed });
   }
-  return turns.slice(-MAX_HISTORY_TURNS);
+  return turns.slice(-maxTurns);
 }

@@ -1,0 +1,345 @@
+/*
+ * Nimbus animation. NimbusSvg sets data-mood, data-action, data-blink and data-reduce-motion; these
+ * rules animate SVG groups with transform and opacity only. In SVG, px inside a transform means user
+ * units of the 120-unit viewBox (about 0.6 CSS px at the 72 px sidebar size).
+ */
+
+.button {
+  display: block;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+/* Wander travels the whole button, in CSS px measured against the sidebar; NimbusMascot sets the offset. */
+.button[data-action="wander"] {
+  animation: nimbus-travel 3s ease-in-out both;
+}
+
+.svg {
+  display: block;
+  /* Hops and the click spring rise above the viewBox. */
+  overflow: visible;
+}
+
+/* Heavy Rain only: a faint glow so the cloud never sinks into the darker sky. */
+:global([data-theme="heavy-rain"]) .svg {
+  filter: drop-shadow(0 0 10px var(--nimbus-glow));
+}
+
+.float,
+.act,
+.shadowFloat,
+.shadowAct,
+.armLeft,
+.armRight,
+.eyeSize,
+.eyeLid,
+.dot {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.float,
+.act {
+  transform-origin: 50% 100%;
+}
+
+.armLeft {
+  transform-origin: 100% 50%;
+}
+
+.armRight {
+  transform-origin: 0% 50%;
+}
+
+/* ---- Happy (default): float and breathe ---- */
+
+.float {
+  animation: nimbus-float 3s ease-in-out infinite;
+}
+
+.shadowFloat {
+  animation: nimbus-shadow-float 3s ease-in-out infinite;
+}
+
+.look {
+  transform: translate(calc(var(--nimbus-look-x, 0) * 1px), calc(var(--nimbus-look-y, 0) * 1px));
+  transition: transform 180ms ease-out;
+}
+
+.eyeSize {
+  transition: transform 150ms ease-out;
+}
+
+.eyeLid {
+  transition: transform 60ms ease-in;
+}
+
+.svg[data-blink] .eyeLid {
+  transform: scaleY(0.1);
+}
+
+.cheek {
+  opacity: 0.6;
+  transition: opacity 200ms ease-out;
+}
+
+/* ---- Excited: cursor nearby ---- */
+
+.svg[data-mood="excited"] .float {
+  animation: nimbus-bounce 0.5s ease-in-out infinite;
+}
+
+.svg[data-mood="excited"] .shadowFloat {
+  animation: nimbus-shadow-bounce 0.5s ease-in-out infinite;
+}
+
+.svg[data-mood="excited"] .eyeSize {
+  transform: scale(1.15);
+}
+
+.svg[data-mood="excited"] .cheek {
+  opacity: 0.95;
+}
+
+.svg[data-mood="excited"] .armLeft {
+  animation: nimbus-flap-left 0.25s ease-in-out infinite alternate;
+}
+
+.svg[data-mood="excited"] .armRight {
+  animation: nimbus-flap-right 0.25s ease-in-out infinite alternate;
+}
+
+/* ---- Thinking: a chat request is in flight ---- */
+
+.svg[data-mood="thinking"] .act {
+  animation: nimbus-sway 2.4s ease-in-out infinite;
+}
+
+.dot {
+  animation: nimbus-dot 1.2s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ---- Idle actions ---- */
+
+.svg[data-action="wave"] .act {
+  animation: nimbus-tilt 1.2s ease-in-out;
+}
+
+.svg[data-action="wave"] .armRight {
+  animation: nimbus-wave 1.2s ease-in-out;
+}
+
+.svg[data-action="lookAround"] .act {
+  animation: nimbus-look-tilt 2s ease-in-out;
+}
+
+.svg[data-action="lookAround"] .eyesAct {
+  animation: nimbus-look-around 2s ease-in-out;
+}
+
+.svg[data-action="wander"] .act {
+  animation: nimbus-wander-hops 3s ease-in-out;
+}
+
+.svg[data-action="wander"] .eyesAct {
+  animation: nimbus-wander-look 3s ease-in-out;
+}
+
+.svg[data-action="hop"] .act {
+  animation: nimbus-hop 0.8s ease-in-out;
+}
+
+.svg[data-action="hop"] .shadowAct {
+  animation: nimbus-shadow-hop 0.8s ease-in-out;
+}
+
+.svg[data-action="spin"] .act {
+  transform-origin: 50% 50%;
+  animation: nimbus-spin 0.9s cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+.svg[data-action="stretch"] .act {
+  animation: nimbus-stretch 1s ease-in-out;
+}
+
+/* ---- Click: squish, spring up, quick wave. The float pauses so the reaction reads cleanly. ---- */
+
+.svg[data-action="clickSquish"] .float,
+.svg[data-action="clickSquish"] .shadowFloat {
+  animation: none;
+}
+
+.svg[data-action="clickSquish"] .act {
+  animation: nimbus-click 0.52s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.svg[data-action="clickSquish"] .shadowAct {
+  animation: nimbus-shadow-spring 0.52s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.svg[data-action="clickSquish"] .armRight {
+  animation: nimbus-quick-wave 0.52s ease-in-out;
+}
+
+/* ---- Reduce motion: a still pose; the face can still change, thinking dots only fade ---- */
+
+.svg[data-reduce-motion] * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.svg[data-reduce-motion] .dot {
+  animation: nimbus-dot-fade 1.4s ease-in-out infinite !important;
+}
+
+@keyframes nimbus-travel {
+  0%, 100% { transform: translateX(0); }
+  40%, 60% { transform: translateX(var(--nimbus-wander-x, 0px)); }
+}
+
+@keyframes nimbus-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes nimbus-shadow-float {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.82); opacity: 0.6; }
+}
+
+@keyframes nimbus-bounce {
+  0%, 100% { transform: translateY(0) scale(1.08); }
+  50% { transform: translateY(-8px) scale(1.08); }
+}
+
+@keyframes nimbus-shadow-bounce {
+  0%, 100% { transform: scale(1.05); opacity: 1; }
+  50% { transform: scale(0.8); opacity: 0.55; }
+}
+
+@keyframes nimbus-flap-left {
+  from { transform: rotate(-10deg); }
+  to { transform: rotate(35deg); }
+}
+
+@keyframes nimbus-flap-right {
+  from { transform: rotate(10deg); }
+  to { transform: rotate(-35deg); }
+}
+
+@keyframes nimbus-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+
+@keyframes nimbus-dot {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes nimbus-dot-fade {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@keyframes nimbus-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-4deg); }
+}
+
+@keyframes nimbus-wave {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-75deg); }
+  30% { transform: rotate(-40deg); }
+  45% { transform: rotate(-75deg); }
+  60% { transform: rotate(-40deg); }
+  75% { transform: rotate(-70deg); }
+  90% { transform: rotate(-20deg); }
+}
+
+@keyframes nimbus-look-tilt {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  15%, 35% { transform: translateY(0) rotate(-4deg); }
+  50%, 70% { transform: translateY(0) rotate(4deg); }
+  82%, 92% { transform: translateY(-2px) rotate(0deg); }
+}
+
+@keyframes nimbus-look-around {
+  0%, 100% { transform: translate(0, 0); }
+  15%, 35% { transform: translate(-3px, 0); }
+  50%, 70% { transform: translate(3px, 0); }
+  82%, 92% { transform: translate(0, -3px); }
+}
+
+@keyframes nimbus-wander-hops {
+  0%, 40%, 60%, 100% { transform: translateY(0) rotate(0deg); }
+  8%, 24% { transform: translateY(-5px) rotate(calc(var(--nimbus-wander-dir, 1) * 6deg)); }
+  16%, 32% { transform: translateY(0) rotate(calc(var(--nimbus-wander-dir, 1) * 6deg)); }
+  68%, 84% { transform: translateY(-5px) rotate(calc(var(--nimbus-wander-dir, 1) * -6deg)); }
+  76%, 92% { transform: translateY(0) rotate(calc(var(--nimbus-wander-dir, 1) * -6deg)); }
+}
+
+@keyframes nimbus-wander-look {
+  0%, 100% { transform: translateX(0); }
+  10%, 40% { transform: translateX(calc(var(--nimbus-wander-dir, 1) * 3px)); }
+  60%, 90% { transform: translateX(calc(var(--nimbus-wander-dir, 1) * -3px)); }
+}
+
+@keyframes nimbus-hop {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  18% { transform: translateY(-13px) scale(0.95, 1.06); }
+  36% { transform: translateY(0) scale(1.12, 0.88); }
+  52% { transform: translateY(-9px) scale(0.96, 1.05); }
+  72% { transform: translateY(0) scale(1.1, 0.9); }
+  86% { transform: translateY(0) scale(0.98, 1.02); }
+}
+
+@keyframes nimbus-shadow-hop {
+  0%, 36%, 72%, 100% { transform: scale(1); opacity: 1; }
+  18% { transform: scale(0.7); opacity: 0.5; }
+  52% { transform: scale(0.78); opacity: 0.6; }
+}
+
+@keyframes nimbus-spin {
+  0% { transform: translateY(0) rotate(0deg); }
+  15% { transform: translateY(-4px) rotate(-20deg); }
+  85% { transform: translateY(-4px) rotate(372deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+}
+
+@keyframes nimbus-stretch {
+  0%, 100% { transform: scale(1, 1); }
+  30% { transform: scale(0.9, 1.15); }
+  60% { transform: scale(1.14, 0.88); }
+  80% { transform: scale(0.97, 1.03); }
+}
+
+@keyframes nimbus-click {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  23% { transform: translateY(0) scale(1.15, 0.8); }
+  55% { transform: translateY(-23px) scale(0.94, 1.08); }
+  75% { transform: translateY(2px) scale(1.05, 0.96); }
+  88% { transform: translateY(-3px) scale(0.99, 1.01); }
+}
+
+@keyframes nimbus-shadow-spring {
+  0%, 23%, 75%, 100% { transform: scale(1); opacity: 1; }
+  55% { transform: scale(0.65); opacity: 0.45; }
+}
+
+@keyframes nimbus-quick-wave {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-70deg); }
+  55% { transform: rotate(-35deg); }
+  80% { transform: rotate(-65deg); }
+}

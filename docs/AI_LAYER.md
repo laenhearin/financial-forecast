@@ -9,6 +9,7 @@ gets those facts as JSON and writes the words around them.
 | Surface | Where | Route | Model (env) | Output |
 | --- | --- | --- | --- | --- |
 | Ask box | Home page | `POST /api/ai/ask` | `GEMINI_MODEL_MAIN` | Read-only tool calls, then streamed text (NDJSON) |
+| Nimbus chat | Sidebar mascot, every page (1024px+) | `POST /api/ai/ask` with `source: "mascot"` | `GEMINI_MODEL_MAIN` | Same as the ask box; the browser shows the reply once complete |
 | Purchase explanation | Purchase Advisor | `POST /api/ai/advisor` | `GEMINI_MODEL_FAST` | Structured JSON: headline, explanation, alternative |
 | Goal summary | Big Purchase, "Help me get there" | `POST /api/ai/goal-summary` | `GEMINI_MODEL_FAST` | Structured JSON: summary |
 | Merchant categories | Cash Back | `POST /api/cash-back/categorize` | `GEMINI_MODEL_FAST` | Structured JSON: category per merchant |
@@ -18,6 +19,11 @@ in localStorage). The server reloads the active demo profile and recomputes the 
 engine functions the pages use, so the model never sees client-made numbers. The ask box's
 `checkPurchase` tool and the Purchase Advisor page both call `checkPurchase()` in
 `src/features/calendar/engine/purchaseCheck.ts`, so their verdicts always agree.
+
+Nimbus (`src/features/nimbus/`) reuses the ask route rather than a second pipeline. `source: "mascot"`
+appends its persona (`src/lib/ai/prompts/system-mascot.ts`) to the ask instructions, keeps up to 19
+earlier turns instead of 4, and caches its answers apart from the ask box's. Its conversation is saved
+in localStorage per customer (`nimbus:chat:v1:<customerId>`, newest 100 messages; the newest 20 are sent).
 
 Verdicts use the app's six balance levels (THRIVING, STABLE, CAUTION, NEAR CRITICAL, CRITICAL,
 BELOW $0) against the user's critical balance, which defaults to their rent.

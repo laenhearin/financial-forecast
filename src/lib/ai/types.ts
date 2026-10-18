@@ -113,6 +113,8 @@ export interface AskRequest {
   history: AskTurn[];
   criticalBalanceCents: Cents | null;
   purchases: SavedPurchaseInput[];
+  /** Set by Nimbus, the sidebar mascot: adds its persona and keeps a longer history. Omitted by the ask box. */
+  source?: "mascot";
 }
 
 export type AskStreamEvent =

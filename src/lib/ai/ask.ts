@@ -3,6 +3,14 @@ import type { AskRequest, AskStreamEvent } from "./types";
 /** Shown when the ask route can't be reached at all (network down, profile load failed, rate limited). */
 export const ASK_UNAVAILABLE_TEXT = "The assistant isn't available right now. Your forecast above is still up to date; try again in a minute.";
 
+/** The route answered with an error status (429 when rate limited); callers may word it by status. */
+export class AskHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`Ask failed (${status}).`);
+    this.name = "AskHttpError";
+  }
+}
+
 /**
  * The only way the UI asks a question. Streams the server's NDJSON events to `onEvent` and resolves
  * when the stream ends. Throws only when the route can't be used; the caller then shows
@@ -16,7 +24,7 @@ export async function streamAsk(request: AskRequest, onEvent: (event: AskStreamE
     body: JSON.stringify(request),
     signal,
   });
-  if (!response.ok || !response.body) throw new Error(`Ask failed (${response.status}).`);
+  if (!response.ok || !response.body) throw new AskHttpError(response.status);
 
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffered = "";

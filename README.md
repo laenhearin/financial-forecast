@@ -55,7 +55,7 @@ The GitHub repository is [laenhearin/financial-forecast](https://github.com/laen
 
 ## AI layer
 
-The ask box, Purchase Advisor explanation, Big Purchase summary, and Cash Back merchant categories use Gemini through server-only routes. The forecast engine computes every number; the model only words them, and every surface falls back to labeled template text when AI is off, unconfigured, rate limited, or fails. Without `GEMINI_API_KEY` the app still works on templates. Setup, fallback behavior, `npm run ai:smoke`, `npm run ai:burst`, and free-tier caveats are in [docs/AI_LAYER.md](docs/AI_LAYER.md).
+The ask box (and Nimbus, the sidebar cloud's chat, which shares its route), Purchase Advisor explanation, Big Purchase summary, and Cash Back merchant categories use Gemini through server-only routes. The forecast engine computes every number; the model only words them, and every surface falls back to labeled template text when AI is off, unconfigured, rate limited, or fails. Without `GEMINI_API_KEY` the app still works on templates. Setup, fallback behavior, `npm run ai:smoke`, `npm run ai:burst`, and free-tier caveats are in [docs/AI_LAYER.md](docs/AI_LAYER.md).
 
 ## Current scope
 

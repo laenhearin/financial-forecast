@@ -9,6 +9,7 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import { APP_NAME } from "@/lib/config";
 import { getActiveHref, NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { NimbusMascot } from "@/features/nimbus/components/NimbusMascot";
 import { useActiveCustomer } from "./ActiveCustomer";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -130,7 +131,10 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        <div className="mt-auto flex items-center gap-3 pt-6 pl-2.5 md:max-lg:flex-col md:max-lg:pl-0">
+        {/* Desktop only. Its auto top margin is the spacer that keeps Nimbus just above the settings row. */}
+        <NimbusMascot className="mt-auto hidden lg:flex" />
+
+        <div className="mt-auto flex items-center gap-3 pt-6 pl-2.5 md:max-lg:flex-col md:max-lg:pl-0 lg:mt-0">
           <CircleUser aria-hidden className="size-5 shrink-0 text-secondary" strokeWidth={1.75} />
           <span title={profileName} className="truncate text-body text-secondary md:max-lg:sr-only">{profileName}</span>
           <ThemeToggle className="ml-auto md:max-lg:ml-0" />
