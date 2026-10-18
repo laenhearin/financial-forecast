@@ -13,6 +13,7 @@ gets those facts as JSON and writes the words around them.
 | Purchase explanation | Purchase Advisor | `POST /api/ai/advisor` | `GEMINI_MODEL_FAST` | Structured JSON: headline, explanation, alternative |
 | Goal summary | Big Purchase, "Help me get there" | `POST /api/ai/goal-summary` | `GEMINI_MODEL_FAST` | Structured JSON: summary |
 | Merchant categories | Cash Back | `POST /api/cash-back/categorize` | `GEMINI_MODEL_FAST` | Structured JSON: category per merchant |
+| Card comparison overview | Swipe and Shine, "Compare cards" | `POST /api/cash-back/compare` | `GEMINI_MODEL_FAST` | Structured JSON: headline, overview, watchOut |
 
 The browser sends **inputs only** (a purchase, goal fields, the critical balance and purchases it keeps
 in localStorage). The server reloads the active demo profile and recomputes the facts with the same

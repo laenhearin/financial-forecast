@@ -8,6 +8,7 @@ import type { Scenario } from "../../big-purchase/types";
 import { findCard } from "../cards/catalog";
 import type { CashBackProfile } from "../data/source";
 import { useCashBack } from "../hooks/useCashBack";
+import { CardCompare } from "./CardCompare";
 import { CardDrawer } from "./CardDrawer";
 import { CardTable } from "./CardTable";
 import { LineupPanel } from "./LineupPanel";
@@ -15,8 +16,8 @@ import { SummaryStrip } from "./SummaryStrip";
 import { SuggestionPanel } from "./SuggestionPanel";
 
 /**
- * Summary strip, the user's card lineup beside one suggestion, and a card table that scrolls inside
- * its own box (about ten rows tall).
+ * Summary strip, the user's card lineup beside one suggestion, a card table that scrolls inside
+ * its own box (about ten rows tall), and a side-by-side comparison of up to three cards.
  */
 export function CashBackApp({ profile: nessieProfile, scenario, initialCardId }: { profile: CashBackProfile; scenario: Scenario; initialCardId: string | null }) {
   const { profile, prefs, analysis, actions } = useCashBack(nessieProfile);
@@ -79,6 +80,7 @@ export function CashBackApp({ profile: nessieProfile, scenario, initialCardId }:
             onOwnership={actions.setOwnershipFilter}
             onShowBusiness={actions.setShowBusiness}
           />
+          <CardCompare analysis={analysis} prefs={prefs} spendProfile={profile.spendProfile} today={profile.asOfDate} onOpen={setDrawerCardId} />
           <CardDrawer
             cardId={drawerCardId}
             analysis={analysis}
