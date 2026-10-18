@@ -6,7 +6,13 @@
   isolation: isolate;
   color: var(--tx);
   background-color: #86abd1;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sky-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--sky-font);
+}
+
+/* Page titles share one face, including inside feature roots that set their own font. */
+.sky :global(.page-title) {
+  font-family: var(--sky-font);
 }
 
 .sky::before {
@@ -49,6 +55,19 @@
   background-position: 15% 90%;
   filter: brightness(var(--sky-exposure)) contrast(var(--sky-contrast)) saturate(0.9);
   opacity: 1;
+}
+
+/*
+ * Landscape screens: put the sun in the top-right corner. The photo's sun sits at 48.4% across and
+ * 49.7% down (1920 × 1440). At twice the viewport width the image is 150vw tall, so the sun is
+ * 96.8vw across and 74.5vw down; these offsets land it at 92vw, 7vh, and the image still covers
+ * the whole screen at any aspect ratio of 5:4 or wider.
+ */
+@media (min-aspect-ratio: 5/4) {
+  .sky[data-weather="sunny"]::before {
+    background-size: 200vw auto;
+    background-position: calc(92vw - 96.8vw) calc(7vh - 74.5vw);
+  }
 }
 
 .sky :global(.home-weather-heading),

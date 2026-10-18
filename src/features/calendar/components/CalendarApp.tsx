@@ -90,7 +90,7 @@ export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarApp
     <div className="mx-auto w-full max-w-300 px-5 py-12 md:px-10">
       <header className="mb-7 text-center">
         <div className="flex flex-col items-center gap-3">
-          <h1 className="text-display font-medium text-primary">Weather Calendar</h1>
+          <h1 className="page-title">Weather Calendar</h1>
           {purchases.length > 0 && (
             <button
               type="button"

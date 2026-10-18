@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore, useTransition, type FormEvent } from "r
 import { useRouter } from "next/navigation";
 import { CircleUser, LogOut } from "lucide-react";
 import { announceCustomerChange, type ActiveCustomer } from "@/components/layout/ActiveCustomer";
+import { ReduceMotionSwitch } from "@/components/layout/ReduceMotionSwitch";
 import { balanceSettingsStore } from "@/features/calendar/state/balanceSettingsStore";
 import { formatDate } from "@/lib/dates";
 import { centsToInputString, formatUSD, parseDollarsToCents } from "@/lib/money";
@@ -77,7 +78,7 @@ export function ProfileView({ customers, active, accounts }: { customers: Active
   return (
     <div className="mx-auto w-full max-w-180 px-5 py-12 md:px-10">
       <header className="mb-7 text-center">
-        <h1 className="text-display font-medium text-primary">Profile</h1>
+        <h1 className="page-title">Profile</h1>
         <p className="mt-2 text-body text-secondary">The Nessie customer every Financial Forecast page reads from.</p>
       </header>
 
@@ -177,6 +178,16 @@ export function ProfileView({ customers, active, accounts }: { customers: Active
           </form>
         </section>
       )}
+
+      <section aria-labelledby="motion-title" className="mt-5 rounded-panel border border-app bg-card p-5 md:p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 id="motion-title" className="text-lead font-semibold text-primary">Reduce motion</h2>
+            <p id="motion-hint" className="mt-1.5 text-caption text-secondary">Calms Nimbus, the sidebar cloud. Saved in this browser; defaults to your system setting.</p>
+          </div>
+          <ReduceMotionSwitch labelledBy="motion-title" describedBy="motion-hint" />
+        </div>
+      </section>
     </div>
   );
 }
