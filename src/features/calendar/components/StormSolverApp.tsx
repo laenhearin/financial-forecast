@@ -2,13 +2,18 @@
 
 import { DebtSummary } from "@/components/home/DebtSummary";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { useActiveCustomerId } from "@/components/layout/ActiveCustomer";
+import { RescuePlanner } from "@/features/storm/components/RescuePlanner";
 import { Database } from "lucide-react";
 import { forecastEstimateNote, nessieSourceNote } from "@/lib/data-source";
 import { parseDollarsToCents } from "@/lib/money";
 import type { Scenario } from "../../big-purchase/types";
 import { scenarioEntries } from "../engine/entries";
+import { defaultCriticalBalanceCents } from "../engine/balanceThresholds";
 import { buildCalendarModel } from "../engine/model";
+import { purchaseStore } from "../state/purchaseStore";
+import { useCriticalBalance } from "../state/useCriticalBalance";
 import { stormAdvice } from "../engine/stormAdvice";
 import { ALL_ACCOUNTS } from "../types";
 import { StormSolverPanel, type StormState } from "./StormSolverPanel";
@@ -21,6 +26,9 @@ const READY: StormState = {
 
 export function StormSolverApp({ scenario }: { scenario: Scenario }) {
   const [storm, setStorm] = useState<StormState>(READY);
+  const customerId = useActiveCustomerId();
+  const purchases = useSyncExternalStore(purchaseStore.subscribe, () => purchaseStore.getSnapshot(customerId), purchaseStore.getServerSnapshot);
+  const criticalBalanceCents = useCriticalBalance(defaultCriticalBalanceCents(scenario));
   const entries = useMemo(() => scenarioEntries(scenario), [scenario]);
   const model = useMemo(() => buildCalendarModel(scenario, [], ALL_ACCOUNTS, entries), [scenario, entries]);
   const accountNames = useMemo(() => Object.fromEntries(scenario.accounts.map((account) => [account.id, account.nickname])), [scenario]);
@@ -49,6 +57,9 @@ export function StormSolverApp({ scenario }: { scenario: Scenario }) {
         </p>
       </header>
       <DebtSummary scenario={scenario} />
+      <div className="mt-4">
+        <RescuePlanner scenario={scenario} purchases={purchases} criticalCents={criticalBalanceCents} />
+      </div>
       <div className="mt-4">
         <StormSolverPanel storm={storm} onAnalyze={analyze} />
       </div>
