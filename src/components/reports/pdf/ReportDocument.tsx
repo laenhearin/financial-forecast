@@ -6,6 +6,7 @@ import { SECTIONS } from "@/lib/reports/sections";
 import type { ReportData } from "@/lib/reports/types";
 import { BalanceLineChart, CategoryDonutChart, IncomeExpenseBarChart, GoalProgressBars } from "./Charts";
 import { BillsPaychecksSection, ForecastCalendarSection } from "./BillsForecast";
+import { TransactionsSection, CardsRewardsSection, AdvisorSolverSection } from "./DetailSections";
 import { colors, styles } from "./theme";
 
 function Footer({ data }: { data: ReportData }) {
@@ -32,6 +33,6 @@ export function ReportDocument({ data }: { data: ReportData }) {
       <Text style={[styles.caption, { marginTop: 55 }]}>{data.meta.sourceLabel}</Text><Text style={styles.caption}>Personal review · USD · Forecasts are estimates</Text>
     </Page>
     <Page size="LETTER" style={styles.page}><Text style={styles.title}>In this report</Text>{data.includedSections.map(id => <Link key={id} src={`#${id}`} style={{ paddingVertical: 12, borderBottom: `0.5 solid ${colors.line}`, color: colors.accent, textDecoration: "none" }}>{SECTIONS.find(section => section.id === id)!.label}</Link>)}<Footer data={data} /></Page>
-    {data.includedSections.map(id => <Page key={id} size="LETTER" style={styles.page}><Text id={id} style={styles.title}>{SECTIONS.find(section => section.id === id)!.label}</Text>{id === "overview" ? <Overview data={data} /> : id === "chartBalance" ? <BalanceLineChart data={data} /> : id === "chartCategory" ? <CategoryDonutChart data={data} /> : id === "chartIncomeExpense" ? <IncomeExpenseBarChart data={data} /> : id === "chartGoals" ? <GoalProgressBars data={data} /> : id === "billsPaychecks" ? <BillsPaychecksSection data={data} /> : id === "forecastCalendar" ? <ForecastCalendarSection data={data} /> : <Text style={styles.caption}>No data available for this section.</Text>}<Footer data={data} /></Page>)}
+    {data.includedSections.map(id => <Page key={id} size="LETTER" style={styles.page}><Text id={id} style={styles.title}>{SECTIONS.find(section => section.id === id)!.label}</Text>{id === "overview" ? <Overview data={data} /> : id === "chartBalance" ? <BalanceLineChart data={data} /> : id === "chartCategory" ? <CategoryDonutChart data={data} /> : id === "chartIncomeExpense" ? <IncomeExpenseBarChart data={data} /> : id === "chartGoals" ? <GoalProgressBars data={data} /> : id === "billsPaychecks" ? <BillsPaychecksSection data={data} /> : id === "forecastCalendar" ? <ForecastCalendarSection data={data} /> : id === "transactions" ? <TransactionsSection data={data} /> : id === "cardsRewards" ? <CardsRewardsSection data={data} /> : id === "advisorSolver" ? <AdvisorSolverSection data={data} /> : <Text style={styles.caption}>No data available for this section.</Text>}<Footer data={data} /></Page>)}
   </Document>;
 }
