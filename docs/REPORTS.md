@@ -60,6 +60,6 @@ REPORT_PDF_SMOKE=1 npx vitest run src/lib/reports/__tests__/pdf.test.tsx
 
 Interaction tests mock the PDF renderer and summary network response. They cover defaults, selection, invalid dates, past forecast availability, stale previews, fallback, Retry and late results after unmount. Pure tests cover date boundaries, transfer classification, sums, chart geometry, truncation, masking, existing-engine integration and summary validation/timeout.
 
-Six pre-existing Forecast Fund assertions fail on the starting main revision (goal cost limit, horizon length, advice/contribution/deadline expectations). They were reproduced without the calendar or Reports changes. Reports does not change that engine or weaken those tests. Lint also has an existing unused `RecordedPayment` warning in `src/app/calendar/page.tsx`.
+When Reports was written, six Forecast Fund assertions failed on main (goal cost limit, horizon length, advice/contribution/deadline expectations). Commit 0eed820 fixed them in the engine and tests, and the unused `RecordedPayment` lint warning in `src/app/calendar/page.tsx` has been removed; on 2026-10-18 lint, typecheck, the full test suite, and the production build all pass.
 
 Local verification on 2026-10-18: the real-render fixture produced 43 pages in approximately 2.8 seconds for 1,005 inputs (1,000 printed). Browser checks covered desktop/mobile layouts, stale previews, fallback export, clickable contents and footer numbering on every interior page. This is an observed local measurement, not a performance guarantee.

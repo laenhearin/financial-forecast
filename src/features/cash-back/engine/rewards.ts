@@ -2,7 +2,7 @@ import { addMonths, clampedDate, dateParts, daysInMonth } from "../../../lib/dat
 import { effectiveBps } from "../format";
 import {
   CATEGORY_IDS, isCategoryId,
-  type Bps, type CapPeriod, type CategoryId, type Cents, type CreditCard, type ISODate, type Issuer,
+  type Bps, type CapPeriod, type CategoryId, type Cents, type CreditCard, type ISODate,
   type SelectableCategory, type Selections, type SpendCap, type SpendProfile,
 } from "../types";
 
@@ -163,11 +163,9 @@ export function getEffectiveRate(card: CreditCard, category: CategoryId, ctx: Ra
   return best!;
 }
 
-const CAPITAL_ONE_FAMILY: ReadonlySet<Issuer> = new Set(["Capital One", "Discover"]);
-
 /**
  * Owned cards ranked for the next dollar in a category, best first. Tie-break, in order: no cap beats a
- * cap, lower annual fee, Capital One or Discover, lower popularityRank.
+ * cap, lower annual fee, lower popularityRank, then card id. No issuer is preferred.
  */
 export function rankCards(cards: readonly CreditCard[], category: CategoryId, ctx: RateContext): EffectiveRate[] {
   return cards
@@ -176,8 +174,8 @@ export function rankCards(cards: readonly CreditCard[], category: CategoryId, ct
       b.option.rateBps - a.option.rateBps
       || Number(a.option.pool !== null) - Number(b.option.pool !== null)
       || a.card.annualFeeCents - b.card.annualFeeCents
-      || Number(CAPITAL_ONE_FAMILY.has(b.card.issuer)) - Number(CAPITAL_ONE_FAMILY.has(a.card.issuer))
-      || a.card.popularityRank - b.card.popularityRank)
+      || a.card.popularityRank - b.card.popularityRank
+      || a.card.id.localeCompare(b.card.id))
     .map(item => item.option);
 }
 

@@ -36,6 +36,17 @@ describe("occurrences", () => {
       .toEqual(["2028-02-29", "2029-02-28", "2030-02-28"]);
   });
 
+  it("never fires before a startDate, for every frequency", () => {
+    // A recurring bill whose first payment is two months away (review test 4).
+    expect(occurrences({ frequency: "monthly", dayOfMonth: 1, startDate: "2026-12-01" }, "2026-10-18", "2027-01-31"))
+      .toEqual(["2026-12-01", "2027-01-01"]);
+    expect(occurrences({ frequency: "biweekly", anchorDate: "2026-10-23", startDate: "2026-11-15" }, "2026-10-18", "2026-12-01"))
+      .toEqual(["2026-11-20"]);
+    // A startDate already past changes nothing.
+    expect(occurrences({ frequency: "monthly", dayOfMonth: 5, startDate: "2026-01-01" }, "2026-10-18", "2026-11-30")).toEqual(["2026-11-05"]);
+    expect(() => occurrences({ frequency: "monthly", dayOfMonth: 5, startDate: "12/01/2026" }, "2026-10-18", "2026-11-30")).toThrow();
+  });
+
   it("rejects malformed schedules", () => {
     expect(() => occurrences({ frequency: "monthly", dayOfMonth: 32 }, "2026-01-01", "2026-02-01")).toThrow();
     expect(() => occurrences({ frequency: "monthly" }, "2026-01-01", "2026-02-01")).toThrow();

@@ -31,6 +31,21 @@ describe("auditNumbers", () => {
     expect(auditNumbers("The $85 phone bill is due.", [{ label: "Phone ($85 plan)" }]).ok).toBe(true);
   });
 
+  it("checks amounts written without a dollar sign, and thousands written as k", () => {
+    const result = auditNumbers("Your savings will be 15,000 dollars, about USD 2,000 or 300 bucks.", [facts]);
+    expect(result.flags).toEqual(["unknown amount 15,000 dollars", "unknown amount USD 2,000", "unknown amount 300 bucks"]);
+    expect(auditNumbers("That's 400 dollars, or 1,800 USD.", [facts]).ok).toBe(true);
+    expect(auditNumbers("Plan on $1.8k.", [facts]).ok).toBe(true);
+    expect(auditNumbers("Plan on $15k.", [facts]).flags).toEqual(["unknown amount $15k"]);
+    // One amount written two ways is checked once.
+    expect(auditNumbers("It costs $25 USD.", [facts]).flags).toEqual(["unknown amount $25"]);
+  });
+
+  it("does not understand context: a known figure attached to the wrong thing still passes", () => {
+    // Rent is $1,800 in the facts; calling it the purchase price is wrong, but the number is known.
+    expect(auditNumbers("The headphones cost $1,800.", [facts]).ok).toBe(true);
+  });
+
   it("checks several payloads together", () => {
     expect(auditNumbers("$10 and $20", [{ a: 10 }, [{ b: 20 }]]).ok).toBe(true);
     expect(auditNumbers("$10 and $20", [{ a: 10 }]).ok).toBe(false);

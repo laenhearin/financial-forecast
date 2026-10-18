@@ -1,10 +1,14 @@
 import { assertISODate, clampedDate, dateParts, fromDayNumber, toDayNumber } from "../../../lib/dates";
 import type { ISODate, Schedule } from "../types";
 
-/** Every date a schedule fires between `from` and `to`, inclusive, in ascending order. */
+/** Every date a schedule fires between `from` and `to`, inclusive, in ascending order, never before its startDate. */
 export function occurrences(schedule: Schedule, from: ISODate, to: ISODate): ISODate[] {
   assertISODate(from);
   assertISODate(to);
+  if (schedule.startDate !== undefined) {
+    assertISODate(schedule.startDate);
+    if (schedule.startDate > from) from = schedule.startDate;
+  }
   if (to < from) return [];
   switch (schedule.frequency) {
     case "once": {

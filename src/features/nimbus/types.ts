@@ -18,6 +18,8 @@ export interface ChatMessage {
   ts: number;
   /** The route answered from its template because AI is off; the bubble is labeled. */
   fromTemplate?: boolean;
+  /** The number audit found a dollar figure that is not in the forecast facts; the bubble says so. */
+  unverified?: boolean;
 }
 
 /** Why the last request failed; each maps to an in-character message. */

@@ -53,6 +53,7 @@ export function validateScenario(scenario: Scenario, { requirePaycheck = true }:
 
 function checkSchedule(label: string, schedule: Schedule, error: (message: string) => void) {
   const dayOk = (day: number | undefined) => day !== undefined && Number.isInteger(day) && day >= 1 && day <= 31;
+  if (schedule.startDate !== undefined && !isISODate(schedule.startDate)) error(`${label}: startDate must be a YYYY-MM-DD date.`);
   switch (schedule.frequency) {
     case "monthly":
       if (!dayOk(schedule.dayOfMonth)) error(`${label}: day of month must be 1 to 31.`);

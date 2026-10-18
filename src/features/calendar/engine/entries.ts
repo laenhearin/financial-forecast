@@ -70,7 +70,8 @@ export function scenarioEntries(scenario: Scenario): CalendarEntry[] {
       sourceId: "everyday-spending",
       date,
       kind: "estimate",
-      label: "Everyday spending (estimate)",
+      // A weekly allowance from monthly averages, placed on one day; not a predicted purchase.
+      label: "Estimated weekly spending",
       amountCents: cents,
       accountId,
       recurring: true,

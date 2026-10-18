@@ -1,7 +1,7 @@
 import "server-only";
 import { ScenarioLoadError } from "../data/dataSource";
 import { validateScenario } from "../data/validateScenario";
-import type { AccountSnapshot, Bill, IncomeSource, Scenario, SpendingCategory } from "../features/big-purchase/types";
+import type { AccountSnapshot, Bill, IncomeSource, Scenario, SpendingCategory, SpendingCoverage } from "../features/big-purchase/types";
 import { resolveCardId } from "../features/cash-back/cards/catalog";
 import type { CashBackProfile } from "../features/cash-back/data/source";
 import type { SpendProfile } from "../features/cash-back/types";
@@ -19,7 +19,7 @@ export { billCategory };
  * Normalizes one Nessie customer into every feature's input. Balances, bills, history, loans, and
  * cards come from the API, and monthly spending by category averages the last six months of Nessie
  * transactions. Nessie has no income schedule: seeded customers use their plan's paycheck
- * (src/lib/plan-assumptions.ts); any other customer gets an estimate from their latest deposit.
+ * (src/lib/plan-assumptions.ts); any other customer gets an estimate from repeating deposits.
  * Both are labeled. Server only.
  *
  * Money: Nessie amounts are read as dollars and converted to integer cents once, here.
@@ -145,7 +145,7 @@ export function buildCustomerProfile(raw: RawCustomerData, today: string): Custo
   });
   const income: IncomeSource[] = plan
     ? [{ id: PLAN_INCOME_ID, label: `${plan.income.label} (plan)`, amountCents: plan.income.amountCents, schedule: plan.income.schedule, isPaycheck: true }]
-    : estimateIncome(history);
+    : estimateIncome(history, today);
 
   const scenario: Scenario = {
     id: `nessie/${customer.id}`,
@@ -158,6 +158,7 @@ export function buildCustomerProfile(raw: RawCustomerData, today: string): Custo
     spending,
     oneOffs: [],
     debts,
+    spendingCoverage: spendingCoverage(history, today),
   };
   // A customer without deposits still gets a forecast; Forecast Fund reports the missing paycheck itself.
   const errors = validateScenario(scenario, { requirePaycheck: false }).filter(issue => issue.level === "error");
@@ -181,19 +182,100 @@ export function buildCustomerProfile(raw: RawCustomerData, today: string): Custo
   };
 }
 
-/** Income estimate: the latest income deposit (not a transfer or interest), repeated monthly on its day of the month. */
-export function estimateIncome(history: readonly RecordedTransaction[]): IncomeSource[] {
-  const latest = history
-    .filter(row => row.kind === "deposit" && row.flow === "income")
-    .sort((a, b) => b.date.localeCompare(a.date) || b.amountCents - a.amountCents)[0];
-  if (!latest) return [];
+/** Cadences a repeating deposit can match, by the median days between deposits. */
+const INCOME_CADENCES = [
+  { frequency: "weekly", minDays: 6, maxDays: 8, perMonth: 52 / 12 },
+  { frequency: "biweekly", minDays: 13, maxDays: 16, perMonth: 26 / 12 },
+  { frequency: "monthly", minDays: 27, maxDays: 33, perMonth: 1 },
+] as const;
+/** Deposits in one series stay within this share of the series' median amount. */
+const INCOME_AMOUNT_TOLERANCE = 0.25;
+/** Labels that read like pay, preferred when no deposit repeats. */
+const PAY_LABEL = /pay(check|roll)?\b|salary|wage|direct dep/i;
+
+/**
+ * Income estimate from the last six months of income deposits (never transfers or interest).
+ * A series is two or more deposits with the same label, amounts within 25% of their median, a
+ * weekly, biweekly, or monthly cadence, and a latest deposit no more than two cadences ago; it
+ * repeats at its median amount from its latest date. The largest series is the paycheck; others
+ * are extra income. With no series, the most paycheck-like deposit (pay-like label first, then
+ * the largest, then the latest) repeats monthly and says it comes from one deposit. Nessie has no
+ * income schedule, so pages label every estimate.
+ */
+export function estimateIncome(history: readonly RecordedTransaction[], today: string = latestDate(history)): IncomeSource[] {
+  const start = addDays(addMonths(today, -SPENDING_WINDOW_MONTHS), 1);
+  const deposits = history
+    .filter(row => row.kind === "deposit" && row.flow === "income" && row.date >= start && row.date <= today)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+  if (!deposits.length) return [];
+
+  const groups = new Map<string, RecordedTransaction[]>();
+  for (const row of deposits) {
+    const key = row.label.toLowerCase().replace(/[^a-z]+/g, " ").trim();
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  }
+  const series = [...groups.values()]
+    .map(rows => incomeSeries(rows, today))
+    .filter(found => found !== null)
+    .sort((a, b) => b.monthlyCents - a.monthlyCents || a.latest.label.localeCompare(b.latest.label));
+  if (series.length) {
+    return series.map((found, index) => ({
+      id: index === 0 ? "nessie-estimated-income" : `nessie-estimated-income-${index + 1}`,
+      label: `${found.latest.label} (estimate)`,
+      amountCents: found.amountCents,
+      schedule: found.frequency === "monthly"
+        ? { frequency: "monthly", dayOfMonth: Number(found.latest.date.slice(8, 10)) }
+        : { frequency: found.frequency, anchorDate: found.latest.date },
+      // Contributions follow one paycheck; a second job's deposits still count as income.
+      isPaycheck: index === 0,
+    }));
+  }
+
+  const best = [...deposits].sort((a, b) =>
+    Number(PAY_LABEL.test(b.label)) - Number(PAY_LABEL.test(a.label)) || b.amountCents - a.amountCents || b.date.localeCompare(a.date))[0];
   return [{
     id: "nessie-estimated-income",
-    label: `${latest.label} (estimate)`,
-    amountCents: latest.amountCents,
-    schedule: { frequency: "monthly", dayOfMonth: Number(latest.date.slice(8, 10)) },
+    label: `${best.label} (estimate from one deposit)`,
+    amountCents: best.amountCents,
+    schedule: { frequency: "monthly", dayOfMonth: Number(best.date.slice(8, 10)) },
     isPaycheck: true,
   }];
+}
+
+function incomeSeries(rows: readonly RecordedTransaction[], today: string) {
+  if (rows.length < 2) return null;
+  const median = lowerMedian(rows.map(row => row.amountCents));
+  const similar = rows.filter(row => Math.abs(row.amountCents - median) <= median * INCOME_AMOUNT_TOLERANCE);
+  if (similar.length < 2) return null;
+  const gaps = similar.slice(1).map((row, i) => daysBetween(similar[i].date, row.date));
+  const gap = lowerMedian(gaps);
+  const cadence = INCOME_CADENCES.find(c => gap >= c.minDays && gap <= c.maxDays);
+  const latest = similar[similar.length - 1];
+  if (!cadence || daysBetween(latest.date, today) > cadence.maxDays * 2) return null;
+  const amountCents = lowerMedian(similar.map(row => row.amountCents));
+  return { frequency: cadence.frequency, amountCents, latest, monthlyCents: amountCents * cadence.perMonth };
+}
+
+/** Middle value, or the lower of the two middle values, so integer cents stay integers. */
+function lowerMedian(values: readonly number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor((sorted.length - 1) / 2)];
+}
+
+function latestDate(history: readonly RecordedTransaction[]): string {
+  return history.reduce((latest, row) => (row.date > latest ? row.date : latest), "0000-01-01");
+}
+
+/** Established: five or more months with about three spending records a month. Limited: two months and six records. */
+export function spendingCoverage(history: readonly RecordedTransaction[], today: string): SpendingCoverage {
+  const start = addDays(addMonths(today, -SPENDING_WINDOW_MONTHS), 1);
+  const inWindow = history.filter(row => row.date >= start && row.date <= today);
+  const spendRecords = inWindow.filter(row => row.flow === "spend" && row.category).length;
+  const earliest = inWindow.reduce((first, row) => (row.date < first ? row.date : first), today);
+  const months = inWindow.length ? Math.round(((daysBetween(earliest, today) + 1) * 120) / 365.25) / 10 : 0;
+  const level: SpendingCoverage["level"] =
+    months >= 5 && spendRecords >= 15 ? "established" : months >= 2 && spendRecords >= 6 ? "limited" : "insufficient";
+  return { level, months: Math.min(months, SPENDING_WINDOW_MONTHS), spendRecords };
 }
 
 /**
@@ -253,8 +335,9 @@ function accountKind(account: NessieRecord): AccountKind {
 }
 
 /**
- * recurring: monthly on recurring_date. Nessie's payment_date is the next occurrence for every live bill;
- * a recurring bill whose first payment is later than next month would be over-counted until then.
+ * recurring: monthly on recurring_date, starting no earlier than payment_date when that is still ahead,
+ * so a bill whose first payment is months away is not charged before it starts. payment_date is optional
+ * in Nessie's schema; a missing or malformed one leaves the schedule unbounded, as before.
  * pending: one payment on payment_date, if still ahead. completed and cancelled bills are skipped.
  */
 function toBill(row: NessieRecord, today: string): Bill | null {
@@ -270,7 +353,9 @@ function toBill(row: NessieRecord, today: string): Bill | null {
       if (typeof day !== "number" || !Number.isInteger(day) || day < 1 || day > 31) {
         throw new Error(`Nessie bill ${row._id} has an invalid recurring_date.`);
       }
-      return { ...base, schedule: { frequency: "monthly", dayOfMonth: day } };
+      const first = row.payment_date;
+      const startDate = typeof first === "string" && isISODate(first) && first > today ? first : undefined;
+      return { ...base, schedule: { frequency: "monthly", dayOfMonth: day, ...(startDate ? { startDate } : {}) } };
     }
     case "pending": {
       const date = isoDate(row, "payment_date");

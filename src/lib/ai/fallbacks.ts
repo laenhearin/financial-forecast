@@ -20,6 +20,10 @@ export function advisorTemplate(facts: AdvisorFacts): AdvisorExplanation {
   } else {
     explanation = `Buying ${what} takes your lowest balance to ${lowText}, which is ${levelLabel.toLowerCase()} for your ${formatUSD(criticalBalanceCents)} critical balance.${facts.worsenedDayCount ? ` ${worse}.` : ""}`;
   }
+  if (facts.payingAccount.needsTransfer) {
+    const account = facts.payingAccount;
+    explanation += ` Your total cash covers it, but ${account.name} alone would drop to ${formatUSD(account.lowest.cents)} on ${formatDate(account.lowest.date, "short")}, so move money into it first or pay from another account.`;
+  }
   return { headline: facts.recommendation, explanation, alternative: advisorAlternative(facts) };
 }
 

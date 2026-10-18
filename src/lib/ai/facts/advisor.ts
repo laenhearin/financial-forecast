@@ -1,7 +1,7 @@
 import type { Scenario } from "@/features/big-purchase/types";
 import { BALANCE_LABELS } from "@/features/calendar/engine/balanceThresholds";
 import { scenarioEntries } from "@/features/calendar/engine/entries";
-import { checkPurchase, earliestSaferDate, purchaseRecommendation, worsenedDays } from "@/features/calendar/engine/purchaseCheck";
+import { checkPurchase, earliestSaferDate, needsTransfer, purchaseRecommendation, worsenedDays } from "@/features/calendar/engine/purchaseCheck";
 import type { CalendarEntry, UserPurchase } from "@/features/calendar/types";
 import type { AdvisorFacts, Cents, PurchaseInput } from "../types";
 
@@ -36,5 +36,10 @@ export function buildAdvisorFacts(
     nextPaycheck: paycheck ? { date: paycheck.date, amountCents: paycheck.amountCents } : null,
     earliestSaferDate: check.level >= 3 ? earliestSaferDate(scenario, purchases, purchase, criticalCents, entries) : null,
     forecastEnd: check.preview.forecastEnd,
+    payingAccount: {
+      name: scenario.accounts.find((account) => account.id === purchase.accountId)?.nickname ?? "Account",
+      lowest: check.payingAccount.lowest,
+      needsTransfer: needsTransfer(check),
+    },
   };
 }

@@ -26,6 +26,7 @@ export interface Schedule {
   anchorDate?: ISODate;        // a known occurrence (once, weekly, biweekly, yearly)
   dayOfMonth?: number;         // monthly and semimonthly; clamp to the last day of short months
   secondDayOfMonth?: number;   // semimonthly only
+  startDate?: ISODate;         // optional: no occurrence before this date (a recurring bill that has not started yet)
 }
 
 export interface IncomeSource {
@@ -65,6 +66,20 @@ export interface Scenario {
   oneOffs: OneOffEvent[];
   /** Outstanding liabilities at the snapshot date, not spendable cash. Payments are in bills. */
   debts?: { id: string; label: string; balanceCents: Cents; monthlyPaymentCents: Cents }[];
+  /** How much recorded history the spending averages rest on; absent for hand-built scenarios. */
+  spendingCoverage?: SpendingCoverage;
+}
+
+/**
+ * Data coverage behind the spending averages, not a statistical confidence: missing records look
+ * the same as no spending, so a thin history can understate it.
+ */
+export interface SpendingCoverage {
+  level: "established" | "limited" | "insufficient";
+  /** Months between the first record in the six-month window and today, one decimal. */
+  months: number;
+  /** Everyday-spending records in the window. */
+  spendRecords: number;
 }
 
 /** Changes the advice engine tests without mutating the scenario. */

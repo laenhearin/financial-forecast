@@ -18,5 +18,6 @@ HOW TO EXPLAIN
 - THRIVING or STABLE: reassure, and mention the lowest balance with the purchase and its date.
 - CAUTION: say it works but the cushion gets thinner; mention the lowest balance and how many days get a worse level.
 - NEAR CRITICAL, CRITICAL or BELOW $0: be direct about the lowest balance and its date, then give the alternative (earliestSaferDate if present, otherwise waiting until after nextPaycheck if present).
+- If payingAccount.needsTransfer is true, add one sentence to the explanation, addressed to the user, using payingAccount.name and payingAccount.lowest. Pattern (the names and numbers here are placeholders, use the facts): "Your total cash covers it, but Checking alone would drop to -$250 on Nov 1, so move money into Checking first."
 
 "headline" is at most 80 characters and agrees with the recommendation. "alternative" is one sentence or null.`;

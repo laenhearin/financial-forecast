@@ -98,11 +98,19 @@ const FROM_CASH_BACK: Partial<Record<CategoryId, SpendingCategoryId>> = {
   drugstores: "drugstores", wholesale: "wholesale",
 };
 
-/** Seed marker first; otherwise deposits are income and withdrawals are spending, categorized by their label. */
+/** A move between the customer's own accounts: "Transfer to savings", "Transfer from checking", "Savings transfer". */
+const OWN_TRANSFER = /\btransfer\b.*\b(checking|savings)\b|\b(checking|savings)\b.*\btransfer\b/i;
+const INTEREST = /\binterest\b/i;
+
+/**
+ * Seed marker first; then transfers between the customer's own checking and savings; then deposits
+ * are income (interest when labeled so) and withdrawals are spending, categorized by their label.
+ */
 export function classifyTransaction(kind: "deposit" | "withdrawal", description: string, label: string): TransactionClass {
   const tagged = parseSeedTag(description);
   if (tagged) return tagged;
-  if (kind === "deposit") return { flow: "income", category: null };
+  if (OWN_TRANSFER.test(label)) return { flow: "transfer", category: null };
+  if (kind === "deposit") return { flow: INTEREST.test(label) ? "interest" : "income", category: null };
   const rule = LABEL_RULES.find(([pattern]) => pattern.test(label));
   if (rule) return { flow: "spend", category: rule[1] };
   const cashBack = categorizeByKeyword(label);

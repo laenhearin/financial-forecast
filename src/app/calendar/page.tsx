@@ -9,14 +9,6 @@ import "@/features/calendar/calendar.css";
 
 export const metadata: Metadata = { title: "Weather Calendar" };
 
-interface RecordedPayment {
-  id: string;
-  accountId: string;
-  date: string;
-  label: string;
-  amountCents: number;
-}
-
 type LoadResult = { ok: true; profile: CustomerProfile } | { ok: false; message: string; details: string[] };
 
 /** Loads the active Nessie customer on the server; the browser never sees the API key. */
