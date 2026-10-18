@@ -91,27 +91,58 @@ describe("Nessie customer profile", () => {
     }
   });
 
-  it("uses the seeded customer's plan income, spending, and category budget, matched by account nickname", async () => {
-    const { scenario, cashBack } = await loadCustomerProfile({ ...CUSTOMER, name: "College student" }, TODAY);
+  it("uses the seeded customer's plan paycheck, matched by account nickname, and spending from Nessie", async () => {
+    const { scenario } = await loadCustomerProfile({ ...CUSTOMER, name: "College student" }, TODAY);
     expect(scenario.customerName).toBe("College student");
     expect(scenario.income).toEqual([{
       id: "plan-income", label: "Paycheck (plan)", amountCents: 65_000,
       schedule: { frequency: "biweekly", anchorDate: "2026-10-23" }, isPaycheck: true,
     }]);
-    expect(scenario.spending).toEqual([{
-      id: "plan-spending", label: "Everyday spending (plan)", monthlyAmountCents: 32_000, cuttable: true, maxCutPercent: 25,
-    }]);
-    expect(cashBack.spendProfile).toEqual({ groceries: 18_000, dining: 6_000, transit: 4_000, other: 4_000 });
+    expect(scenario.spending.map(category => category.id)).toEqual(["spending-school", "spending-groceries", "spending-dining"]);
     // Balances and bills still come from Nessie, not from the plan.
     expect(scenario.accounts.map(account => account.balanceCents)).toEqual([35_000, 40_000]);
     expect(scenario.bills.map(bill => bill.amountCents)).toEqual([6_000, 65_000]);
   });
 
-  it("falls back to Nessie-history estimates for a customer without a plan entry", async () => {
+  it("falls back to a Nessie income estimate for a customer without a plan entry", async () => {
     api.getCustomerAccounts.mockResolvedValue(accounts().map(account => ({ ...account, nickname: account.nickname.replace("ff-demo-v1/college/", "") })));
     const { scenario } = await loadCustomerProfile(CUSTOMER, TODAY);
     expect(scenario.income[0].id).toBe("nessie-estimated-income");
-    expect(scenario.spending[0].id).toBe("nessie-estimated-spending");
+    expect(scenario.spending.map(category => category.id)).toEqual(["spending-school", "spending-groceries", "spending-dining"]);
+  });
+
+  it("averages six months of tagged seed history into spending categories, leaving out one-offs, bills, savings, and transfers", () => {
+    const tagged = (seq: number, tag: string, label: string) => `ff-demo-v2/college/${String(seq).padStart(4, "0")}/${tag} | SYNTHETIC | ${label}`;
+    const { scenario, cashBack, history } = buildCustomerProfile(raw({
+      deposits: [
+        deposit("pay", "2026-10-09", 650, tagged(1, "income", "Campus library paycheck")),
+        deposit("in", "2026-10-12", 25, tagged(2, "transfer", "Transfer from checking")),
+        deposit("int", "2026-09-30", 1, tagged(3, "interest", "Savings interest")),
+      ],
+      withdrawals: [
+        withdrawal("g1", "2026-04-18", 600, tagged(4, "spend:groceries", "Publix")),
+        withdrawal("g2", "2026-09-01", 300, tagged(5, "spend:groceries", "Aldi")),
+        withdrawal("d1", "2026-10-01", 120, tagged(6, "spend:dining", "Chipotle")),
+        withdrawal("old", "2026-04-17", 9_999, tagged(7, "spend:groceries", "Before the window")),
+        withdrawal("fees", "2026-08-14", 1_150, tagged(8, "oneoff:education", "Fall tuition and fees")),
+        withdrawal("rent", "2026-10-01", 650, tagged(9, "bill:housing", "Housing payment")),
+        withdrawal("ira", "2026-10-05", 500, tagged(10, "saving", "Roth IRA contribution")),
+        withdrawal("out", "2026-10-12", 25, tagged(11, "transfer", "Transfer to savings")),
+      ],
+    }), TODAY);
+    // Six full months from 2026-04-18: (600 + 300) / 6 and 120 / 6.
+    expect(scenario.spending).toEqual([
+      { id: "spending-groceries", label: "Groceries", monthlyAmountCents: 15_000, cuttable: true, maxCutPercent: 10 },
+      { id: "spending-dining", label: "Dining out", monthlyAmountCents: 2_000, cuttable: true, maxCutPercent: 40 },
+    ]);
+    expect(cashBack.spendProfile).toEqual({ groceries: 15_000, dining: 2_000 });
+    expect(Object.fromEntries(history.map(row => [row.id, `${row.flow}${row.category ? `:${row.category}` : ""}`]))).toMatchObject({
+      pay: "income", in: "transfer", int: "interest", g1: "spend:groceries", fees: "one-off:education", rent: "bill", ira: "saving", out: "transfer",
+    });
+    expect(history.find(row => row.id === "fees")?.label).toBe("Fall tuition and fees");
+    // Transfers and interest are never mistaken for the paycheck.
+    expect(buildCustomerProfile(raw({ deposits: [deposit("pay", "2026-10-09", 650, "Paycheck"), deposit("in", "2026-10-12", 25, tagged(2, "transfer", "Transfer"))] }), TODAY)
+      .scenario.income[0]).toMatchObject({ amountCents: 65_000 });
   });
 
   it("reads approved Nessie loans as debt, separate from cash", () => {
@@ -123,31 +154,33 @@ describe("Nessie customer profile", () => {
     expect(projectBase(scenario).startingCashCents).toBe(75_000);
   });
 
-  it("estimates income from the latest deposit and spending from the last 90 days of withdrawals", () => {
+  it("estimates income from the latest deposit and categorizes untagged withdrawals by label", () => {
     const { scenario } = buildCustomerProfile(raw(), TODAY);
     expect(scenario.income).toEqual([{
       id: "nessie-estimated-income", label: "Campus library paycheck (estimate)", amountCents: 65_000,
       schedule: { frequency: "monthly", dayOfMonth: 21 }, isPaycheck: true,
     }]);
-    // (9,200 + 14,500 + 2,800) / 3, rounded to whole cents.
-    expect(scenario.spending).toEqual([{
-      id: "nessie-estimated-spending", label: "Everyday spending (estimate)", monthlyAmountCents: 8_833, cuttable: true, maxCutPercent: 25,
-    }]);
+    // History starts with the Jul 21 deposit, so 89 days (1,068 / 365.25 months) are averaged: 14,500, 9,200, and 2,800 cents.
+    expect(scenario.spending).toEqual([
+      { id: "spending-school", label: "School and books", monthlyAmountCents: 4_959, cuttable: false, maxCutPercent: 0 },
+      { id: "spending-groceries", label: "Groceries", monthlyAmountCents: 3_146, cuttable: true, maxCutPercent: 10 },
+      { id: "spending-dining", label: "Dining out", monthlyAmountCents: 958, cuttable: true, maxCutPercent: 40 },
+    ]);
   });
 
-  it("uses an inclusive 90-day window and ignores records that are not completed or not yet dated", () => {
+  it("uses an inclusive six-month window and ignores records that are not completed or not yet dated", () => {
     const { scenario, history } = buildCustomerProfile(raw({
       deposits: [deposit("d-old", "2026-06-01", 500, "Old paycheck"), deposit("d-new", "2026-10-01", 700, "New paycheck"), deposit("d-pending", "2026-10-10", 900, "Pending", "pending")],
       withdrawals: [
-        withdrawal("w-in", "2026-07-20", 30, "Day 89: inside"),
-        withdrawal("w-out", "2026-07-19", 3_000, "Day 90: outside"),
+        withdrawal("w-in", "2026-04-18", 30, "First day: inside"),
+        withdrawal("w-out", "2026-04-17", 3_000, "Day before: outside"),
         withdrawal("w-future", "2026-10-18", 4_000, "Tomorrow"),
         withdrawal("w-cancelled", "2026-10-01", 5_000, "Cancelled", "cancelled"),
       ],
     }), TODAY);
-    expect(scenario.spending[0].monthlyAmountCents).toBe(1_000);
+    expect(scenario.spending).toEqual([{ id: "spending-other", label: "Other spending", monthlyAmountCents: 500, cuttable: true, maxCutPercent: 20 }]);
     expect(scenario.income[0]).toMatchObject({ amountCents: 70_000, schedule: { frequency: "monthly", dayOfMonth: 1 } });
-    expect(history.map(row => row.id)).toEqual(["d-old", "w-out", "w-in", "d-new"]);
+    expect(history.map(row => row.id)).toEqual(["w-out", "w-in", "d-old", "d-new"]);
   });
 
   it("starts the forecast from the Nessie balances without replaying posted history", () => {
@@ -162,7 +195,8 @@ describe("Nessie customer profile", () => {
     const { cashBack } = buildCustomerProfile(raw(), TODAY);
     // market-fresh and everyday-1 are the seed's sample ids for these catalog cards.
     expect([...cashBack.ownedCardIds].sort()).toEqual(["amex-blue-cash-everyday", "capital-one-quicksilver"]);
-    expect(cashBack.spendProfile).toEqual({ groceries: 3_067, other: 4_833, dining: 933 });
+    // School spending earns the base rate, so it counts as "other".
+    expect(cashBack.spendProfile).toEqual({ other: 4_959, groceries: 3_146, dining: 958 });
     expect(cashBack).toMatchObject({ customerName: "string string", asOfDate: TODAY, sourceLabel: "Nessie sandbox" });
   });
 

@@ -16,7 +16,9 @@ import { formatDate, daysBetween } from "@/lib/dates";
 
 async function loadHome() {
   const profile = await loadActiveProfile();
-  const { scenario, history, asOfDate } = profile;
+  const { scenario, asOfDate } = profile;
+  // Transfers between the customer's own accounts net to zero, so they change neither balances nor totals.
+  const history = profile.history.filter(record => record.flow !== "transfer");
   const today = monthlyActivity(history.filter(record => record.date === asOfDate), asOfDate);
   const homeData = buildHomeForecast(scenario);
   const accounts = new Set(scenario.accounts.filter(account => account.includeInForecast).map(account => account.id));
@@ -26,7 +28,8 @@ async function loadHome() {
     historicalDays: historicalBalances(history.filter(record => accounts.has(record.accountId)), asOfDate, homeData.availableBalanceCents),
     defaultCriticalCents: defaultCriticalBalanceCents(scenario),
     billEntries: scenarioEntries(scenario),
-    monthlyTotals: monthlyActivity(history, asOfDate),
+    // Money moved to retirement or brokerage accounts left the balance but isn't spending.
+    monthlyTotals: monthlyActivity(history.filter(record => record.flow !== "saving"), asOfDate),
     todayNetCents: today.incomeCents - today.spendingCents,
   };
 }

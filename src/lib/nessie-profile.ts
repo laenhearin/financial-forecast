@@ -4,31 +4,32 @@ import { validateScenario } from "../data/validateScenario";
 import type { AccountSnapshot, Bill, IncomeSource, Scenario, SpendingCategory } from "../features/big-purchase/types";
 import { resolveCardId } from "../features/cash-back/cards/catalog";
 import type { CashBackProfile } from "../features/cash-back/data/source";
-import { categorizeByKeyword } from "../features/cash-back/engine/categorize";
-import type { CategoryId, SpendProfile } from "../features/cash-back/types";
-import { addDays, isISODate } from "./dates";
+import type { SpendProfile } from "../features/cash-back/types";
+import { addDays, addMonths, daysBetween, isISODate, maxDate } from "./dates";
 import { dollarsToCents } from "./money";
 import {
   getAccountBills, getAccountDeposits, getAccountLoans, getAccountWithdrawals, getCustomerAccounts, getCustomers, type NessieRecord,
 } from "./nessie-api";
 import { planAssumptionsFor, type PlanAssumptions } from "./plan-assumptions";
+import { billCategory, classifyTransaction, SPENDING_CATEGORIES, type SpendingCategoryId, type TransactionFlow } from "./spending-categories";
+
+export { billCategory };
 
 /**
  * Normalizes one Nessie customer into every feature's input. Balances, bills, history, loans, and
- * cards come from the API. Nessie has no income schedule or spending budget: seeded customers use
- * their plan assumptions (src/lib/plan-assumptions.ts); any other customer gets estimates computed
- * here from their Nessie history. Both are labeled. Server only.
+ * cards come from the API, and monthly spending by category averages the last six months of Nessie
+ * transactions. Nessie has no income schedule: seeded customers use their plan's paycheck
+ * (src/lib/plan-assumptions.ts); any other customer gets an estimate from their latest deposit.
+ * Both are labeled. Server only.
  *
  * Money: Nessie amounts are read as dollars and converted to integer cents once, here.
  */
 
 export const NESSIE_SOURCE_LABEL = "Nessie sandbox";
-/** Income and spending ids that mark a scenario built from plan assumptions rather than Nessie estimates. */
+/** Income id that marks a scenario using its plan's paycheck rather than a Nessie estimate. */
 export const PLAN_INCOME_ID = "plan-income";
-export const PLAN_SPENDING_ID = "plan-spending";
-/** Estimates use the last 90 days, today included. */
-export const HISTORY_WINDOW_DAYS = 90;
-const WINDOW_MONTHS = 3;
+/** Spending averages cover the last six months, today included. */
+export const SPENDING_WINDOW_MONTHS = 6;
 
 export interface CustomerSummary { id: string; name: string }
 
@@ -39,6 +40,10 @@ export interface RecordedTransaction {
   date: string;
   amountCents: number;
   label: string;
+  /** Spending, bill payment, transfer between own accounts, and so on (src/lib/spending-categories.ts). */
+  flow: TransactionFlow;
+  /** For spend and one-off records. */
+  category: SpendingCategoryId | null;
 }
 
 export interface CustomerProfile {
@@ -133,14 +138,11 @@ export function buildCustomerProfile(raw: RawCustomerData, today: string): Custo
   accounts.sort((a, b) => Number(a.type !== "checking") - Number(b.type !== "checking"));
 
   const plan = raw.assumptions ?? null;
-  const monthlySpendingCents = plan ? plan.monthlySpendingCents : Math.round(sumCents(recentWithdrawals(history, today)) / WINDOW_MONTHS);
-  const spending: SpendingCategory[] = monthlySpendingCents > 0
-    ? [{
-      id: plan ? PLAN_SPENDING_ID : "nessie-estimated-spending",
-      label: plan ? "Everyday spending (plan)" : "Everyday spending (estimate)",
-      monthlyAmountCents: monthlySpendingCents, cuttable: true, maxCutPercent: 25,
-    }]
-    : [];
+  const monthlySpend = monthlySpendByCategory(history, today);
+  const spending: SpendingCategory[] = [...monthlySpend].map(([category, cents]) => {
+    const { label, maxCutPercent } = SPENDING_CATEGORIES[category];
+    return { id: `spending-${category}`, label, monthlyAmountCents: cents, cuttable: maxCutPercent > 0, maxCutPercent };
+  });
   const income: IncomeSource[] = plan
     ? [{ id: PLAN_INCOME_ID, label: `${plan.income.label} (plan)`, amountCents: plan.income.amountCents, schedule: plan.income.schedule, isPaycheck: true }]
     : estimateIncome(history);
@@ -172,17 +174,17 @@ export function buildCustomerProfile(raw: RawCustomerData, today: string): Custo
       customerName: customer.name,
       asOfDate: today,
       ownedCardIds: [...cardIds],
-      spendProfile: plan ? plan.spendProfile : estimateSpendProfile(history, today),
+      spendProfile: cashBackSpendProfile(monthlySpend),
       sourceLabel: NESSIE_SOURCE_LABEL,
     },
     history,
   };
 }
 
-/** Income estimate: the latest deposit, repeated monthly on its day of the month. */
+/** Income estimate: the latest income deposit (not a transfer or interest), repeated monthly on its day of the month. */
 export function estimateIncome(history: readonly RecordedTransaction[]): IncomeSource[] {
   const latest = history
-    .filter(row => row.kind === "deposit")
+    .filter(row => row.kind === "deposit" && row.flow === "income")
     .sort((a, b) => b.date.localeCompare(a.date) || b.amountCents - a.amountCents)[0];
   if (!latest) return [];
   return [{
@@ -194,24 +196,37 @@ export function estimateIncome(history: readonly RecordedTransaction[]): IncomeS
   }];
 }
 
-/** Monthly spend per cash-back category: withdrawals in the window, sorted by merchant keywords, divided by 3. */
-export function estimateSpendProfile(history: readonly RecordedTransaction[], today: string): SpendProfile {
-  const totals = new Map<CategoryId, number>();
-  for (const row of recentWithdrawals(history, today)) {
-    const category = categorizeByKeyword(row.label) ?? "other";
-    totals.set(category, (totals.get(category) ?? 0) + row.amountCents);
-  }
-  const profile: SpendProfile = {};
-  for (const [category, total] of totals) {
-    const monthly = Math.round(total / WINDOW_MONTHS);
-    if (monthly > 0) profile[category] = monthly;
-  }
-  return profile;
+/**
+ * Average monthly everyday spending per category over the last six months, largest first. One-offs,
+ * bill payments, savings, and transfers are left out: bills are already scheduled, and the rest do
+ * not repeat monthly. A history that starts in the window's first month covers all six months; a
+ * shorter one is averaged over the months from its first record (at least one).
+ */
+export function monthlySpendByCategory(history: readonly RecordedTransaction[], today: string): Map<SpendingCategoryId, number> {
+  const start = addDays(addMonths(today, -SPENDING_WINDOW_MONTHS), 1);
+  const inWindow = history.filter(row => row.date >= start && row.date <= today);
+  const rows = inWindow.filter(row => row.flow === "spend" && row.category);
+  if (!rows.length) return new Map();
+  const earliest = inWindow.reduce((first, row) => (row.date < first ? row.date : first), today);
+  const covered = daysBetween(maxDate(start, earliest), today) + 1;
+  const months = earliest <= addMonths(start, 1) ? SPENDING_WINDOW_MONTHS : Math.min(SPENDING_WINDOW_MONTHS, Math.max(1, (covered * 12) / 365.25));
+  const totals = new Map<SpendingCategoryId, number>();
+  for (const row of rows) totals.set(row.category!, (totals.get(row.category!) ?? 0) + row.amountCents);
+  for (const total of totals.values()) if (!Number.isSafeInteger(total)) throw new Error("Spending total exceeds the supported range.");
+  return new Map([...totals]
+    .map(([category, total]) => [category, Math.round(total / months)] as const)
+    .filter(([, cents]) => cents > 0)
+    .sort((a, b) => b[1] - a[1]));
 }
 
-function recentWithdrawals(history: readonly RecordedTransaction[], today: string): RecordedTransaction[] {
-  const start = addDays(today, -(HISTORY_WINDOW_DAYS - 1));
-  return history.filter(row => row.kind === "withdrawal" && row.date >= start && row.date <= today);
+/** The same monthly spending, grouped by Swipe and Shine's reward categories. */
+export function cashBackSpendProfile(monthly: ReadonlyMap<SpendingCategoryId, number>): SpendProfile {
+  const profile: SpendProfile = {};
+  for (const [category, cents] of monthly) {
+    const id = SPENDING_CATEGORIES[category].cashBack;
+    profile[id] = (profile[id] ?? 0) + cents;
+  }
+  return profile;
 }
 
 /**
@@ -229,15 +244,6 @@ export function displayLabel(value: string): string {
 export function cardIdFromNickname(nickname: string): string | undefined {
   const trimmed = nickname.trim();
   return resolveCardId(trimmed.slice(trimmed.lastIndexOf("/") + 1)) ?? resolveCardId(trimmed);
-}
-
-/** Groups bills for the critical-balance default (housing) and advice; Nessie bills have no category field. */
-export function billCategory(label: string): string {
-  if (/rent|housing|mortgage/i.test(label)) return "housing";
-  if (/util|internet|electric|water|phone|mobile/i.test(label)) return "utilities";
-  if (/loan|debt|credit/i.test(label)) return "debt";
-  if (/transit|car|auto|insurance/i.test(label)) return "transport";
-  return "other";
 }
 
 function accountKind(account: NessieRecord): AccountKind {
@@ -283,10 +289,9 @@ function pushTransaction(history: RecordedTransaction[], row: NessieRecord, kind
   if (row.status !== "completed") return;
   const date = isoDate(row, "transaction_date");
   if (date > today) return;
-  history.push({
-    id: row._id, accountId, kind, date, amountCents: cents(row, "amount"),
-    label: displayLabel(text(row, "description")) || (kind === "deposit" ? "Deposit" : "Withdrawal"),
-  });
+  const description = text(row, "description");
+  const label = displayLabel(description) || (kind === "deposit" ? "Deposit" : "Withdrawal");
+  history.push({ id: row._id, accountId, kind, date, amountCents: cents(row, "amount"), label, ...classifyTransaction(kind, description, label) });
 }
 
 function text(record: NessieRecord, field: string): string {
@@ -308,8 +313,3 @@ function isoDate(record: NessieRecord, field: string): string {
   return value;
 }
 
-function sumCents(rows: readonly RecordedTransaction[]): number {
-  const total = rows.reduce((sum, row) => sum + row.amountCents, 0);
-  if (!Number.isSafeInteger(total)) throw new Error("Spending total exceeds the supported range.");
-  return total;
-}

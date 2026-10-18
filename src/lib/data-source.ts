@@ -7,16 +7,14 @@ export function nessieSourceNote(customerName: string, asOfDate: string): string
 }
 
 /** Swipe and Shine adds this: where the monthly category spending came from. */
-export function cashBackSpendNote(scenario: Pick<Scenario, "income">): string {
-  return scenario.income.some(income => income.id === "plan-income")
-    ? "Monthly spending by category is this customer's plan budget; cards start from their Nessie credit card accounts."
-    : "Monthly spending averages the last 90 days of Nessie withdrawals; cards start from the customer's Nessie credit card accounts.";
+export function cashBackSpendNote(): string {
+  return "Monthly spending by category averages the last 6 months of Nessie transactions; cards start from the customer's Nessie credit card accounts.";
 }
 
-/** Forecast pages add this. Nessie has no income or spending schedule, so says where both came from. */
+/** Forecast pages add this. Nessie has no income schedule, so says where income and spending came from. */
 export function forecastEstimateNote(scenario: Pick<Scenario, "income">): string {
   // Kept in sync with PLAN_INCOME_ID in nessie-profile.ts, which is server-only.
   return scenario.income.some(income => income.id === "plan-income")
-    ? "Income and everyday spending are this customer's plan assumptions; balances, bills, and loans come from Nessie."
-    : "Income repeats the latest Nessie deposit monthly; everyday spending averages the last 90 days of withdrawals.";
+    ? "Income is this customer's plan paycheck; spending by category averages the last 6 months of Nessie transactions; balances, bills, and loans come from Nessie."
+    : "Income repeats the latest Nessie deposit monthly; spending by category averages the last 6 months of Nessie transactions.";
 }
