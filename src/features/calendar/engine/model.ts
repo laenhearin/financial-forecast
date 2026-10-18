@@ -4,7 +4,7 @@ import type { Scenario } from "../../big-purchase/types";
 import { FORECAST_DAYS } from "../config";
 import { balanceLevel, BALANCE_LABELS, majorBillImpact } from "./balanceThresholds";
 import { ALL_ACCOUNTS, type AccountView, type CalendarEntry, type Cents, type DayBalance, type ISODate, type UserPurchase } from "../types";
-import { forecastEndDate, purchaseEntries, scenarioEntries, signedCents, sortEntries } from "./entries";
+import { forecastEndDate, isRecorded, purchaseEntries, scenarioEntries, signedCents, sortEntries } from "./entries";
 
 export interface CalendarModel {
   asOfDate: ISODate;
@@ -16,6 +16,21 @@ export interface CalendarModel {
   entriesByDate: Map<ISODate, CalendarEntry[]>;
   /** End-of-day balances from the as-of date through the forecast end. */
   balances: Map<ISODate, DayBalance>;
+  /**
+   * End-of-day balances before the as-of date, rebuilt by undoing recorded transactions from the
+   * snapshot. Kept apart from `balances` so forecast lows and risk checks never include past days.
+   */
+  recordedBalances: Map<ISODate, DayBalance>;
+  /** Earliest recorded transaction in view; no balance is known before it. */
+  historyStart: ISODate | null;
+}
+
+/** A recorded Nessie deposit or withdrawal, transfers between the customer's accounts included. */
+export interface RecordedActivity {
+  accountId: string;
+  date: ISODate;
+  kind: "deposit" | "withdrawal";
+  amountCents: Cents;
 }
 
 export function viewAccountIds(scenario: Scenario, view: AccountView): string[] {
@@ -26,13 +41,15 @@ export function viewAccountIds(scenario: Scenario, view: AccountView): string[] 
 /**
  * Entries and daily balances for the accounts in view. Account balances are end of day on the
  * as-of date, so scheduled items start the next day. Purchases added here count from the as-of
- * date onward; earlier ones are listed but do not change the forecast.
+ * date onward; earlier ones are listed but do not change the forecast. `recorded` (every past
+ * deposit and withdrawal, transfers included) gives the end-of-day balance of each past day.
  */
 export function buildCalendarModel(
   scenario: Scenario,
   purchases: readonly UserPurchase[],
   view: AccountView,
   baseEntries: readonly CalendarEntry[] = scenarioEntries(scenario),
+  recorded: readonly RecordedActivity[] = [],
 ): CalendarModel {
   const asOfDate = scenario.asOfDate;
   const forecastEnd = forecastEndDate(asOfDate);
@@ -47,24 +64,58 @@ export function buildCalendarModel(
   const running: Record<string, Cents> = {};
   for (const account of scenario.accounts) if (inView.has(account.id)) running[account.id] = account.balanceCents;
   const startingCents = Object.values(running).reduce((sum, cents) => sum + cents, 0);
+  const { recordedBalances, historyStart } = pastBalances(asOfDate, running, recorded.filter((row) => inView.has(row.accountId)));
 
   const balances = new Map<ISODate, DayBalance>();
   for (let date = asOfDate; date <= forecastEnd; date = addDays(date, 1)) {
     for (const entry of entriesByDate.get(date) ?? []) {
-      // Completed payments are already included in the opening balance snapshot.
-      if (entry.kind !== "payment") running[entry.accountId] += signedCents(entry);
+      // Recorded transactions are already included in the opening balance snapshot.
+      if (!isRecorded(entry)) running[entry.accountId] += signedCents(entry);
     }
     const totalCents = Object.values(running).reduce((sum, cents) => sum + cents, 0);
     if (!Number.isSafeInteger(totalCents)) throw new Error("Projected balance exceeds the supported range.");
     balances.set(date, { totalCents, byAccount: { ...running } });
   }
 
-  return { asOfDate, forecastEnd, accountIds, startingCents, entries, entriesByDate, balances };
+  return { asOfDate, forecastEnd, accountIds, startingCents, entries, entriesByDate, balances, recordedBalances, historyStart };
+}
+
+/**
+ * Walks back from the snapshot (end of the as-of date): the day before ends with that day's
+ * transactions undone. Covers the earliest recorded day through the day before the as-of date.
+ */
+function pastBalances(asOfDate: ISODate, snapshot: Record<string, Cents>, recorded: readonly RecordedActivity[]) {
+  const recordedBalances = new Map<ISODate, DayBalance>();
+  const byDate = new Map<ISODate, RecordedActivity[]>();
+  let historyStart: ISODate | null = null;
+  for (const row of recorded) {
+    if (row.date > asOfDate) continue;
+    if (!Number.isSafeInteger(row.amountCents) || row.amountCents < 0) throw new Error("Recorded amounts must be nonnegative cents.");
+    byDate.set(row.date, [...(byDate.get(row.date) ?? []), row]);
+    if (historyStart === null || row.date < historyStart) historyStart = row.date;
+  }
+  if (historyStart === null) return { recordedBalances, historyStart };
+  const back = { ...snapshot };
+  for (let date = asOfDate; date > historyStart; date = addDays(date, -1)) {
+    for (const row of byDate.get(date) ?? []) back[row.accountId] -= row.kind === "deposit" ? row.amountCents : -row.amountCents;
+    const totalCents = Object.values(back).reduce((sum, cents) => sum + cents, 0);
+    if (!Number.isSafeInteger(totalCents)) throw new Error("Recorded balance exceeds the supported range.");
+    recordedBalances.set(addDays(date, -1), { totalCents, byAccount: { ...back } });
+  }
+  return { recordedBalances, historyStart };
 }
 
 /** Projected total for a day, or null before the as-of date and after the forecast window. */
 export function balanceOn(model: CalendarModel, date: ISODate): Cents | null {
   return model.balances.get(date)?.totalCents ?? null;
+}
+
+/** End-of-day balance for display: rebuilt from records before the as-of date, projected from it on. */
+export function endOfDayBalance(model: CalendarModel, date: ISODate): { cents: Cents; recorded: boolean } | null {
+  const projected = model.balances.get(date);
+  if (projected) return { cents: projected.totalCents, recorded: false };
+  const past = model.recordedBalances.get(date);
+  return past ? { cents: past.totalCents, recorded: true } : null;
 }
 
 export type RiskLevel = 0 | 1 | 2 | 3 | 4 | 5;
@@ -124,9 +175,14 @@ export interface DayAlert {
 export function dayAlert(model: CalendarModel, date: ISODate, criticalCents = 0): DayAlert {
   const balance = balanceOn(model, date);
   if (balance === null) {
-    return date < model.asOfDate
-      ? { tone: "safe", text: "This date is in the past. Select today or a future date to see the forecast." }
-      : { tone: "safe", text: `This date is past the ${FORECAST_DAYS}-day forecast window.` };
+    if (date >= model.asOfDate) return { tone: "safe", text: `This date is past the ${FORECAST_DAYS}-day forecast window.` };
+    const past = model.recordedBalances.get(date)?.totalCents;
+    if (past === undefined) {
+      return { tone: "safe", text: model.historyStart ? `Recorded Nessie history starts ${formatDate(model.historyStart, "full")}.` : "No recorded Nessie history for this date." };
+    }
+    return past < 0
+      ? { tone: "danger", text: `This day has passed. Recorded transactions left the balance ${formatUSD(-past)} below zero.` }
+      : { tone: "safe", text: `This day has passed. Recorded transactions left ${formatUSD(past)} at the end of the day.` };
   }
   const level = balanceLevel(balance, criticalCents);
   if (level === 5) return { tone: "danger", text: `⚠️ Danger: your projected balance is ${formatUSD(-balance)} below zero.` };

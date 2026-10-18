@@ -2,6 +2,7 @@
  * Template text for every surface, built from the same facts the model gets. Pure and client-safe.
  * These read as normal product copy because users see them whenever the model is unavailable.
  */
+import { HORIZON_MONTHS } from "@/features/big-purchase/config";
 import { formatDate } from "@/lib/dates";
 import { formatUSD } from "@/lib/money";
 import type { AdvisorExplanation, AdvisorFacts, Baseline, GoalSummaryFacts } from "./types";
@@ -37,7 +38,7 @@ export function goalSummaryTemplate(facts: GoalSummaryFacts): string {
 
   if (facts.affordableNow) sentences.push(`You can afford ${item} right now and still keep ${formatUSD(facts.bufferCents)} in reserve.`);
   else if (facts.affordableDate) sentences.push(`At ${contribution} per paycheck you can afford ${item} on ${formatDate(facts.affordableDate, "long")}.`);
-  else sentences.push(`At ${contribution} per paycheck, ${item} is not within reach in the next 24 months.`);
+  else sentences.push(`At ${contribution} per paycheck, ${item} is not within reach in the next ${HORIZON_MONTHS} months.`);
 
   if (facts.onTrack === false) {
     const top = facts.changes[0];
@@ -53,7 +54,7 @@ export function goalSummaryTemplate(facts: GoalSummaryFacts): string {
       if (combined && combined.reachesDeadline && combined.count > 1) {
         sentences.push(`Combining the top ${combined.count} reaches your deadline.`);
       } else if (combined && !combined.reachesDeadline && facts.changes.length > 1) {
-        sentences.push(`Even with every change, the earliest date is ${combined.earliestDate ? formatDate(combined.earliestDate, "long") : "beyond 24 months"}.`);
+        sentences.push(`Even with every change, the earliest date is ${combined.earliestDate ? formatDate(combined.earliestDate, "long") : `beyond ${HORIZON_MONTHS} months`}.`);
       }
     }
   } else if (facts.onTrack) {

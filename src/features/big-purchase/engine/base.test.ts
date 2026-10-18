@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { HORIZON_MONTHS } from "../config";
 import { projectBase, startingCash } from "./base";
 import { buildEvents, weeklySpendingCents } from "./events";
 import { category, makeScenario, monthlyBill, paycheck } from "./testScenario";
@@ -34,11 +35,12 @@ describe("projectBase", () => {
     expect(on("2026-02-01")).toBe(118_500 + 100_000 * 2 - 12_000 * 3 - 80_000); // payday Jan 16, 30; Saturdays Jan 17, 24, 31; rent Feb 1
   });
 
-  it("covers the 24-month horizon and lists paydays after the as-of date", () => {
+  it("covers the 60-month horizon and lists paydays after the as-of date", () => {
+    expect(HORIZON_MONTHS).toBe(60);
     const projection = projectBase(scenario);
     expect(projection.days[0].date).toBe("2026-01-01");
-    expect(projection.days.at(-1)?.date).toBe("2028-01-01");
-    expect(projection.days).toHaveLength(731);
+    expect(projection.days.at(-1)?.date).toBe("2031-01-01");
+    expect(projection.days).toHaveLength(365 * 5 + 1 + 1); // 2028 is a leap year; both ends included
     expect(projection.paydays.slice(0, 3)).toEqual(["2026-01-02", "2026-01-16", "2026-01-30"]);
   });
 

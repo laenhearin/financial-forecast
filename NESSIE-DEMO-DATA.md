@@ -31,6 +31,28 @@ Every new account nickname and transaction description contains `ff-demo-v1`. Ex
 
 **Later on 2026-10-17:** all eight customers were renamed in Nessie to their plan labels (for example "string string" became "College student" and "Alejandro Ponce" became "20s: commuter") so the app can show API names. Addresses were re-sent unchanged and verified. The original names are recorded in the ignored `data/nessie-demo/customer-names.local.json` on the machine that made the change.
 
+## Six-month history (seed v2)
+
+**Written to Nessie on 2026-10-17:** 1,032 records created and each read back; a later `--check` reports none missing.
+
+The 32 v1 transactions were too sparse for the tools, so seed v2 adds about 1,000 more: 15 to 30 a month per profile, **2026-04-18 through 2026-10-17**, on the seeded checking and savings accounts. It only adds deposits and withdrawals. No customer, account, balance, bill, loan, or v1 record is changed.
+
+- **Paychecks** on each plan schedule (hourly jobs vary a little), **past bill payments** for every Nessie bill (utilities run higher in summer), and **everyday purchases** at real chains in detailed categories (groceries, dining, coffee, gas, transit, streaming, pharmacy, car care, and more).
+- Each profile's category budgets ([src/lib/demo-history/personas.ts](src/lib/demo-history/personas.ts)) add up to its plan's monthly spending, so forecasts are unchanged; a test checks every profile's Forecast Fund result against the old single spending line.
+- The plan incomes exceed bills and spending, so the surplus leaves through labeled savings (Roth IRA, 529, brokerage), one-off costs (tuition, insurance premiums, trips), transfers to savings, and, for the tight profiles, cash withdrawals or money sent to family. Checking never goes below zero when the home page rebuilds past balances.
+- Every description carries a marker with its category, for example `ff-demo-v2/college/0042/spend:groceries | SYNTHETIC | Publix`. [src/lib/spending-categories.ts](src/lib/spending-categories.ts) reads it; records without a marker are categorized from their label.
+
+The app now averages the last six months of everyday spending per category for every customer (forecasts, Forecast Fund and Storm Solver cut advice, Swipe and Shine). One-offs, bill payments, savings, and transfers are not projected forward. Seeded customers still use their plan's paycheck, since Nessie has no future income schedule.
+
+```zsh
+npm run nessie:history                     # regenerate data/nessie-demo/history-v2.json and print a summary (offline)
+npm run nessie:seed-history                # offline preview
+npm run nessie:seed-history -- --check     # read-only: what is present or missing in Nessie
+npm run nessie:seed-history -- --apply     # create only the missing records, then read every one back
+```
+
+`--apply` matches records by description, writes three at a time, never retries a failed write, and stops on any duplicate or read-back mismatch. Rerun `--check` after any failure. Its ignored receipt is `data/nessie-demo/history-v2.receipt.local.json`.
+
 ## Read names and transactions directly from Terminal
 
 Run these commands **from the repository root**. No Next.js server or application script is required. The shell reads your trusted local environment file; the key itself never needs to appear in a command you paste.

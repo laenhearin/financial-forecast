@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "ai:smoke": "node scripts/ai-smoke.mts",
     "ai:burst": "node scripts/ai-burst.mts",
-    "nessie:read": "node --conditions=react-server --experimental-transform-types --no-warnings --import ./scripts/resolve-app-imports.mjs --env-file=.env.local scripts/read-nessie-profile.mts"
+    "nessie:read": "node --conditions=react-server --experimental-transform-types --no-warnings --import ./scripts/resolve-app-imports.mjs --env-file=.env.local scripts/read-nessie-profile.mts",
+    "nessie:history": "node --conditions=react-server --experimental-transform-types --no-warnings --import ./scripts/resolve-app-imports.mjs scripts/generate-nessie-history.mts",
+    "nessie:seed-history": "node --conditions=react-server --experimental-transform-types --no-warnings --import ./scripts/resolve-app-imports.mjs --env-file=.env.local scripts/seed-nessie-history.mts"
   },
   "engines": {
     "node": "24.x"

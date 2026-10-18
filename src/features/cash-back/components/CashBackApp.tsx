@@ -39,7 +39,7 @@ export function CashBackApp({ profile: nessieProfile, scenario, initialCardId }:
         <p className="mt-0.5 text-body text-secondary">Use the right card for every purchase.</p>
         <p className="mt-1 flex items-start justify-center gap-1.5 text-micro text-secondary">
           <Database aria-hidden className="mt-px size-3.5 shrink-0" strokeWidth={1.75} />
-          {nessieSourceNote(profile.customerName, profile.asOfDate)} {cashBackSpendNote(scenario)}
+          {nessieSourceNote(profile.customerName, profile.asOfDate)} {cashBackSpendNote()}
         </p>
       </header>
       <DebtSummary scenario={scenario} />

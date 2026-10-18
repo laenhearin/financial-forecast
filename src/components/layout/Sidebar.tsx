@@ -24,7 +24,7 @@ const iconButton =
 const FEATURE_TOOLTIP_DELAY_MS = 1000;
 
 function LogoMark({ className }: { className?: string }) {
-  return <Image src="/icon.png" alt="" width={44} height={44} className={cn("size-8 shrink-0 rounded-logo object-cover", className)} />;
+  return <Image src="/icon.png" alt="" width={128} height={128} className={cn("size-8 shrink-0 rounded-logo object-cover", className)} />;
 }
 
 export function Sidebar() {
@@ -86,9 +86,9 @@ export function Sidebar() {
           "md:sticky md:top-0 md:z-20 md:h-screen",
         )}
       >
-        <div className="mb-7 flex items-center gap-3 px-1 md:max-lg:justify-center md:max-lg:px-0">
-          <LogoMark className="size-11 md:max-lg:size-9" />
-          <span className="text-xl leading-tight font-semibold tracking-tight text-primary md:max-lg:sr-only">{APP_NAME}</span>
+        <div className="mb-10 flex items-center gap-3 px-1 md:max-lg:mb-7 md:max-lg:justify-center md:max-lg:px-0">
+          <LogoMark className="size-16 md:max-lg:size-10" />
+          <span className="text-2xl leading-tight font-semibold tracking-tight text-primary md:max-lg:sr-only">{APP_NAME}</span>
           <button type="button" aria-label="Close menu" onClick={() => closeDrawer(true)} className={cn(iconButton, "ml-auto md:hidden")}>
             <X aria-hidden className="size-4.5" strokeWidth={1.75} />
           </button>

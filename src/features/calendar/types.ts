@@ -6,9 +6,10 @@ export type BillPriority = "essential" | "important" | "optional";
 
 /**
  * income, bill and planned (one-off expenses) are scheduled; estimate is the scenario's
- * everyday spending; purchase is something the user added on this page.
+ * everyday spending; purchase is something the user added on this page. payment (money out) and
+ * received (money in) are recorded Nessie transactions, already in the balance snapshot.
  */
-export type EntryKind = "income" | "bill" | "planned" | "estimate" | "purchase" | "payment";
+export type EntryKind = "income" | "bill" | "planned" | "estimate" | "purchase" | "payment" | "received";
 
 export interface CalendarEntry {
   id: string;

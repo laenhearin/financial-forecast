@@ -20,7 +20,7 @@ export function forecastEndDate(asOfDate: ISODate): ISODate {
   return addDays(asOfDate, FORECAST_DAYS);
 }
 
-const KIND_ORDER: Record<CalendarEntry["kind"], number> = { income: 0, bill: 1, planned: 2, purchase: 3, payment: 4, estimate: 5 };
+const KIND_ORDER: Record<CalendarEntry["kind"], number> = { income: 0, received: 1, bill: 2, planned: 3, purchase: 4, payment: 5, estimate: 6 };
 
 /** By date, then income first within a day. */
 export function sortEntries(entries: CalendarEntry[]): CalendarEntry[] {
@@ -104,7 +104,17 @@ export function purchaseEntries(purchase: UserPurchase, fromDate: ISODate, toDat
     .map((date) => ({ ...purchaseEntry({ ...purchase, id: `${purchase.id}:${date}`, date }), sourceId: purchase.id }));
 }
 
+/** Money coming in: scheduled income or a recorded deposit. */
+export function isIncoming(entry: Pick<CalendarEntry, "kind">): boolean {
+  return entry.kind === "income" || entry.kind === "received";
+}
+
+/** Recorded Nessie transactions, already included in the balance snapshot. */
+export function isRecorded(entry: Pick<CalendarEntry, "kind">): boolean {
+  return entry.kind === "payment" || entry.kind === "received";
+}
+
 /** Signed change to the balance. */
 export function signedCents(entry: Pick<CalendarEntry, "kind" | "amountCents">): number {
-  return entry.kind === "income" ? entry.amountCents : -entry.amountCents;
+  return isIncoming(entry) ? entry.amountCents : -entry.amountCents;
 }

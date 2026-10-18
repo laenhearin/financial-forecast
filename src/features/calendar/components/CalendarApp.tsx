@@ -9,7 +9,7 @@ import { DebtSummary } from "@/components/home/DebtSummary";
 import type { Scenario } from "../../big-purchase/types";
 import { forecastEndDate, scenarioEntries } from "../engine/entries";
 import { monthStartOf } from "../engine/grid";
-import { buildCalendarModel } from "../engine/model";
+import { buildCalendarModel, type RecordedActivity } from "../engine/model";
 import { defaultCriticalBalanceCents } from "../engine/balanceThresholds";
 import { ALL_ACCOUNTS, type AccountView, type ISODate, type UserPurchase } from "../types";
 import { purchaseStore } from "../state/purchaseStore";
@@ -21,22 +21,22 @@ import { StatsRow } from "./StatsRow";
 import { SpendingChart } from "./SpendingChart";
 import { CalendarListView } from "./CalendarListView";
 
-interface RecordedPayment {
+interface RecordedTransaction extends RecordedActivity {
   id: string;
-  accountId: string;
-  date: ISODate;
   label: string;
-  amountCents: number;
+  /** Between the customer's own accounts: counted in past balances, not listed as a payment. */
+  transfer: boolean;
 }
 
 interface CalendarAppProps {
   scenario: Scenario;
-  pastPayments: RecordedPayment[];
+  /** Every recorded Nessie deposit and withdrawal up to the as-of date. */
+  pastActivity: RecordedTransaction[];
   initialDate?: string;
 }
 
 /** Money calendar and weekly spending for one scenario; view state is local, purchases are saved per Nessie customer. */
-export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarAppProps) {
+export function CalendarApp({ scenario, pastActivity, initialDate }: CalendarAppProps) {
   const customerId = useActiveCustomerId();
   const asOf = scenario.asOfDate;
   const startDate = initialDate && isISODate(initialDate) && initialDate >= asOf && initialDate <= forecastEndDate(asOf) ? initialDate : asOf;
@@ -50,19 +50,22 @@ export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarApp
 
   const baseEntries = useMemo(() => {
     const checkingAccountId = scenario.accounts[0]?.id ?? "";
-    const recorded = pastPayments.map(payment => ({
-      id: `payment-${payment.id}`,
-      sourceId: payment.id,
-      date: payment.date,
-      kind: "payment" as const,
-      label: payment.label,
-      amountCents: payment.amountCents,
-      accountId: payment.accountId || checkingAccountId,
+    const recorded = pastActivity.filter(row => !row.transfer).map(row => ({
+      id: `recorded-${row.id}`,
+      sourceId: row.id,
+      date: row.date,
+      kind: row.kind === "deposit" ? "received" as const : "payment" as const,
+      label: row.label,
+      amountCents: row.amountCents,
+      accountId: row.accountId || checkingAccountId,
       recurring: false,
     }));
     return [...scenarioEntries(scenario), ...recorded];
-  }, [pastPayments, scenario]);
-  const model = useMemo(() => buildCalendarModel(scenario, purchases, view, baseEntries), [scenario, purchases, view, baseEntries]);
+  }, [pastActivity, scenario]);
+  const model = useMemo(
+    () => buildCalendarModel(scenario, purchases, view, baseEntries, pastActivity),
+    [scenario, purchases, view, baseEntries, pastActivity],
+  );
   const accountNames = useMemo(() => Object.fromEntries(scenario.accounts.map((a) => [a.id, a.nickname])), [scenario]);
   const viewName = view === ALL_ACCOUNTS ? null : (accountNames[view] ?? null);
 

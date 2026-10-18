@@ -3,6 +3,7 @@ import { classifyActivity } from "../classifyActivity";
 import { aggregateTotals } from "../aggregations";
 import type { AccountSnapshot } from "@/features/big-purchase/types";
 import type { RecordedTransaction } from "@/lib/nessie-profile";
+import { classifyTransaction } from "@/lib/spending-categories";
 const accounts: AccountSnapshot[] = ["checking", "savings"].map((type) => ({
   id: type,
   nickname: type,
@@ -22,6 +23,7 @@ const row = (
   label,
   amountCents: 5000,
   date: "2026-10-01",
+  ...classifyTransaction(kind, label, label),
 });
 it("pairs both transfer legs once and keeps savings out of income/spending", () => {
   const rows = classifyActivity(

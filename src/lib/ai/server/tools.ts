@@ -1,7 +1,7 @@
 import "server-only";
 import { addDays, daysBetween, isISODate } from "@/lib/dates";
 import { computeForecast } from "@/features/big-purchase/engine/forecast";
-import { MAX_COST_CENTS } from "@/features/big-purchase/config";
+import { HORIZON_MONTHS, MAX_COST_CENTS } from "@/features/big-purchase/config";
 import { defaultBufferCents } from "@/features/big-purchase/state/goalStore";
 import { PURCHASE_NAME_MAX_LENGTH } from "@/features/calendar/config";
 import { BALANCE_LABELS, balanceLevel } from "@/features/calendar/engine/balanceThresholds";
@@ -108,7 +108,7 @@ const HANDLERS: Record<string, Handler> = {
 
   getGoalTimeline(args, context) {
     const costCents = dollars(args.cost, MAX_COST_CENTS);
-    if (costCents === null) return { error: "cost must be a positive dollar amount up to 250,000." };
+    if (costCents === null) return { error: `cost must be a positive dollar amount up to ${(MAX_COST_CENTS / 100).toLocaleString("en-US")}.` };
     let contributionCents: number | null = null;
     if (args.contributionPerPaycheck !== undefined) {
       contributionCents = dollars(args.contributionPerPaycheck, MAX_COST_CENTS);
@@ -128,7 +128,7 @@ const HANDLERS: Record<string, Handler> = {
       largestSafeContributionPerPaycheckCents: forecast.limitContributionCents,
       paychecksNeeded: forecast.plan.paycheckCount,
       searchedThrough: forecast.horizonEndDate,
-      note: forecast.plan.affordableDate === null && !forecast.plan.affordableNow ? "Not affordable within the 24-month horizon at this contribution." : undefined,
+      note: forecast.plan.affordableDate === null && !forecast.plan.affordableNow ? `Not affordable within the ${HORIZON_MONTHS}-month horizon at this contribution.` : undefined,
     });
   },
 

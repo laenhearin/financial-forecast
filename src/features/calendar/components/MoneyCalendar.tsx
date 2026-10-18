@@ -4,7 +4,8 @@ import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { MAX_CHIPS_PER_DAY } from "../config";
 import { monthGrid, shiftMonth, WEEKDAY_NAMES } from "../engine/grid";
-import { balanceOn, type CalendarModel, type RiskLevel } from "../engine/model";
+import { isIncoming } from "../engine/entries";
+import { endOfDayBalance, type CalendarModel, type RiskLevel } from "../engine/model";
 import { BALANCE_LABELS, balanceLevel } from "../engine/balanceThresholds";
 import { formatMonthYear, formatWeekday, plural } from "../format";
 import type { CalendarEntry, ISODate } from "../types";
@@ -30,12 +31,14 @@ const CHIP_STYLE: Record<CalendarEntry["kind"], string> = {
   planned: "bg-accent-soft",
   purchase: "border border-app bg-card",
   payment: "bg-pos-soft text-pos",
+  received: "bg-pos-soft",
   estimate: "border border-dashed border-app bg-card",
 };
 
 function chipText(entry: CalendarEntry): string {
   switch (entry.kind) {
     case "income":
+    case "received":
       return `+${formatUSD(entry.amountCents)}`;
     case "bill":
       return `Bill · ${entry.label}`;
@@ -50,7 +53,7 @@ function chipText(entry: CalendarEntry): string {
   }
 }
 
-export const entryTitle = (entry: CalendarEntry) => `${entry.label}: ${entry.kind === "income" ? "+" : "−"}${formatUSD(entry.amountCents)}`;
+export const entryTitle = (entry: CalendarEntry) => `${entry.label}: ${isIncoming(entry) ? "+" : "−"}${formatUSD(entry.amountCents)}`;
 
 interface DayCellProps {
   model: CalendarModel;
@@ -63,15 +66,16 @@ interface DayCellProps {
 
 function DayCell({ model, date, month, selected, criticalBalanceCents, onSelect }: DayCellProps) {
   const entries = model.entriesByDate.get(date) ?? [];
-  const balance = balanceOn(model, date);
+  const endOfDay = endOfDayBalance(model, date);
+  const balance = endOfDay?.cents ?? null;
   const risk = balanceLevel(balance, criticalBalanceCents);
   const WeatherIcon = RISK_ICON[risk];
   const isToday = date === model.asOfDate;
-  const incoming = entries.filter((e) => e.kind === "income");
+  const incoming = entries.filter(isIncoming);
   const label = [
     `${formatWeekday(date)}, ${formatDate(date, "long")}`,
     isToday ? "Today" : null,
-    balance !== null ? `Projected ${formatUSD(balance)}, ${BALANCE_LABELS[risk].toLowerCase()}` : null,
+    endOfDay ? `${endOfDay.recorded ? "Ended the day with" : "Projected"} ${formatUSD(endOfDay.cents)}, ${BALANCE_LABELS[risk].toLowerCase()}` : null,
     plural(entries.length, "item"),
   ]
     .filter(Boolean)
@@ -113,7 +117,7 @@ function DayCell({ model, date, month, selected, criticalBalanceCents, onSelect 
           ))}
           {entries.length > MAX_CHIPS_PER_DAY && <span className="block truncate px-1 text-micro">+{entries.length - MAX_CHIPS_PER_DAY} more</span>}
         </span>
-        {balance !== null && <span className="mt-1.5 block truncate text-micro font-semibold">{formatUSD(balance)}</span>}
+        {endOfDay && <span className="mt-1.5 block truncate text-micro font-semibold">{formatUSD(endOfDay.cents)}</span>}
       </span>
     </button>
   );
@@ -123,8 +127,8 @@ function Legend() {
   const levels: RiskLevel[] = [0, 1, 2, 3, 4, 5];
   return (
     <div className="mt-4 flex flex-col gap-2 text-micro text-secondary">
-      <p className="font-medium text-primary">Projected balance</p>
-      <ul aria-label="Projected balance levels" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <p className="font-medium text-primary">End-of-day balance</p>
+      <ul aria-label="End-of-day balance levels" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {levels.map((level) => {
           const WeatherIcon = RISK_ICON[level];
           return (
@@ -195,7 +199,7 @@ export function MoneyCalendar({ model, month, selected, viewName, criticalBalanc
 
       <Legend />
       <p className={noteClass}>
-        Calendar colors use projected balances after income, bills, estimated everyday spending and your purchases. Select a date to inspect its transactions.
+        Each day shows the money left at the end of that day. Past days are rebuilt from recorded Nessie transactions; today onward is projected from income, bills, estimated everyday spending and your purchases. Select a date to inspect its transactions.
       </p>
     </section>
   );

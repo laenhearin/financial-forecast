@@ -38,12 +38,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const result = await loadProfile();
   if (!result.ok) return <CalendarLoadError message={result.message} details={result.details} />;
   const { customer, scenario } = result.profile;
-  const pastPayments = result.profile.history
-    .filter(transaction => transaction.kind === "withdrawal" && transaction.date <= scenario.asOfDate)
-    .map(({ id, accountId, date, label, amountCents }) => ({ id, accountId, date, label, amountCents }));
+  const pastActivity = result.profile.history
+    .filter(transaction => transaction.date <= scenario.asOfDate)
+    .map(({ id, accountId, date, kind, label, amountCents, flow }) => ({ id, accountId, date, kind, label, amountCents, transfer: flow === "transfer" }));
   return (
     <ActiveCustomerProvider customer={customer}>
-      <CalendarApp key={`${scenario.id}:${scenario.asOfDate}:${initialDate ?? ""}`} initialDate={initialDate} scenario={scenario} pastPayments={pastPayments} />
+      <CalendarApp key={`${scenario.id}:${scenario.asOfDate}:${initialDate ?? ""}`} initialDate={initialDate} scenario={scenario} pastActivity={pastActivity} />
     </ActiveCustomerProvider>
   );
 }
