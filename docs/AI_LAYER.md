@@ -55,10 +55,15 @@ Templates (`src/lib/ai/fallbacks.ts`) are built from the same facts and read as 
 copy. The UI labels each answer "AI ..." or "From template", and never shows a blank panel or raw
 error. Each response carries `meta: { source, model, latencyMs, fallbackReason?, auditFlags? }`.
 
-**Number audit** (`src/lib/ai/audit.ts`): every `$` amount in model text must match a number in the
-facts (within $0.50). For the Advisor and goal summary, a failed audit swaps in the template. For the
-streamed ask answer, text already shown can't be retracted, so flags go to `done.meta.auditFlags` and
-the server log.
+**Number audit** (`src/lib/ai/audit.ts`): every money amount in model text ("$1,234.56", "$15k",
+"1,234 dollars", "USD 1,234") must match a number in the facts (within $0.50). For the Advisor and goal
+summary, a failed audit swaps in the template. For the streamed ask answer, text already shown can't be
+retracted, so flags go to `done.meta.auditFlags` and the server log, and the ask card and Nimbus show
+"Some dollar figures here didn't match your forecast" under that answer.
+
+What it does not do: it does not check percentages, day counts, or dates, and it only checks that a
+figure exists somewhere in the facts, not that it is attached to the right thing (calling the $1,800
+rent the purchase price passes). It reduces unsupported numbers; it does not prove an explanation correct.
 
 **Force the fallback path:** set `AI_FORCE_FALLBACK=true` and restart the server.
 

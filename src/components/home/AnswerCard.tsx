@@ -42,6 +42,9 @@ export function AnswerCard({ state, onClose }: { state: AskState; onClose: () =>
                 <Sparkles aria-hidden className="size-3.5 text-accent" strokeWidth={1.75} />
                 {fromTemplate ? "From template, using your forecast" : state.meta ? "AI answer from your forecast" : "Assistant unavailable"}
               </span>
+              {state.meta?.auditFlags?.length ? (
+                <span role="note" className="text-micro text-secondary">Some dollar figures here didn&apos;t match your forecast. Check them on the calendar.</span>
+              ) : null}
               {MENTIONS_AMOUNT.test(state.question) && (
                 <Link href={{ pathname: ROUTES.purchaseAdvisor, query: { q: state.question } }} className="jump-link">
                   Open in Purchase advisor <span aria-hidden>→</span>

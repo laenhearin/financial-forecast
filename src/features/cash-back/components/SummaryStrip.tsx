@@ -17,9 +17,9 @@ export function SummaryStrip({ analysis, onShowSuggestion }: { analysis: WalletA
   return (
     <ul className={cn("grid gap-3", bestCard ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
       <li className={tileClass}>
-        <p className={labelClass}>Yearly rewards with your cards</p>
+        <p className={labelClass}>Estimated yearly rewards with your cards</p>
         <p className={figureClass}>{formatWholeDollars(analysis.projection.totalCents)}<span className="text-body font-normal text-secondary">/yr</span></p>
-        <p className={noteClass}>Next 12 months, before annual fees</p>
+        <p className={noteClass}>Next 12 months, before annual fees. A simulation from your spending profile, not rewards your issuer has credited.</p>
       </li>
       <li className={tileClass}>
         <p className={labelClass}>Cards working for you</p>

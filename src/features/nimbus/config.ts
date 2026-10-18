@@ -57,3 +57,5 @@ export const NIMBUS_ERRORS: Record<NimbusChatError, string> = {
 };
 /** Shown under replies the route built from its template because AI is off. */
 export const TEMPLATE_NOTE = "From template, using your forecast";
+/** Shown under a reply whose dollar figures did not all match the forecast facts (the number audit). */
+export const UNVERIFIED_NOTE = "Some dollar figures here didn't match your forecast. Check them on the calendar.";

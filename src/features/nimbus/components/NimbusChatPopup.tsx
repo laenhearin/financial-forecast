@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { Eraser, RotateCcw, SendHorizontal, Sparkles, X } from "lucide-react";
 import { MAX_QUESTION_LENGTH } from "@/lib/ai/validate";
 import { cn } from "@/lib/utils";
-import { NIMBUS_ERRORS, NIMBUS_GREETING, NIMBUS_SIZE, NO_LOOK, POPUP, TEMPLATE_NOTE } from "../config";
+import { NIMBUS_ERRORS, NIMBUS_GREETING, NIMBUS_SIZE, NO_LOOK, POPUP, TEMPLATE_NOTE, UNVERIFIED_NOTE } from "../config";
 import { useBlink } from "../hooks/useNimbusBehavior";
 import type { useNimbusChat } from "../hooks/useNimbusChat";
 import { NimbusSvg } from "./NimbusSvg";
@@ -108,7 +108,7 @@ export function NimbusChatPopup({ id, placement, chat, reduceMotion, onClose }: 
       <ol ref={listRef} aria-live="polite" aria-label="Conversation with Nimbus" className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-3">
         {messages.length === 0 && <Bubble from="assistant">{NIMBUS_GREETING}</Bubble>}
         {messages.map((message) => (
-          <Bubble key={message.id} from={message.role} note={message.fromTemplate ? TEMPLATE_NOTE : undefined}>
+          <Bubble key={message.id} from={message.role} note={message.fromTemplate ? TEMPLATE_NOTE : message.unverified ? UNVERIFIED_NOTE : undefined}>
             {message.content}
           </Bubble>
         ))}

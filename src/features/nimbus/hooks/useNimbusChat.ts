@@ -79,7 +79,7 @@ export function useNimbusChat(customerId: string | null) {
       setError(finished?.fallbackReason === "rate_limited" ? "busy" : "failed");
       return;
     }
-    chatStore.append(customerId, { id: crypto.randomUUID(), role: "assistant", content: reply, ts: Date.now(), ...(finished?.source === "template" ? { fromTemplate: true } : {}) });
+    chatStore.append(customerId, { id: crypto.randomUUID(), role: "assistant", content: reply, ts: Date.now(), ...(finished?.source === "template" ? { fromTemplate: true } : {}), ...(finished?.auditFlags?.length ? { unverified: true } : {}) });
   }, [customerId, criticalBalanceCents, purchases]);
 
   /** Ignores empty input and anything sent while a reply is loading. */

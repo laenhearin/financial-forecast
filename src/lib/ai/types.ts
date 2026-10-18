@@ -48,6 +48,11 @@ export interface AdvisorFacts {
   /** First later date where buying keeps the lowest balance at CAUTION or better; only for risky verdicts. */
   earliestSaferDate: ISODate | null;
   forecastEnd: ISODate;
+  /**
+   * The account paying for it, on its own. needsTransfer: total cash covers the purchase but this
+   * account alone goes below $0, so money has to move first. Scheduled items post to the paycheck account.
+   */
+  payingAccount: { name: string; lowest: DatedCents; needsTransfer: boolean };
 }
 
 export interface AdvisorExplanation {

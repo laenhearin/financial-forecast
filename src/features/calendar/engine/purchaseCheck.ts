@@ -19,6 +19,22 @@ export interface PurchaseCheck {
   lowestWith: { date: ISODate; cents: Cents };
   /** The verdict: balance level of the lowest point after the purchase. */
   level: BalanceLevel;
+  /**
+   * The paying account alone, with the purchase, on or after the purchase date. The verdict uses
+   * total cash; this says whether that one account can actually cover the payment without a transfer.
+   */
+  payingAccount: { id: string; lowest: { date: ISODate; cents: Cents } };
+}
+
+/** Lowest end-of-day balance of one account on or after a date. */
+export function lowestAccountBalanceFrom(model: CalendarModel, accountId: string, fromDate: ISODate): { date: ISODate; cents: Cents } {
+  let lowest: { date: ISODate; cents: Cents } | null = null;
+  for (const [date, { byAccount }] of model.balances) {
+    const cents = byAccount[accountId];
+    if (date < fromDate || cents === undefined) continue;
+    if (lowest === null || cents < lowest.cents) lowest = { date, cents };
+  }
+  return lowest ?? { date: fromDate, cents: 0 };
 }
 
 /**
@@ -45,7 +61,13 @@ export function checkPurchase(
     lowestWithout: lowestBalanceFrom(baseline, purchase.date),
     lowestWith,
     level: balanceLevel(lowestWith.cents, criticalCents),
+    payingAccount: { id: purchase.accountId, lowest: lowestAccountBalanceFrom(preview, purchase.accountId, purchase.date) },
   };
+}
+
+/** True when total cash covers the purchase but the paying account alone would go below $0. */
+export function needsTransfer(check: PurchaseCheck): boolean {
+  return check.payingAccount.lowest.cents < 0 && check.lowestWith.cents >= 0;
 }
 
 export interface PurchaseRecommendation { title: string; detail: string }

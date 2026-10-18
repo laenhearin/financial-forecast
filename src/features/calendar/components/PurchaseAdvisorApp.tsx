@@ -18,7 +18,7 @@ import type { PurchaseInput } from "@/lib/ai/types";
 import { ALL_ACCOUNTS } from "../types";
 import { buildCalendarModel, lowestBalance } from "../engine/model";
 import { scenarioEntries } from "../engine/entries";
-import { checkPurchase, purchaseRecommendation } from "../engine/purchaseCheck";
+import { checkPurchase, needsTransfer, purchaseRecommendation } from "../engine/purchaseCheck";
 import { purchaseStore } from "../state/purchaseStore";
 import { useAdvisorExplanation } from "../state/useAdvisorExplanation";
 import { useCriticalBalance } from "../state/useCriticalBalance";
@@ -53,6 +53,7 @@ export function PurchaseAdvisorApp({ scenario }: { scenario: Scenario }) {
   const baselineLowAfterDate = check?.lowestWithout ?? baselineLow;
   const previewLowAfterDate = check?.lowestWith ?? null;
   const recommendation = check ? { ...purchaseRecommendation(check), tone: RECOMMENDATION_TONES[check.level] } : null;
+  const payingAccountName = scenario.accounts.find((account) => account.id === accountId)?.nickname ?? "this account";
   const explanation = useAdvisorExplanation(check ? hypothetical : null, criticalBalanceCents, purchases,
     () => hypothetical ? advisorTemplate(buildAdvisorFacts(scenario, purchases, hypothetical, criticalBalanceCents, entries)) : null);
 
@@ -134,6 +135,14 @@ export function PurchaseAdvisorApp({ scenario }: { scenario: Scenario }) {
                 <div><p className="text-micro text-secondary">Lowest balance without it</p><p className="mt-1 text-body font-semibold text-primary">{formatUSD(baselineLowAfterDate.cents)} <span className="text-caption font-normal text-secondary">· {BALANCE_LABELS[balanceLevel(baselineLowAfterDate.cents, criticalBalanceCents)]} · {formatDate(baselineLowAfterDate.date, "short")}</span></p></div>
                 <div><p className="text-micro text-secondary">Lowest balance with it</p><p className={`mt-1 text-body font-semibold ${balanceLevel(previewLowAfterDate!.cents, criticalBalanceCents) >= 4 ? "text-neg" : "text-primary"}`}>{formatUSD(previewLowAfterDate!.cents)} <span className="text-caption font-normal text-secondary">· {BALANCE_LABELS[balanceLevel(previewLowAfterDate!.cents, criticalBalanceCents)]} · {formatDate(previewLowAfterDate!.date, "short")}</span></p></div>
               </div>
+              {check && scenario.accounts.length > 1 && (
+                <p className={`mt-3 rounded-item px-3.5 py-3 text-caption text-primary ${needsTransfer(check) ? "bg-rain-soft" : "bg-secondary"}`}>
+                  <span className="font-semibold">Paying from {payingAccountName}: </span>
+                  {needsTransfer(check)
+                    ? `your total cash covers this, but ${payingAccountName} alone would drop to ${formatUSD(check.payingAccount.lowest.cents)} on ${formatDate(check.payingAccount.lowest.date, "short")}. Move money into it first, or pay from another account.`
+                    : `that account stays at or above ${formatUSD(check.payingAccount.lowest.cents)} (lowest on ${formatDate(check.payingAccount.lowest.date, "short")}), so it can cover the payment on its own.`}
+                </p>
+              )}
               {recommendation && <div className={`mt-3 rounded-item px-3.5 py-3 ${recommendation.tone}`}>
                 <p className="text-caption font-semibold text-primary">{recommendation.title}</p>
                 <p className="mt-1 text-caption text-primary">{recommendation.detail}</p>

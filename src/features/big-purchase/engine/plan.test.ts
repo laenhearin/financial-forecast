@@ -106,6 +106,28 @@ describe("computeForecast", () => {
     expect(computeForecast(tiny, { costCents: 0, bufferCents: 20_000, contributionCents: null })).toMatchObject({ ok: false, issue: "missing-cost" });
   });
 
+  it("funds a $1 goal on the first paycheck without overshooting it (review test 21)", () => {
+    const result = computeForecast(tiny, { costCents: 100, bufferCents: 5_000, contributionCents: null });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.forecast.plan).toMatchObject({ affordableDate: "2026-01-02", paycheckCount: 1, tier: "ok" });
+    expect(Math.max(...result.forecast.days.map(day => day.earmarkCents))).toBe(100);
+  });
+
+  it("treats a $0 contribution as never reaching the goal, without looping or dividing by zero (review test 24)", () => {
+    const result = computeForecast(tiny, { ...goal, contributionCents: 0 });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.forecast.plan).toMatchObject({ contributionCents: 0, affordableDate: null, paycheckCount: 0 });
+    expect(result.forecast.days.every(day => day.earmarkCents === 0)).toBe(true);
+  });
+
+  it("flags a contribution larger than the paycheck instead of accepting it (review test 30)", () => {
+    const result = computeForecast(tiny, { ...goal, contributionCents: 50_000 });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.forecast.limitContributionCents).toBeLessThanOrEqual(10_000);
+    expect(result.forecast.plan.tier).toBe("alert");
+    expect(result.forecast.plan.violations[0]).toMatchObject({ date: "2026-01-02", kind: "negative" });
+  });
+
   it("reports an error state, not a crash, without paycheck income", () => {
     expect(computeForecast(makeScenario(), { ...goal, contributionCents: null })).toMatchObject({ ok: false, issue: "no-paycheck" });
   });

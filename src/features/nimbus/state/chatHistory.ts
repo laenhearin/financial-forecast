@@ -10,7 +10,8 @@ function isChatMessage(value: unknown): value is ChatMessage {
     && (message.role === "user" || message.role === "assistant")
     && typeof message.content === "string"
     && typeof message.ts === "number" && Number.isFinite(message.ts)
-    && (message.fromTemplate === undefined || typeof message.fromTemplate === "boolean");
+    && (message.fromTemplate === undefined || typeof message.fromTemplate === "boolean")
+    && (message.unverified === undefined || typeof message.unverified === "boolean");
 }
 
 /** Saved history, or an empty one when anything about it is invalid. Keeps the newest messages. */

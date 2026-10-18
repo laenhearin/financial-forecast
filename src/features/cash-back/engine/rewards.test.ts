@@ -106,13 +106,16 @@ describe("rankCards", () => {
       .toEqual(["capital-one-savor", "amex-blue-cash-everyday"]);
   });
 
-  it("then prefers a lower fee, then Capital One or Discover, then popularity", () => {
+  it("then prefers a lower fee, then popularity, with no issuer preference", () => {
     const flat = cardsByIds(["citi-double-cash", "wells-fargo-active-cash", "capital-one-spark-cash-plus"]);
     // All three earn 2% on "other"; Spark has a fee, and Double Cash (6) is more popular than Active Cash (9).
     expect(rankCards(flat, "other", { today: NOV }).map(option => option.cardId))
       .toEqual(["citi-double-cash", "wells-fargo-active-cash", "capital-one-spark-cash-plus"]);
-    const quicksilvers = cardsByIds(["bofa-unlimited-cash", "capital-one-quicksilver-secured"]);
-    expect(rankCards(quicksilvers, "other", { today: NOV })[0].cardId).toBe("capital-one-quicksilver-secured");
+    // Same rate and fee: the more popular card wins whoever issues it, in either input order.
+    const pair = ["bofa-unlimited-cash", "capital-one-quicksilver-secured"];
+    const byPopularity = cardsByIds(pair).sort((a, b) => a.popularityRank - b.popularityRank).map(card => card.id);
+    expect(rankCards(cardsByIds(pair), "other", { today: NOV }).map(option => option.cardId)).toEqual(byPopularity);
+    expect(rankCards(cardsByIds([...pair].reverse()), "other", { today: NOV }).map(option => option.cardId)).toEqual(byPopularity);
   });
 });
 

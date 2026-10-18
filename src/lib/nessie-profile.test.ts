@@ -71,8 +71,8 @@ describe("Nessie customer profile", () => {
       { id: SAVINGS, nickname: "Savings", type: "savings", balanceCents: 40_000, includeInForecast: true },
     ]);
     expect(profile.scenario.bills.map(({ id, label, amountCents, schedule, category }) => ({ id, label, amountCents, schedule, category }))).toEqual([
-      { id: "b-util", label: "Utilities and internet", amountCents: 6_000, schedule: { frequency: "monthly", dayOfMonth: 24 }, category: "utilities" },
-      { id: "b-home", label: "Housing", amountCents: 65_000, schedule: { frequency: "monthly", dayOfMonth: 1 }, category: "housing" },
+      { id: "b-util", label: "Utilities and internet", amountCents: 6_000, schedule: { frequency: "monthly", dayOfMonth: 24, startDate: "2026-10-24" }, category: "utilities" },
+      { id: "b-home", label: "Housing", amountCents: 65_000, schedule: { frequency: "monthly", dayOfMonth: 1, startDate: "2026-11-01" }, category: "housing" },
     ]);
     expect(profile.history.map(row => [row.kind, row.date, row.amountCents, row.label])).toEqual([
       ["deposit", "2026-07-21", 65_000, "Campus library paycheck"],
@@ -154,10 +154,10 @@ describe("Nessie customer profile", () => {
     expect(projectBase(scenario).startingCashCents).toBe(75_000);
   });
 
-  it("estimates income from the latest deposit and categorizes untagged withdrawals by label", () => {
+  it("estimates income from a single deposit, saying so, and categorizes untagged withdrawals by label", () => {
     const { scenario } = buildCustomerProfile(raw(), TODAY);
     expect(scenario.income).toEqual([{
-      id: "nessie-estimated-income", label: "Campus library paycheck (estimate)", amountCents: 65_000,
+      id: "nessie-estimated-income", label: "Campus library paycheck (estimate from one deposit)", amountCents: 65_000,
       schedule: { frequency: "monthly", dayOfMonth: 21 }, isPaycheck: true,
     }]);
     // History starts with the Jul 21 deposit, so 89 days (1,068 / 365.25 months) are averaged: 14,500, 9,200, and 2,800 cents.
@@ -209,7 +209,7 @@ describe("Nessie customer profile", () => {
       bill("stopped", { status: "cancelled", nickname: "Gym", payment_date: "2026-11-03", recurring_date: 3, payment_amount: 45 }),
     ] }), TODAY);
     expect(scenario.bills.map(({ id, amountCents, schedule, category }) => ({ id, amountCents, schedule, category }))).toEqual([
-      { id: "recurring", amountCents: 1_250, schedule: { frequency: "monthly", dayOfMonth: 31 }, category: "housing" },
+      { id: "recurring", amountCents: 1_250, schedule: { frequency: "monthly", dayOfMonth: 31, startDate: "2026-11-01" }, category: "housing" },
       { id: "pending-future", amountCents: 26_000, schedule: { frequency: "once", anchorDate: "2026-12-12" }, category: "transport" },
     ]);
   });
@@ -250,3 +250,88 @@ describe("Nessie customer profile", () => {
     expect(displayLabel("  Financial Forecast Demo ")).toBe("Financial Forecast Demo");
   });
 });
+
+describe("review scenarios: bills that have not started, income detection, transfers, and history coverage", () => {
+  const paid = (id: string, date: string, amount: number, description: string) => deposit(id, date, amount, description);
+
+  it("does not charge a recurring bill before its first payment date", () => {
+    const { scenario } = buildCustomerProfile(raw({ bills: [
+      bill("lease", { nickname: "Apartment rent", payment_date: "2026-12-01", recurring_date: 1, payment_amount: 1200 }),
+      bill("no-date", { nickname: "Phone", recurring_date: 5, payment_amount: 40 }),
+      bill("bad-date", { nickname: "Internet", payment_date: "Dec 1", recurring_date: 9, payment_amount: 50 }),
+    ] }), TODAY);
+    expect(scenario.bills.find(b => b.id === "lease")?.schedule).toEqual({ frequency: "monthly", dayOfMonth: 1, startDate: "2026-12-01" });
+    // A missing or unreadable payment_date (optional in Nessie's schema) leaves the bill unbounded, as before.
+    expect(scenario.bills.find(b => b.id === "no-date")?.schedule).toEqual({ frequency: "monthly", dayOfMonth: 5 });
+    expect(scenario.bills.find(b => b.id === "bad-date")?.schedule).toEqual({ frequency: "monthly", dayOfMonth: 9 });
+    // The balance only drops by the rent on Dec 1, not on Nov 1.
+    const base = projectBase(scenario).days;
+    const change = (date: string) => base.find(d => d.date === date)!.baseCents - base.find(d => d.date === addDaysLocal(date, -1))!.baseCents;
+    expect(change("2026-11-01")).toBeGreaterThan(-120_000);
+    expect(change("2026-12-01")).toBeLessThanOrEqual(-120_000);
+  });
+
+  it("picks the paycheck, not the latest small deposit, when nothing repeats (review example)", () => {
+    const { scenario } = buildCustomerProfile(raw({ deposits: [
+      paid("pay", "2026-10-01", 1500, "Acme Corp payroll"),
+      paid("gift", "2026-10-08", 200, "Birthday gift"),
+      paid("refund", "2026-10-15", 100, "Reimbursement"),
+    ] }), TODAY);
+    expect(scenario.income).toEqual([{
+      id: "nessie-estimated-income", label: "Acme Corp payroll (estimate from one deposit)", amountCents: 150_000,
+      schedule: { frequency: "monthly", dayOfMonth: 1 }, isPaycheck: true,
+    }]);
+  });
+
+  it("detects a biweekly paycheck and ignores a one-time gift", () => {
+    const { scenario } = buildCustomerProfile(raw({ deposits: [
+      paid("p1", "2026-08-28", 1180, "Acme payroll"), paid("p2", "2026-09-11", 1200, "Acme payroll"),
+      paid("p3", "2026-09-25", 1200, "Acme payroll"), paid("p4", "2026-10-09", 1220, "Acme payroll"),
+      paid("gift", "2026-10-14", 1000, "Gift from grandma"),
+    ] }), TODAY);
+    expect(scenario.income).toEqual([{
+      id: "nessie-estimated-income", label: "Acme payroll (estimate)", amountCents: 120_000,
+      schedule: { frequency: "biweekly", anchorDate: "2026-10-09" }, isPaycheck: true,
+    }]);
+  });
+
+  it("keeps a second regular income as income but not as the paycheck, and drops a series that stopped", () => {
+    const { scenario } = buildCustomerProfile(raw({ deposits: [
+      paid("a1", "2026-09-03", 900, "Main job"), paid("a2", "2026-09-17", 900, "Main job"), paid("a3", "2026-10-01", 900, "Main job"), paid("a4", "2026-10-15", 900, "Main job"),
+      paid("b1", "2026-08-20", 300, "Tutoring"), paid("b2", "2026-09-20", 300, "Tutoring"),
+      paid("old1", "2026-05-01", 2000, "Old employer"), paid("old2", "2026-06-01", 2000, "Old employer"),
+    ] }), TODAY);
+    expect(scenario.income.map(({ id, amountCents, schedule, isPaycheck }) => ({ id, amountCents, schedule, isPaycheck }))).toEqual([
+      { id: "nessie-estimated-income", amountCents: 90_000, schedule: { frequency: "biweekly", anchorDate: "2026-10-15" }, isPaycheck: true },
+      { id: "nessie-estimated-income-2", amountCents: 30_000, schedule: { frequency: "monthly", dayOfMonth: 20 }, isPaycheck: false },
+    ]);
+  });
+
+  it("treats untagged transfers between checking and savings as transfers, and interest as interest", () => {
+    const { scenario, history } = buildCustomerProfile(raw({
+      deposits: [paid("in", "2026-10-12", 500, "Transfer from checking"), paid("int", "2026-09-30", 2, "Savings interest")],
+      withdrawals: [withdrawal("out", "2026-10-12", 500, "Transfer to savings"), withdrawal("zelle", "2026-10-13", 40, "Zelle transfer to Sam")],
+    }), TODAY);
+    expect(Object.fromEntries(history.map(row => [row.id, row.flow]))).toEqual({ in: "transfer", int: "interest", out: "transfer", zelle: "spend" });
+    // Neither the transfer nor the interest becomes an income estimate.
+    expect(scenario.income).toEqual([]);
+    expect(scenario.spending.map(c => [c.id, c.monthlyAmountCents])).toEqual([["spending-other", 4_000]]);
+  });
+
+  it("describes thin spending history as insufficient rather than trusting a low average", () => {
+    // An old deposit makes the window look five months long, but only one grocery purchase is recorded.
+    const thin = buildCustomerProfile(raw({
+      deposits: [paid("pay", "2026-05-20", 900, "Paycheck")],
+      withdrawals: [withdrawal("g", "2026-10-01", 300, "Publix groceries")],
+    }), TODAY).scenario;
+    expect(thin.spendingCoverage).toEqual({ level: "insufficient", months: 5, spendRecords: 1 });
+    const weekly = Array.from({ length: 26 }, (_, i) => withdrawal(`g${i}`, addDaysLocal("2026-04-20", i * 7), 80, "Publix groceries"));
+    expect(buildCustomerProfile(raw({ withdrawals: weekly }), TODAY).scenario.spendingCoverage).toEqual({ level: "established", months: 5.9, spendRecords: 26 });
+    expect(buildCustomerProfile(raw({ withdrawals: weekly.slice(-10) }), TODAY).scenario.spendingCoverage?.level).toBe("limited");
+  });
+});
+
+function addDaysLocal(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}

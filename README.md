@@ -31,7 +31,7 @@ Eight synthetic profiles are seeded into the shared Nessie sandbox with 32 histo
 
 - **One authority.** [src/lib/active-customer.ts](src/lib/active-customer.ts) decides whose data is shown: an httpOnly cookie holding a Nessie customer `_id`, checked against `GET /customers` (the first customer when unset or unknown). The layout, every page, `/api/dashboard`, and the AI routes resolve through it; "today" is also decided there, once per request, in America/New_York. Pick the customer on **Profile**.
 - **Normalization.** [src/lib/nessie-profile.ts](src/lib/nessie-profile.ts) reads the customer's accounts, then each checking/savings account's deposits, withdrawals, bills, and loans, and converts Nessie dollars to integer cents once. Checking and savings balances are the starting cash; approved loans are shown as debt; credit card accounts provide the Cash Back cards (by nickname). Customer names are the Nessie names.
-- **Plan assumptions, labeled.** Nessie has no income schedule or spending budget. Seeded customers use their income, everyday spending, and Cash Back category budget from `data/nessie-demo/plan.json`, matched by the seed's checking-account nickname ([src/lib/plan-assumptions.ts](src/lib/plan-assumptions.ts)). Any other customer gets estimates from Nessie history: the latest deposit repeated monthly, and the last 90 days of withdrawals ÷ 3.
+- **Plan assumptions, labeled.** Nessie has no income schedule. Seeded customers use their paycheck from `data/nessie-demo/plan.json`, matched by the seed's checking-account nickname ([src/lib/plan-assumptions.ts](src/lib/plan-assumptions.ts)). Any other customer gets an income estimate from Nessie deposits that repeat weekly, biweekly, or monthly with similar amounts; when none repeat, the most paycheck-like recent deposit repeats monthly and is labeled as coming from one deposit. Everyday spending for every customer averages the last six months of Nessie withdrawals by category, and pages say how much history that rests on (established, limited, or too thin). Recurring bills start no earlier than their Nessie `payment_date`.
 - **Browser state** (goals, purchases you add, card list edits, the critical balance) is saved per customer id received from the server, never sent to Nessie.
 - **Fixtures** live only in `src/test-fixtures/` for tests; lint blocks app code from importing them, and only `src/lib/plan-assumptions.ts` may read `data/nessie-demo/plan.json`.
 
@@ -67,9 +67,16 @@ See [Reports setup, data limitations, and verification](docs/REPORTS.md) for tra
 
 Included: dashboard, calendar, Purchase Advisor, Storm Solver, Forecast Fund (`/big-purchase`), and Swipe and Shine (`/cash-back`), all on live Nessie reads for the selected customer, plus tests.
 
-Known limits: Nessie bills carry no flexibility, so bills are never suggested for cancelling or moving; `GET /accounts/{id}/purchases` responds but returned no records on 2026-10-17, so card-level purchases are not read.
+Known limits:
 
-Next: verified Nessie reads, user-confirmed schedules, 30-day calendar, purchase simulator, and optional local storage. No separate database is needed for the initial demo. Forecasts currently report end-of-day balances; they do not model same-day posting order or bank fees.
+- **Estimates, not guarantees.** Forecasts are end-of-day balances; they do not model the order payments post within a day, or bank fees. Everyday spending is a weekly allowance placed on Saturdays, not a prediction of individual purchases. Paychecks are assumed to continue; job loss or variable income is not modeled. No accuracy benchmark (backtest) has been run yet.
+- **Income and spending for non-seeded customers** are inferred from history and cannot be confirmed in the app yet; thin histories understate spending, and the page says so.
+- **Accounts.** Verdicts use total checking plus savings. Purchase Advisor also checks the paying account on its own and says when money would have to move first. Scheduled income, bills, and spending post to the first checking account.
+- **Nessie behavior.** Bills carry no flexibility, so bills are never suggested for cancelling or moving. Posting a completed deposit or withdrawal did not change Nessie's account `balance` during seeding, so a new withdrawal changes history and spending averages but not today's balance; use the Purchase Advisor, not a live Nessie write, to demo a purchase. `GET /accounts/{id}/purchases` responds but returned no records on 2026-10-17, so card-level purchases are not read, and Swipe and Shine rewards are simulations from category spending, not rewards an issuer has credited. Amounts are read as dollars, which the seed relies on; the Nessie spec does not state the unit, so verify it before supporting other customers.
+- **No sign-in.** Anyone with the deployed link can switch between the synthetic customers this server's Nessie key can read. A real product needs authentication and per-user authorization. Browser state is per customer but does not sync across browsers or devices.
+- **AI wording.** The number audit catches dollar amounts that are not in the engine's facts; it does not check percentages or dates, and it cannot tell when a real figure is attached to the wrong thing. See [docs/AI_LAYER.md](docs/AI_LAYER.md).
+
+Next: let users confirm or edit their income and monthly spending, backtest forecasts against later history, add a lost-income scenario, and spread estimated spending across the days it usually happens. No separate database is needed for the demo.
 
 ## Dependency audit note
 
