@@ -361,6 +361,25 @@
   }
 }
 
+/*
+ * Every page's main title: one size and weight everywhere, with a dark navy outline and glow so the
+ * white text stays readable over the bright sky photo.
+ */
+@utility page-title {
+  font-size: 2.5rem;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: var(--tx);
+  -webkit-text-stroke: 1.5px rgb(8 29 56 / 55%);
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 1px rgb(8 29 56 / 90%),
+    0 1px 2px rgb(8 29 56 / 80%),
+    0 2px 14px rgb(8 29 56 / 55%);
+}
+
 @utility jump-link {
   display: inline-flex;
   align-items: center;

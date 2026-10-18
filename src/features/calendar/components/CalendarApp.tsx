@@ -88,9 +88,9 @@ export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarApp
 
   return (
     <div className="mx-auto w-full max-w-300 px-5 py-12 md:px-10">
-      <header className="mb-7">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-display font-medium text-primary">Weather Calendar</h1>
+      <header className="mb-7 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <h1 className="page-title">Weather Calendar</h1>
           {purchases.length > 0 && (
             <button
               type="button"
@@ -105,7 +105,7 @@ export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarApp
             </button>
           )}
         </div>
-        <p className="mt-1.5 flex items-start gap-1.5 text-caption text-secondary">
+        <p className="mt-1.5 flex items-start justify-center gap-1.5 text-caption text-secondary">
           <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
           {nessieSourceNote(scenario.customerName, scenario.asOfDate)} {forecastEstimateNote(scenario)} Purchases you add are saved in this browser for this customer.
         </p>

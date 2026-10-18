@@ -29,7 +29,7 @@ export function BigPurchaseApp({ load }: { load: BigPurchaseLoad }) {
   if (!load.ok) {
     return (
       <div className="mx-auto max-w-[1280px] px-6 pb-16">
-        <header className="py-6"><h1 className="text-2xl font-semibold tracking-tight">Forecast Fund</h1></header>
+        <header className="py-6 text-center"><h1 className="page-title">Forecast Fund</h1></header>
         <ErrorCard title="We couldn't load your data" message={load.message} details={load.details} />
       </div>
     );
@@ -54,10 +54,10 @@ function Planner({ scenario }: { scenario: Scenario }) {
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 pb-16">
-      <header className="flex flex-wrap items-center justify-between gap-4 py-6">
+      <header className="flex flex-col items-center gap-4 py-6 text-center">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Forecast Fund</h1>
-          <p className={`mt-1 flex items-start gap-1.5 text-sm ${mutedTextClass}`}>
+          <h1 className="page-title">Forecast Fund</h1>
+          <p className={`mt-1 flex items-start justify-center gap-1.5 text-sm ${mutedTextClass}`}>
             <Database aria-hidden className="mt-0.5 size-4 shrink-0" />
             {nessieSourceNote(scenario.customerName, scenario.asOfDate)} {forecastEstimateNote(scenario)}
           </p>

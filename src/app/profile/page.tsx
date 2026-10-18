@@ -14,7 +14,7 @@ export default async function ProfilePage() {
     const message = error instanceof Error ? error.message : "Nessie customers could not be loaded.";
     return (
       <div className="mx-auto w-full max-w-180 px-5 py-12 md:px-10">
-        <h1 className="text-display font-medium text-primary">Profile</h1>
+        <h1 className="page-title">Profile</h1>
         <p role="alert" className="mt-7 rounded-panel border border-neg bg-card p-5 text-caption text-secondary">We couldn&apos;t load Nessie customers: {message}</p>
       </div>
     );

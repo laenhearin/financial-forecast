@@ -33,10 +33,10 @@ export function CashBackApp({ profile: nessieProfile, scenario, initialCardId }:
 
   return (
     <div className="mx-auto flex w-full max-w-350 flex-col gap-4 px-5 py-6 md:px-8 lg:py-7">
-      <header className="shrink-0">
-        <h1 className="text-display font-medium text-primary">Swipe and Shine</h1>
+      <header className="shrink-0 text-center">
+        <h1 className="page-title">Swipe and Shine</h1>
         <p className="mt-0.5 text-body text-secondary">Use the right card for every purchase.</p>
-        <p className="mt-1 flex items-start gap-1.5 text-micro text-secondary">
+        <p className="mt-1 flex items-start justify-center gap-1.5 text-micro text-secondary">
           <Database aria-hidden className="mt-px size-3.5 shrink-0" strokeWidth={1.75} />
           {nessieSourceNote(profile.customerName, profile.asOfDate)} {cashBackSpendNote(scenario)}
         </p>
