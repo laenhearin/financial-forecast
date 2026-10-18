@@ -55,14 +55,19 @@ export function generateAdvice(scenario: Scenario, goal: ForecastGoal, forecast:
   if (target > inEffect) {
     const date = affordableDateFor(base.paydays, goal.costCents, target);
     const aboveSuggested = target > forecast.suggestedContributionCents;
+    // The suggestion is also capped at 20% of a paycheck, so going above it doesn't by itself break the buffer.
+    const bufferSafeCents = suggestedContribution(base.days, base.paydays, planGoal, maxCents);
+    const buffer = formatUSD(goal.bufferCents);
     if (date) {
       add({
         id: "raise-contribution",
         type: "raise-contribution",
         title: `Set aside ${formatUSD(target)} per paycheck`,
-        reason: aboveSuggested
-          ? `Setting aside ${formatUSD(target)} per paycheck ${impact(date)}. That is above your safe suggested amount of ${formatUSD(forecast.suggestedContributionCents)}, so cash would dip under your ${formatUSD(goal.bufferCents)} buffer on some days.`
-          : `Your safe suggested amount is ${formatUSD(forecast.suggestedContributionCents)} per paycheck and you are using ${formatUSD(inEffect)}. Raising it ${impact(date)} while keeping cash above your buffer.`,
+        reason: target > bufferSafeCents
+          ? `Setting aside ${formatUSD(target)} per paycheck ${impact(date)}. That is above ${formatUSD(bufferSafeCents)}, the most that keeps cash above your ${buffer} buffer, so cash would dip under it on some days.`
+          : aboveSuggested
+            ? `Setting aside ${formatUSD(target)} per paycheck ${impact(date)} while keeping cash above your ${buffer} buffer. That is above the suggested amount of ${formatUSD(forecast.suggestedContributionCents)}, which is capped at 20% of your paycheck.`
+            : `Your safe suggested amount is ${formatUSD(forecast.suggestedContributionCents)} per paycheck and you are using ${formatUSD(inEffect)}. Raising it ${impact(date)} while keeping cash above your buffer.`,
         newAffordableDate: date,
         ease: byThreshold(target - inEffect, 5_000, 15_000),
         params: { newContributionCents: target, previousContributionCents: inEffect, aboveSuggested: aboveSuggested ? 1 : 0 },

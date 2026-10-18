@@ -74,26 +74,36 @@ describe("generateAdvice", () => {
     }
   });
 
-  it("suggests raising a contribution that is below the suggested amount", () => {
-    // $100 paychecks, $250 goal, $50 buffer: suggested $50 funds on the 5th payday (Feb 27); $25 takes 10.
-    const simple = makeScenario({ balanceCents: 0, income: [paycheck(10_000, "2026-01-02")] });
-    const typed: ForecastGoal = { costCents: 25_000, bufferCents: 5_000, contributionCents: 2_500 };
+  // $100 paychecks, $250 goal, $50 buffer. The suggestion is capped at 20% of the paycheck ($20, the
+  // 13th payday, Jun 19); $50 is the most that keeps cash above the buffer (5th payday, Feb 27).
+  const simple = makeScenario({ balanceCents: 0, income: [paycheck(10_000, "2026-01-02")] });
+  const raiseFor = (contributionCents: number | null, deadline: string) => {
+    const typed: ForecastGoal = { costCents: 25_000, bufferCents: 5_000, contributionCents };
     const result = computeForecast(simple, typed);
     if (!result.ok) throw new Error(result.message);
-    const { items } = generateAdvice(simple, typed, result.forecast, "2026-02-27");
+    return generateAdvice(simple, typed, result.forecast, deadline).items;
+  };
+
+  it("suggests raising a contribution that is below the suggested amount", () => {
+    // $10 takes 25 paydays (Dec 4); the suggested $20 takes 13 (Jun 19).
+    const items = raiseFor(1_000, "2026-06-19");
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ type: "raise-contribution", daysSooner: 70, newAffordableDate: "2026-02-27", ease: "easy", meetsDeadline: true });
-    expect(items[0].reason).toBe("Your safe suggested amount is $50 per paycheck and you are using $25. Raising it moves your date up 70 days while keeping cash above your buffer.");
+    expect(items[0]).toMatchObject({ type: "raise-contribution", daysSooner: 168, newAffordableDate: "2026-06-19", ease: "easy", meetsDeadline: true, params: { aboveSuggested: 0 } });
+    expect(items[0].reason).toBe("Your safe suggested amount is $20 per paycheck and you are using $10. Raising it moves your date up 168 days while keeping cash above your buffer.");
+  });
+
+  it("raises above the 20% suggestion without claiming a buffer dip while cash stays above it", () => {
+    // $25 takes 10 paydays (May 8); $50 takes 5 (Feb 27).
+    const items = raiseFor(2_500, "2026-02-27");
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ type: "raise-contribution", daysSooner: 70, newAffordableDate: "2026-02-27", meetsDeadline: true, params: { newContributionCents: 5_000, aboveSuggested: 1 } });
+    expect(items[0].reason).toBe("Setting aside $50 per paycheck moves your date up 70 days while keeping cash above your $50 buffer. That is above the suggested amount of $20, which is capped at 20% of your paycheck.");
   });
 
   it("raises to what the deadline needs, up to the limit, and notes the buffer dip", () => {
-    const simple = makeScenario({ balanceCents: 0, income: [paycheck(10_000, "2026-01-02")] });
-    const typed: ForecastGoal = { costCents: 25_000, bufferCents: 5_000, contributionCents: null };
-    const result = computeForecast(simple, typed);
-    if (!result.ok) throw new Error(result.message);
-    const raise = generateAdvice(simple, typed, result.forecast, "2026-01-30").items[0];
+    const raise = raiseFor(null, "2026-01-30")[0];
     expect(raise).toMatchObject({ type: "raise-contribution", newAffordableDate: "2026-01-30", params: { newContributionCents: 8_500, aboveSuggested: 1 } });
-    expect(raise.reason).toMatch(/above your safe suggested amount of \$50, so cash would dip under your \$50 buffer/);
+    expect(raise.reason).toMatch(/That is above \$50, the most that keeps cash above your \$50 buffer, so cash would dip under it on some days\.$/);
   });
 
   it("returns no advice when on track", () => {

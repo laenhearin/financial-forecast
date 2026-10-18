@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MAX_COST_CENTS } from "../config";
 import { getEarmarkSummary } from "../selectors/earmark";
 import type { Forecast } from "../types";
 import { canReset, createGoal, defaultBufferCents, emptyState, isGoalValid, parseStoredState, resetGoal, setGoalStatus, updateGoal, withGoal } from "./goalStore";
@@ -30,7 +31,8 @@ describe("status rules", () => {
   it("activates only valid goals", () => {
     expect(setGoalStatus(createGoal("g", today), "active", today).ok).toBe(false);
     expect(setGoalStatus({ ...laptop(), name: "  " }, "active", today).ok).toBe(false);
-    expect(setGoalStatus({ ...laptop(), costCents: 25_000_001 }, "active", today).ok).toBe(false);
+    expect(setGoalStatus({ ...laptop(), costCents: MAX_COST_CENTS + 1 }, "active", today).ok).toBe(false);
+    expect(setGoalStatus({ ...laptop(), costCents: MAX_COST_CENTS }, "active", today).ok).toBe(true);
     const result = setGoalStatus(laptop(), "active", today);
     expect(result.ok && result.goal.status).toBe("active");
   });

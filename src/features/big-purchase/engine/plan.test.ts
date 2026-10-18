@@ -110,14 +110,16 @@ describe("computeForecast", () => {
     expect(computeForecast(makeScenario(), { ...goal, contributionCents: null })).toMatchObject({ ok: false, issue: "no-paycheck" });
   });
 
-  it("uses the suggested amount when no contribution is typed", () => {
+  it("uses the suggested amount when no contribution is typed, capped at 20% of the paycheck", () => {
+    // $50 would keep cash above the buffer, but the suggestion stops at 20% of $100.
     const result = computeForecast(tiny, { ...goal, contributionCents: null });
     if (!result.ok) throw new Error(result.message);
-    expect(result.forecast.plan).toMatchObject({ contributionCents: 5_000, affordableDate: "2026-02-27", paycheckCount: 5, tier: "ok" });
+    expect(result.forecast).toMatchObject({ suggestedContributionCents: 2_000, limitContributionCents: 10_000 });
+    expect(result.forecast.plan).toMatchObject({ contributionCents: 2_000, affordableDate: "2026-06-19", paycheckCount: 13, tier: "ok" });
   });
 
   it("builds funding points that start at 0% and end at 100% on the affordable date", () => {
-    const result = computeForecast(tiny, { ...goal, contributionCents: null });
+    const result = computeForecast(tiny, { ...goal, contributionCents: 5_000 });
     if (!result.ok) throw new Error(result.message);
     const { funding } = result.forecast;
     expect(funding.map(point => point.date)).toEqual(["2026-01-01", "2026-01-02", "2026-01-16", "2026-01-30", "2026-02-13", "2026-02-27"]);
