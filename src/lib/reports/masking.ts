@@ -5,6 +5,8 @@ export function maskAccountNumber(value: string): string {
 }
 /** Protect free-text labels too; upstream names can contain account numbers or identifiers. */
 export function safeLabel(value: string): string {
-  return value.replace(/\b[0-9a-f]{24}\b/gi, "****")
-    .replace(/\d(?:[ -]?\d){4,}/g, match => maskAccountNumber(match));
+  return value
+    .replace(/\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b/gi, "****")
+    .replace(/\b[0-9a-f]{24}\b/gi, "****")
+    .replace(/\d(?:[ -]?\d){4,}/g, (match) => maskAccountNumber(match));
 }
