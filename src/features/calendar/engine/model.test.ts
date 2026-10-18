@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loadTestScenario } from "../../../test-fixtures/scenarios";
 import { projectBase } from "../../big-purchase/engine/base";
 import type { UserPurchase } from "../types";
-import { balanceOn, buildCalendarModel, dayAlert, lowestBalance, riskLevel, upcomingBills } from "./model";
+import { balanceOn, buildCalendarModel, dayAlert, endOfDayBalance, lowestBalance, riskLevel, upcomingBills, type RecordedActivity } from "./model";
 
 const scenario = loadTestScenario("tightMonth");
 const purchase = (date: string, amountCents: number, accountId = "checking"): UserPurchase => ({
@@ -38,6 +38,49 @@ describe("buildCalendarModel balances", () => {
   });
 });
 
+describe("past end-of-day balances", () => {
+  // Snapshots at the end of 2026-10-17: checking $500, savings $1,200.
+  const recorded: RecordedActivity[] = [
+    { accountId: "checking", date: "2026-10-17", kind: "withdrawal", amountCents: 2_000 },
+    { accountId: "checking", date: "2026-10-15", kind: "deposit", amountCents: 10_000 },
+    // A $30 transfer from checking to savings.
+    { accountId: "checking", date: "2026-10-15", kind: "withdrawal", amountCents: 3_000 },
+    { accountId: "savings", date: "2026-10-15", kind: "deposit", amountCents: 3_000 },
+    { accountId: "checking", date: "2026-10-13", kind: "deposit", amountCents: 500 },
+    { accountId: "checking", date: "2026-10-18", kind: "withdrawal", amountCents: 999 },
+  ];
+
+  it("undoes each day's recorded transactions, back to the earliest one", () => {
+    const model = buildCalendarModel(scenario, [], "checking", undefined, recorded);
+    expect(model.historyStart).toBe("2026-10-13");
+    expect([...model.recordedBalances].map(([date, day]) => [date, day.totalCents])).toEqual([
+      ["2026-10-16", 52_000], ["2026-10-15", 52_000], ["2026-10-14", 45_000], ["2026-10-13", 45_000],
+    ]);
+    expect(endOfDayBalance(model, "2026-10-16")).toEqual({ cents: 52_000, recorded: true });
+    expect(endOfDayBalance(model, "2026-10-17")).toEqual({ cents: 50_000, recorded: false });
+    expect(endOfDayBalance(model, "2026-10-12")).toBeNull();
+  });
+
+  it("nets transfers between accounts in the combined view", () => {
+    const model = buildCalendarModel(scenario, [], "all", undefined, recorded);
+    expect(model.recordedBalances.get("2026-10-14")).toEqual({ totalCents: 162_000, byAccount: { checking: 45_000, savings: 117_000 } });
+  });
+
+  it("keeps past days out of the forecast and its lows", () => {
+    const model = buildCalendarModel(scenario, [], "checking", undefined, recorded);
+    const without = buildCalendarModel(scenario, [], "checking");
+    expect(model.balances).toEqual(without.balances);
+    expect(lowestBalance(model)).toEqual(lowestBalance(without));
+    expect(balanceOn(model, "2026-10-16")).toBeNull();
+  });
+
+  it("describes a past day by its recorded balance", () => {
+    const model = buildCalendarModel(scenario, [], "checking", undefined, recorded);
+    expect(dayAlert(model, "2026-10-16")).toEqual({ tone: "safe", text: "This day has passed. Recorded transactions left $520 at the end of the day." });
+    expect(dayAlert(model, "2026-10-01").text).toBe("Recorded Nessie history starts October 13, 2026.");
+  });
+});
+
 describe("riskLevel", () => {
   it("shades by share of the starting balance", () => {
     const base = 100000;
@@ -65,7 +108,7 @@ describe("dayAlert", () => {
   const model = buildCalendarModel(scenario, [purchase("2026-10-18", 60000)], "checking");
 
   it("explains days without a forecast", () => {
-    expect(dayAlert(model, "2026-10-01").text).toMatch(/in the past/);
+    expect(dayAlert(model, "2026-10-01").text).toBe("No recorded Nessie history for this date.");
     expect(dayAlert(model, "2027-02-01").text).toMatch(/90-day forecast window/);
   });
 

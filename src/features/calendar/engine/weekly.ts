@@ -1,4 +1,5 @@
 import type { Cents, ISODate } from "../types";
+import { isIncoming } from "./entries";
 import { weekDates } from "./grid";
 import type { CalendarModel } from "./model";
 
@@ -7,11 +8,11 @@ export interface WeekDaySpending {
   spendingCents: Cents;
 }
 
-/** Money going out each day of the selected week: bills, planned costs, estimates and purchases. */
+/** Money going out each day of the selected week: bills, planned costs, estimates, purchases and recorded payments. */
 export function weeklySpending(model: CalendarModel, date: ISODate): WeekDaySpending[] {
   return weekDates(date).map((day) => ({
     date: day,
-    spendingCents: (model.entriesByDate.get(day) ?? []).filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0),
+    spendingCents: (model.entriesByDate.get(day) ?? []).filter((e) => !isIncoming(e)).reduce((sum, e) => sum + e.amountCents, 0),
   }));
 }
 

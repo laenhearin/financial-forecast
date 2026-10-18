@@ -12,6 +12,7 @@ function entryKind(entry: CalendarEntry) {
     case "planned": return "Planned payment";
     case "purchase": return "Calendar purchase";
     case "payment": return "Recorded payment";
+    case "received": return "Recorded deposit";
     case "estimate": return "Estimate";
   }
 }
@@ -22,7 +23,7 @@ export function CalendarListView({ model, selected, accountNames, onSelect }: {
   accountNames: Record<string, string>;
   onSelect: (date: ISODate) => void;
 }) {
-  const entries = model.entries.filter((entry) => entry.date >= model.asOfDate && entry.kind !== "estimate" && entry.kind !== "payment");
+  const entries = model.entries.filter((entry) => entry.date >= model.asOfDate && entry.kind !== "estimate" && entry.kind !== "payment" && entry.kind !== "received");
 
   return (
     <section aria-label="Chronological calendar list" className={panelClass}>

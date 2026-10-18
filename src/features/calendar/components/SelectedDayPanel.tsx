@@ -6,7 +6,8 @@ import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { FORECAST_DAYS } from "../config";
-import { balanceOn, dayAlert, type CalendarModel, type DayAlert } from "../engine/model";
+import { isIncoming } from "../engine/entries";
+import { dayAlert, endOfDayBalance, type CalendarModel, type DayAlert } from "../engine/model";
 import { balanceLevel } from "../engine/balanceThresholds";
 import { formatWeekday } from "../format";
 import type { CalendarEntry, ISODate } from "../types";
@@ -28,6 +29,8 @@ function kindText(entry: CalendarEntry): string {
       return "Purchase · Added by you";
     case "payment":
       return "Payment · Recorded";
+    case "received":
+      return "Money received · Recorded";
   }
 }
 
@@ -42,7 +45,8 @@ interface SelectedDayPanelProps {
 export function SelectedDayPanel({ model, date, accountNames, criticalBalanceCents, onRemovePurchase }: SelectedDayPanelProps) {
   const [pendingDelete, setPendingDelete] = useState<CalendarEntry | null>(null);
   const entries = model.entriesByDate.get(date) ?? [];
-  const balance = balanceOn(model, date);
+  const endOfDay = endOfDayBalance(model, date);
+  const balance = endOfDay?.cents ?? null;
   const alert = dayAlert(model, date, criticalBalanceCents);
   const isPast = date < model.asOfDate;
 
@@ -57,12 +61,12 @@ export function SelectedDayPanel({ model, date, accountNames, criticalBalanceCen
         {alert.text}
       </p>
 
-      <p className="mt-4 text-caption text-secondary">Projected balance after this day</p>
+      <p className="mt-4 text-caption text-secondary">{isPast ? "Balance at the end of this day" : "Projected balance after this day"}</p>
       <p className={cn("mt-1 text-display font-semibold", balance !== null && balanceLevel(balance, criticalBalanceCents) >= 4 ? "text-neg" : "text-primary")}>
         {balance !== null ? formatUSD(balance) : isPast ? "Past date" : "Outside forecast"}
       </p>
       <p className="mt-1 text-micro text-secondary">
-        {balance !== null ? "After scheduled transactions" : isPast ? "Forecast starts from today" : `Forecast covers ${FORECAST_DAYS} days from today`}
+        {endOfDay?.recorded ? "Rebuilt from recorded Nessie transactions" : balance !== null ? "After scheduled transactions" : isPast ? "Before the recorded history" : `Forecast covers ${FORECAST_DAYS} days from today`}
       </p>
 
       <hr className="my-5 border-app" />
@@ -81,8 +85,8 @@ export function SelectedDayPanel({ model, date, accountNames, criticalBalanceCen
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <p className={cn("text-caption font-semibold whitespace-nowrap", entry.kind === "income" ? "text-pos" : "text-primary")}>
-                  {entry.kind === "income" ? "+" : "−"}
+                <p className={cn("text-caption font-semibold whitespace-nowrap", isIncoming(entry) ? "text-pos" : "text-primary")}>
+                  {isIncoming(entry) ? "+" : "−"}
                   {formatUSD(entry.amountCents)}
                 </p>
                 {entry.kind === "purchase" && (
