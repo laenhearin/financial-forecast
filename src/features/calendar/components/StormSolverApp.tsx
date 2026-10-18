@@ -40,10 +40,10 @@ export function StormSolverApp({ scenario }: { scenario: Scenario }) {
 
   return (
     <div className="mx-auto w-full max-w-400 px-5 py-6 md:px-8">
-      <header className="mb-4">
+      <header className="mb-4 text-center">
         <h1 className="text-display font-medium text-primary">Storm Solver</h1>
         <p className="mt-1.5 text-caption text-secondary">Review upcoming bills, your projected balance, and ways to prepare for tight spots.</p>
-        <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary">
+        <p className="mt-2 flex items-start justify-center gap-1.5 text-caption text-secondary">
           <Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
           {nessieSourceNote(scenario.customerName, scenario.asOfDate)} {forecastEstimateNote(scenario)} Recommendations use the combined account forecast.
         </p>

@@ -2,7 +2,7 @@ import type { IdleAction, NimbusChatError, NimbusLook } from "./types";
 
 /** Every Nimbus timing, weight, radius, limit and color, in one place. */
 
-export const NIMBUS_SIZE = { default: 72, min: 64, max: 80, header: 40 } as const;
+export const NIMBUS_SIZE = { default: 88, min: 64, max: 96, header: 40 } as const;
 
 /** One palette for both themes; the Heavy Rain theme only adds NIMBUS_COLORS.glow. */
 export const NIMBUS_COLORS = {

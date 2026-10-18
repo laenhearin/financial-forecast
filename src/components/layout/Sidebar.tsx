@@ -23,8 +23,8 @@ const iconButton =
 
 const FEATURE_TOOLTIP_DELAY_MS = 1000;
 
-function LogoMark() {
-  return <Image src="/icon.png" alt="" width={32} height={32} className="size-8 shrink-0 rounded-logo object-cover" />;
+function LogoMark({ className }: { className?: string }) {
+  return <Image src="/icon.png" alt="" width={44} height={44} className={cn("size-8 shrink-0 rounded-logo object-cover", className)} />;
 }
 
 export function Sidebar() {
@@ -86,9 +86,9 @@ export function Sidebar() {
           "md:sticky md:top-0 md:z-20 md:h-screen",
         )}
       >
-        <div className="mb-7 flex items-center gap-2.5 px-2.5 md:max-lg:justify-center md:max-lg:px-0">
-          <LogoMark />
-          <span className="truncate text-lead font-medium text-primary md:max-lg:sr-only">{APP_NAME}</span>
+        <div className="mb-7 flex items-center gap-3 px-1 md:max-lg:justify-center md:max-lg:px-0">
+          <LogoMark className="size-11 md:max-lg:size-9" />
+          <span className="text-xl leading-tight font-semibold tracking-tight text-primary md:max-lg:sr-only">{APP_NAME}</span>
           <button type="button" aria-label="Close menu" onClick={() => closeDrawer(true)} className={cn(iconButton, "ml-auto md:hidden")}>
             <X aria-hidden className="size-4.5" strokeWidth={1.75} />
           </button>
@@ -133,27 +133,28 @@ export function Sidebar() {
         </nav>
 
         {/* Desktop only. Its auto top margin is the spacer that keeps Nimbus just above the settings block. */}
-        <NimbusMascot className="mt-auto hidden pb-3 lg:flex" />
+        <NimbusMascot className="mt-auto hidden pb-6 lg:flex" />
 
-        <div className="mt-auto border-t border-app pt-4 lg:mt-0">
-          <div className="mb-3 flex items-center gap-2 rounded-panel bg-app p-2.5 md:max-lg:justify-center md:max-lg:bg-transparent md:max-lg:p-0">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-              <CircleUser aria-hidden className="size-5" strokeWidth={1.75} />
-            </span>
-            <div className="min-w-0 md:max-lg:sr-only">
-              <p className="text-[0.65rem] font-medium uppercase tracking-wide text-secondary">Current profile</p>
-              <p className="truncate text-caption font-semibold text-primary">{profileName}</p>
-            </div>
-          </div>
+        <div className="mt-auto border-t border-app pt-5 lg:mt-0">
+          {/* The current profile is the way into Profile & settings. */}
           <div className="flex items-center gap-2 md:max-lg:flex-col">
             <Link
               href={ROUTES.profile}
+              title={`${profileName} · Profile & settings`}
               aria-current={pathname === ROUTES.profile ? "page" : undefined}
               onClick={() => closeDrawer(false)}
-              className={cn("ui-transition group relative flex h-10 min-w-0 flex-1 items-center gap-3 rounded-item px-3 text-body md:max-lg:w-full md:max-lg:justify-center md:max-lg:px-0", pathname === ROUTES.profile ? "bg-nav-active font-medium text-accent" : "text-secondary hover:bg-nav-hover hover:text-primary")}
+              className={cn(
+                "ui-transition flex min-w-0 flex-1 items-center gap-2.5 rounded-panel p-2 md:max-lg:w-full md:max-lg:flex-none md:max-lg:justify-center md:max-lg:p-1",
+                pathname === ROUTES.profile ? "bg-nav-active text-accent" : "bg-app text-primary hover:bg-nav-hover",
+              )}
             >
-              <CircleUser aria-hidden className="size-4.5 shrink-0" strokeWidth={1.75} />
-              <span className="truncate md:max-lg:sr-only">Profile &amp; settings</span>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                <CircleUser aria-hidden className="size-5" strokeWidth={1.75} />
+              </span>
+              <span className="truncate text-caption font-semibold md:max-lg:sr-only">
+                <span className="sr-only">Profile and settings: </span>
+                {profileName}
+              </span>
             </Link>
             <ThemeToggle className="size-10 shrink-0 md:max-lg:size-8" />
           </div>

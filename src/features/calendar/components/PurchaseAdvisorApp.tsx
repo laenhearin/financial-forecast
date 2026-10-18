@@ -75,10 +75,10 @@ export function PurchaseAdvisorApp({ scenario }: { scenario: Scenario }) {
 
   return (
     <div className="mx-auto w-full max-w-300 px-5 py-12 md:px-10">
-      <header className="mb-7">
+      <header className="mb-7 text-center">
         <h1 className="text-display font-medium text-primary">Purchase Advisor</h1>
         <p className="mt-1.5 text-caption text-secondary">Try a purchase against your cash forecast before deciding whether to add it to your calendar.</p>
-        <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary"><Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />{nessieSourceNote(scenario.customerName, scenario.asOfDate)}</p>
+        <p className="mt-2 flex items-start justify-center gap-1.5 text-caption text-secondary"><Database aria-hidden className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />{nessieSourceNote(scenario.customerName, scenario.asOfDate)}</p>
       </header>
       <DebtSummary scenario={scenario} />
 

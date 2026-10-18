@@ -76,7 +76,7 @@ export function ProfileView({ customers, active, accounts }: { customers: Active
 
   return (
     <div className="mx-auto w-full max-w-180 px-5 py-12 md:px-10">
-      <header className="mb-7">
+      <header className="mb-7 text-center">
         <h1 className="text-display font-medium text-primary">Profile</h1>
         <p className="mt-2 text-body text-secondary">The Nessie customer every Financial Forecast page reads from.</p>
       </header>
