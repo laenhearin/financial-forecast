@@ -1,14 +1,23 @@
 /*
- * Weather-style shading for calendar days: light rain for caution, heavy rain for critical.
- * Built from the theme tokens, so it follows Clear sky and Midnight. Kept in the components
- * layer so Tailwind utilities still win.
+ * Six distinct balance colors, shared by the day cells and legend. A bright edge and
+ * weather icon reinforce the color; rain patterns distinguish the tighter balance levels.
+ * Mix with the theme's card surface so both Clear Skies and Heavy Rain stay coordinated.
  */
 @layer components {
-  .cal-risk-1 { background-color: color-mix(in srgb, var(--rain) 6%, var(--card)); }
-  .cal-risk-2 { background-color: color-mix(in srgb, var(--rain) 11%, var(--card)); }
-  .cal-risk-3 { background-color: color-mix(in srgb, var(--rain) 17%, var(--card)); }
-  .cal-risk-4 { background-color: color-mix(in srgb, var(--rain) 24%, var(--card)); }
-  .cal-risk-5 { background-color: color-mix(in srgb, var(--rain) 32%, var(--card)); }
+  .cal-risk-0 { --cal-tone: #216450; --cal-edge: #8de5b9; }
+  .cal-risk-1 { --cal-tone: #245880; --cal-edge: #8dd5ff; }
+  .cal-risk-2 { --cal-tone: #755915; --cal-edge: #ffda77; }
+  .cal-risk-3 { --cal-tone: #854326; --cal-edge: #ffb185; }
+  .cal-risk-4 { --cal-tone: #832e43; --cal-edge: #ff9bac; }
+  .cal-risk-5 { --cal-tone: #4c255e; --cal-edge: #ddb1ff; }
+
+  .cal-balance-cell {
+    color: #fff;
+    background-color: color-mix(in srgb, var(--cal-tone) 85%, var(--weather-card-solid));
+    border-color: color-mix(in srgb, var(--cal-edge) 55%, var(--cal-tone));
+    border-left: 3px solid var(--cal-edge);
+  }
+  button.cal-balance-cell:hover { border-color: var(--cal-edge); }
 
   .cal-rain::before,
   .cal-storm::before {
@@ -19,9 +28,9 @@
     pointer-events: none;
   }
   .cal-rain::before {
-    background: repeating-linear-gradient(115deg, transparent 0 13px, color-mix(in srgb, var(--rain) 22%, transparent) 13px 15px, transparent 15px 25px);
+    background: repeating-linear-gradient(115deg, transparent 0 13px, color-mix(in srgb, var(--rain) 14%, transparent) 13px 15px, transparent 15px 25px);
   }
   .cal-storm::before {
-    background: repeating-linear-gradient(115deg, transparent 0 11px, color-mix(in srgb, var(--rain) 34%, transparent) 11px 13px, transparent 13px 22px);
+    background: repeating-linear-gradient(115deg, transparent 0 11px, color-mix(in srgb, var(--rain) 20%, transparent) 11px 13px, transparent 13px 22px);
   }
 }

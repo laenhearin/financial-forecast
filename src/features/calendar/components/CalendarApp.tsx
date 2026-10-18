@@ -18,7 +18,7 @@ import { AddPurchasePanel } from "./AddPurchasePanel";
 import { MoneyCalendar } from "./MoneyCalendar";
 import { SelectedDayPanel } from "./SelectedDayPanel";
 import { StatsRow } from "./StatsRow";
-import { WeeklySpendingChart } from "./WeeklySpendingChart";
+import { SpendingChart } from "./SpendingChart";
 import { CalendarListView } from "./CalendarListView";
 
 interface RecordedTransaction extends RecordedActivity {
@@ -71,6 +71,7 @@ export function CalendarApp({ scenario, pastActivity, initialDate }: CalendarApp
 
   function selectDay(date: ISODate) {
     setSelected(date);
+    setMonth(monthStartOf(date));
     setPurchaseDate(date);
   }
 
@@ -134,7 +135,7 @@ export function CalendarApp({ scenario, pastActivity, initialDate }: CalendarApp
           ) : (
             <CalendarListView model={model} selected={selected} accountNames={accountNames} onSelect={selectDay} />
           )}
-          <WeeklySpendingChart model={model} selected={selected} />
+          <SpendingChart model={model} selected={selected} month={month} />
         </div>
         <div className="flex min-w-0 flex-col gap-5">
           <SelectedDayPanel

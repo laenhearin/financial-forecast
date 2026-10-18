@@ -26,7 +26,7 @@ describe("sidebar active state", () => {
     expect(getActiveHref("/a/b/c", [{ href: "/a" }, { href: "/a/b" }])).toBe("/a/b");
   });
 
-  it("lists the six pages in order", () => {
+  it("lists the seven pages in order", () => {
     expect(NAV_ITEMS.map((i) => [i.label, i.href])).toEqual([
       ["Home", "/"],
       ["Weather calendar", "/calendar"],
@@ -34,6 +34,7 @@ describe("sidebar active state", () => {
       ["Forecast Fund", "/big-purchase"],
       ["Storm solver", "/storm-solver"],
       ["Swipe and Shine", "/cash-back"],
+      ["Reports", "/reports"],
     ]);
   });
 });

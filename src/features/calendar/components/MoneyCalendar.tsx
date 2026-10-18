@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Cloud, CloudLightning, CloudRain, CloudSun, Sun, Zap, type LucideIcon } from "lucide-react";
 import { formatDate } from "@/lib/dates";
 import { formatUSD } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -11,14 +11,18 @@ import { formatMonthYear, formatWeekday, plural } from "../format";
 import type { CalendarEntry, ISODate } from "../types";
 import { noteClass, panelClass, panelTitleClass, secondaryButtonClass, subtitleClass } from "./ui";
 
-/** Day background per risk level; 0 is a plain card. */
+/** The legend and forecast days share exactly the same balance colors. */
 const RISK_BG: Record<RiskLevel, string> = {
-  0: "bg-card",
-  1: "cal-risk-1 cal-rain",
-  2: "cal-risk-2 cal-rain",
+  0: "cal-risk-0",
+  1: "cal-risk-1",
+  2: "cal-risk-2",
   3: "cal-risk-3 cal-rain",
   4: "cal-risk-4 cal-storm",
   5: "cal-risk-5 cal-storm",
+};
+
+const RISK_ICON: Record<RiskLevel, LucideIcon> = {
+  0: Sun, 1: CloudSun, 2: Cloud, 3: CloudRain, 4: CloudLightning, 5: Zap,
 };
 
 const CHIP_STYLE: Record<CalendarEntry["kind"], string> = {
@@ -65,6 +69,7 @@ function DayCell({ model, date, month, selected, criticalBalanceCents, onSelect 
   const endOfDay = endOfDayBalance(model, date);
   const balance = endOfDay?.cents ?? null;
   const risk = balanceLevel(balance, criticalBalanceCents);
+  const WeatherIcon = RISK_ICON[risk];
   const isToday = date === model.asOfDate;
   const incoming = entries.filter(isIncoming);
   const label = [
@@ -83,9 +88,8 @@ function DayCell({ model, date, month, selected, criticalBalanceCents, onSelect 
       aria-pressed={selected}
       onClick={() => onSelect(date)}
       className={cn(
-        "ui-transition relative isolate min-h-20 min-w-0 overflow-hidden rounded-item border px-1 py-1.5 text-left text-primary sm:min-h-26 sm:px-2 sm:py-2",
-        RISK_BG[risk],
-        risk >= 4 ? "border-rain" : "border-app hover:border-accent-line",
+        "ui-transition relative isolate min-h-20 min-w-0 overflow-hidden rounded-item border px-1 py-1.5 text-left sm:min-h-26 sm:px-2 sm:py-2",
+        balance === null ? "border-app bg-card text-primary hover:border-accent-line" : cn("cal-balance-cell", RISK_BG[risk]),
         selected && "ring-2 ring-accent ring-inset",
         date.slice(0, 7) !== month.slice(0, 7) && "opacity-40",
       )}
@@ -98,10 +102,8 @@ function DayCell({ model, date, month, selected, criticalBalanceCents, onSelect 
           ${incoming.length > 1 ? incoming.length : ""}
         </span>
       )}
-      {risk > 0 && (
-        <span aria-hidden className="absolute top-7 right-1.5 z-10 text-caption leading-none">
-          {risk >= 4 ? "⛈️" : "⚠️"}
-        </span>
+      {balance !== null && (
+        <WeatherIcon aria-hidden className="absolute top-7 right-1.5 z-10 size-3.5" strokeWidth={2} />
       )}
       <span className="relative z-10 block">
         <span className={cn("inline-grid text-micro font-semibold", isToday && "size-6 place-items-center rounded-full border border-accent-line bg-nav-active")}>
@@ -125,15 +127,18 @@ function Legend() {
   const levels: RiskLevel[] = [0, 1, 2, 3, 4, 5];
   return (
     <div className="mt-4 flex flex-col gap-2 text-micro text-secondary">
-      <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <span>End-of-day balance:</span>
-        {levels.map((level) => (
-          <span key={level} className="inline-flex items-center gap-1.5">
-            <i aria-hidden className={cn("relative isolate inline-block size-3.5 overflow-hidden rounded-chip border border-app", RISK_BG[level])} />
-            {level >= 4 ? `⛈️ ${BALANCE_LABELS[level]}` : BALANCE_LABELS[level]}
-          </span>
-        ))}
-      </p>
+      <p className="font-medium text-primary">End-of-day balance</p>
+      <ul aria-label="End-of-day balance levels" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {levels.map((level) => {
+          const WeatherIcon = RISK_ICON[level];
+          return (
+            <li key={level} className={cn("cal-balance-cell relative isolate flex items-center gap-2 overflow-hidden rounded-item border px-2.5 py-2 text-micro font-semibold", RISK_BG[level])}>
+              <WeatherIcon aria-hidden className="relative z-10 size-4 shrink-0" strokeWidth={2} />
+              <span className="relative z-10">{BALANCE_LABELS[level]}</span>
+            </li>
+          );
+        })}
+      </ul>
       <p className="inline-flex items-center gap-1.5">
         <i aria-hidden className="inline-block size-3.5 rounded-chip border border-pos bg-pos-soft" />
         Green $ = incoming money
