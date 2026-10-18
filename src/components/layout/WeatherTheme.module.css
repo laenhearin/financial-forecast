@@ -94,23 +94,38 @@
 .rain::after {
   content: "";
   position: absolute;
-  inset: -180px 0;
-  background-image: repeating-linear-gradient(103deg, transparent 0 24px, rgb(218 238 255 / 40%) 25px 26px, transparent 27px 72px);
-  mask-image: repeating-linear-gradient(to bottom, #000 0 18px, transparent 20px 90px);
-  animation: rainfall 800ms linear infinite;
+  inset: -180px 0 0;
+  /* Travel exactly one repeating tile per cycle, so the loop never jumps. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='180' viewBox='0 0 160 180'%3E%3Cg stroke='%23daeeff' stroke-opacity='.65' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M28 12l-4 18M102 52l-4 22M62 112l-4 16M146 148l-4 20'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 160px 180px;
+  animation: rainfall 1000ms linear infinite;
+  will-change: transform;
   opacity: 0.5;
 }
 
 .rain::after {
-  background-size: 140px 180px;
-  animation-duration: 1200ms;
-  animation-delay: -400ms;
+  background-size: 240px 180px;
+  background-position: 73px 47px;
+  animation-duration: 1500ms;
+  animation-delay: -750ms;
   opacity: 0.25;
 }
 
+.sky[data-weather="downpour"] .rain::before {
+  background-size: 100px 180px;
+  animation-duration: 550ms;
+  opacity: 0.8;
+}
+
+.sky[data-weather="downpour"] .rain::after {
+  background-size: 150px 180px;
+  animation-duration: 800ms;
+  opacity: 0.5;
+}
+
 @keyframes rainfall {
-  from { transform: translate(0, -90px); }
-  to { transform: translate(-20px, 90px); }
+  from { transform: translateY(0); }
+  to { transform: translateY(180px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

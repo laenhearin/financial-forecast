@@ -32,7 +32,7 @@ export function CashBackPreview({ profile }: { profile: CashBackProfile }) {
             </ul>
           ) : <p className="rounded-item bg-app p-2 text-micro text-secondary">No cards added yet.</p>}
         </div>
-        <div>
+        <div className="mt-auto pt-2">
           <h4 className="mb-1.5 text-micro font-medium text-secondary">Recommended cards</h4>
           {analysis.suggestions.length ? (
             <ul aria-label="Recommended cards" className="flex gap-2 overflow-x-auto pb-1">

@@ -1,6 +1,7 @@
 import { buildHomeForecast } from "@/lib/home-forecast";
 import { DebtSummary } from "@/components/home/DebtSummary";
 import { monthlyActivity } from "@/lib/monthly-activity";
+import { historicalBalances } from "@/lib/historical-balances";
 import { AskBox } from "@/components/home/AskBox";
 import { BalanceChart } from "@/components/home/BalanceChart";
 import { FeaturePreviews } from "@/components/home/FeaturePreviews";
@@ -17,9 +18,12 @@ async function loadHome() {
   const profile = await loadActiveProfile();
   const { scenario, history, asOfDate } = profile;
   const today = monthlyActivity(history.filter(record => record.date === asOfDate), asOfDate);
+  const homeData = buildHomeForecast(scenario);
+  const accounts = new Set(scenario.accounts.filter(account => account.includeInForecast).map(account => account.id));
   return {
     ...profile,
-    homeData: buildHomeForecast(scenario),
+    homeData,
+    historicalDays: historicalBalances(history.filter(record => accounts.has(record.accountId)), asOfDate, homeData.availableBalanceCents),
     defaultCriticalCents: defaultCriticalBalanceCents(scenario),
     billEntries: scenarioEntries(scenario),
     monthlyTotals: monthlyActivity(history, asOfDate),
@@ -49,6 +53,8 @@ export default async function HomePage() {
         <div className="flex min-w-0 flex-col lg:col-start-1 lg:row-start-2">
           <DebtSummary scenario={scenario} />
           <BalanceChart
+            key={scenario.id}
+            history={home.historicalDays}
             asOfDate={homeData.asOfDate}
             scenario={scenario}
             todayNetCents={todayNetCents}

@@ -11,8 +11,10 @@ import { dailyWeather, forecastDate, forecastDays, weeklyCurve } from "./weeklyF
 import type { BillMarker, ProjectionPoint } from "./types";
 import type { Scenario } from "@/features/big-purchase/types";
 import { useCalendarAdjustedForecast } from "./useCalendarAdjustedForecast";
+import type { HistoricalDay } from "@/lib/historical-balances";
 
 interface BalanceChartProps {
+  history: HistoricalDay[];
   asOfDate: string;
   scenario: Scenario;
   todayNetCents: number;
@@ -24,7 +26,7 @@ interface BalanceChartProps {
   className?: string;
 }
 
-export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalanceCents, projection, markers, monthlyTotals, isLoading = false, className }: BalanceChartProps) {
+export function BalanceChart({ history, asOfDate, scenario, todayNetCents, availableBalanceCents, projection, markers, monthlyTotals, isLoading = false, className }: BalanceChartProps) {
   const [week, setWeek] = useState(0);
   const [selected, setSelected] = useState(0);
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -33,8 +35,13 @@ export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalan
   const openingAdjustment = adjusted.availableBalanceCents - availableBalanceCents;
   const days = forecastDays(adjusted.projection, adjusted.availableBalanceCents, todayNetCents + openingAdjustment);
   const lastWeek = Math.max(0, Math.ceil(days.length / 7) - 1);
-  const currentWeek = Math.min(week, lastWeek);
-  const visible = days.slice(currentWeek * 7, currentWeek * 7 + 7);
+  const firstWeek = -Math.ceil(history.length / 7);
+  const currentWeek = Math.max(firstWeek, Math.min(week, lastWeek));
+  const isHistory = currentWeek < 0;
+  const visible = isHistory
+    ? history.filter(day => day.day >= currentWeek * 7 && day.day < (currentWeek + 1) * 7)
+    : days.slice(currentWeek * 7, currentWeek * 7 + 7);
+  const weekTransactions = isHistory ? history.filter(day => day.day >= currentWeek * 7 && day.day < (currentWeek + 1) * 7).flatMap(day => day.transactions) : [];
   const active = Math.min(selected, Math.max(0, visible.length - 1));
   const curve = weeklyCurve(visible);
   const selectedDay = visible[active];
@@ -43,7 +50,7 @@ export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalan
   const low = Math.min(...visible.map(day => day.balanceCents));
 
   function changeWeek(offset: number) {
-    setWeek(Math.max(0, Math.min(lastWeek, currentWeek + offset)));
+    setWeek(Math.max(firstWeek, Math.min(lastWeek, currentWeek + offset)));
     setSelected(0);
     setTooltipVisible(false);
   }
@@ -73,17 +80,19 @@ export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalan
         </div>
       </div>
       {selectedDay ? <>
-        <div className="mt-2 flex items-center justify-end gap-3">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <p aria-live="polite" className="text-micro text-secondary">{isHistory ? "History · estimated balances" : "Forecast"} · {forecastDate(asOfDate, visible[0].day).label} – {forecastDate(asOfDate, visible[visible.length - 1].day).label}</p>
           <div className="flex gap-1">
-            <button type="button" onClick={() => changeWeek(-1)} disabled={currentWeek === 0} aria-label="Previous forecast week" className="rounded-item border border-app bg-card p-2 text-primary disabled:opacity-35"><ChevronLeft aria-hidden className="size-4" /></button>
+            {currentWeek !== 0 && <button type="button" onClick={() => changeWeek(-currentWeek)} className="rounded-item border border-app bg-card px-2 text-micro text-primary">Today</button>}
+            <button type="button" onClick={() => changeWeek(-1)} disabled={currentWeek === firstWeek} aria-label="Previous week" className="rounded-item border border-app bg-card p-2 text-primary disabled:opacity-35"><ChevronLeft aria-hidden className="size-4" /></button>
             <button type="button" onClick={() => changeWeek(1)} disabled={currentWeek === lastWeek} aria-label="Next forecast week" className="rounded-item border border-app bg-card p-2 text-primary disabled:opacity-35"><ChevronRight aria-hidden className="size-4" /></button>
           </div>
         </div>
         <div className="overflow-x-auto pb-2" role="region" aria-label="Daily forecast chart and cards" tabIndex={0}>
           <div className="min-w-140">
             <svg viewBox="0 0 700 230" role="group" aria-labelledby={`${id}-title ${id}-description`} className="block h-auto w-full overflow-visible">
-              <title id={`${id}-title`}>Seven-day balance forecast</title>
-              <desc id={`${id}-description`}>Projected balances, not recorded transactions. Select a day below for its balance and daily change. The vertical scale fits the visible balances.</desc>
+              <title id={`${id}-title`}>{isHistory ? "Historical balance estimates" : "Seven-day balance forecast"}</title>
+              <desc id={`${id}-description`}>{isHistory ? "Balances reconstructed from recorded transactions, not verified daily snapshots." : "Projected balances, not recorded transactions."} Select a day below for its balance and daily change. The vertical scale fits the visible balances.</desc>
               <defs><linearGradient id={`${id}-fill`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ac)" stopOpacity="0.5" /><stop offset="100%" stopColor="var(--ac)" stopOpacity="0.03" /></linearGradient></defs>
               <g className="stroke-app" strokeWidth="1">
                 <path d="M 2 25 V 200 H 698" fill="none" />
@@ -125,6 +134,7 @@ export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalan
             <div className="grid grid-cols-7 gap-1.5">
               {visible.map((day, index) => {
                 const date = forecastDate(asOfDate, day.day);
+                const recorded = isHistory ? history.find(record => record.day === day.day) : undefined;
                 const bills = markers.filter((marker) => marker.day === day.day);
                 const weather = dailyWeather(day.netCents, bills.length > 0);
                 const Icon = weather === "sunny" ? Sun : weather === "rainy" ? CloudRain : Cloud;
@@ -141,6 +151,7 @@ export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalan
                   <Icon aria-hidden className={cn("my-3 size-8", weather === "sunny" ? "text-sun" : "text-accent")} strokeWidth={1.5} />
                   <span className="sr-only">{outlook}. </span>
                   <span className="text-micro text-secondary">net <span className={day.netCents < 0 ? "text-neg" : day.netCents > 0 ? "text-pos" : "text-secondary"}>{day.netCents > 0 ? "+" : ""}{formatUSD(day.netCents)}</span></span>
+                  {recorded && <span className="mt-1 text-micro text-secondary">Spent {formatUSD(recorded.spendingCents)}</span>}
                   <span className="mt-3 text-caption font-semibold text-primary">{day.day === 0 ? "TODAY" : date.weekday}</span>
                   <time dateTime={date.date} className="mt-1 text-micro text-secondary">{date.label}</time>
                   {bills.length > 0 && <span className="mt-2 text-micro text-secondary">{bills.map((bill) => bill.label).join(", ")}</span>}
@@ -150,6 +161,16 @@ export function BalanceChart({ asOfDate, scenario, todayNetCents, availableBalan
           </div>
         </div>
         <p className="mt-3 text-micro text-secondary">Sunny: net $0 or a gain. Cloudy: a loss. Rain: a loss of $100+ or a bill day with a net loss.</p>
+        {isHistory && <div className="mt-3 border-t border-app pt-3">
+          <h3 className="text-caption font-medium text-primary">Recorded transactions this week</h3>
+          {weekTransactions.length ? <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto" aria-label="Recorded transactions this week">
+            {weekTransactions.map(record => <li key={record.id} className="flex items-center justify-between gap-3 rounded-item bg-rain-soft px-3 py-2 text-micro">
+              <span><time dateTime={record.date} className="text-secondary">{formatDate(record.date, "short")}</time> · {record.label}</span>
+              <span className={cn("shrink-0", record.kind === "deposit" ? "text-pos" : "text-neg")}>{record.kind === "deposit" ? "+" : "−"}{formatUSD(record.amountCents)}</span>
+            </li>)}
+          </ul> : <p className="mt-2 text-micro text-secondary">No recorded transactions this week.</p>}
+          <p className="mt-2 text-micro text-secondary">Past balances are estimated from the current snapshot and available transactions. Missing activity may affect them. Browser-added purchases and forecast assumptions are excluded.</p>
+        </div>}
       </> : <p className="mt-8 text-body text-secondary">No projected balance is available.</p>}
     </div>
   );
