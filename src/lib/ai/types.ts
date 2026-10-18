@@ -8,7 +8,7 @@ import type { Cents, ISODate } from "@/features/big-purchase/types";
 export type { Cents, ISODate };
 
 /** Registered AI surfaces. A new surface adds a prompt, a facts builder, a schema and a template. */
-export type AiSurface = "advisor" | "goal-summary" | "ask" | "cash-back-classify" | "cash-back-compare";
+export type AiSurface = "advisor" | "goal-summary" | "ask" | "cash-back-classify" | "cash-back-compare" | "reports";
 
 export type AiSource = "model" | "cache" | "template";
 
