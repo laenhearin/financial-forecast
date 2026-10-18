@@ -192,20 +192,23 @@ const INCOME_CADENCES = [
 const INCOME_AMOUNT_TOLERANCE = 0.25;
 /** Labels that read like pay, preferred when no deposit repeats. */
 const PAY_LABEL = /pay(check|roll)?\b|salary|wage|direct dep/i;
+/** These inflows are not evidence of continuing pay, even if two happen a month apart. */
+const ONE_TIME_INFLOW = /\b(?:refund|reimbursement|gift|bonus|lottery|windfall)\b/i;
 
 /**
  * Income estimate from the last six months of income deposits (never transfers or interest).
  * A series is two or more deposits with the same label, amounts within 25% of their median, a
  * weekly, biweekly, or monthly cadence, and a latest deposit no more than two cadences ago; it
  * repeats at its median amount from its latest date. The largest series is the paycheck; others
- * are extra income. With no series, the most paycheck-like deposit (pay-like label first, then
- * the largest, then the latest) repeats monthly and says it comes from one deposit. Nessie has no
- * income schedule, so pages label every estimate.
+ * are extra income. With no series, only a positively identified pay-like deposit repeats monthly
+ * and says it comes from one deposit. Unidentified deposits and gifts/refunds never become payroll.
+ * Nessie has no income schedule, so pages label every estimate.
  */
 export function estimateIncome(history: readonly RecordedTransaction[], today: string = latestDate(history)): IncomeSource[] {
   const start = addDays(addMonths(today, -SPENDING_WINDOW_MONTHS), 1);
   const deposits = history
-    .filter(row => row.kind === "deposit" && row.flow === "income" && row.date >= start && row.date <= today)
+    .filter(row => row.kind === "deposit" && row.flow === "income" && row.amountCents > 0 &&
+      !ONE_TIME_INFLOW.test(row.label) && row.date >= start && row.date <= today)
     .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
   if (!deposits.length) return [];
 
@@ -231,8 +234,9 @@ export function estimateIncome(history: readonly RecordedTransaction[], today: s
     }));
   }
 
-  const best = [...deposits].sort((a, b) =>
-    Number(PAY_LABEL.test(b.label)) - Number(PAY_LABEL.test(a.label)) || b.amountCents - a.amountCents || b.date.localeCompare(a.date))[0];
+  const best = deposits.filter(row => PAY_LABEL.test(row.label))
+    .sort((a, b) => b.amountCents - a.amountCents || b.date.localeCompare(a.date))[0];
+  if (!best) return [];
   return [{
     id: "nessie-estimated-income",
     label: `${best.label} (estimate from one deposit)`,

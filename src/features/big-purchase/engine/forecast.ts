@@ -18,12 +18,12 @@ export function computeForecast(scenario: Scenario, goal: ForecastGoal, mods: Sc
   }
 
   const base = projectBase(scenario, mods);
-  if (!base.paydays.length) {
+  const planGoal = { costCents, bufferCents };
+  const affordableNow = isAffordableNow(base.days, planGoal);
+  if (!base.paydays.length && !affordableNow) {
     return { ok: false, issue: "no-paycheck", message: "This scenario has no paycheck income, so there is nothing to set aside from." };
   }
 
-  const planGoal = { costCents, bufferCents };
-  const affordableNow = isAffordableNow(base.days, planGoal);
   const maxCents = maxCandidateCents(scenario, costCents);
   const suggested = affordableNow ? 0 : suggestedContribution(base.days, base.paydays, planGoal, suggestedContributionCapCents(scenario, costCents));
   const limit = affordableNow ? 0 : contributionLimit(base.days, base.paydays, planGoal, maxCents);

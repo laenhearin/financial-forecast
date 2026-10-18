@@ -42,12 +42,12 @@ function addDays(date: string, days: number): string {
 }
 
 async function main() {
-  const demo = await fetch(`${base}/api/demo-data`, { cache: "no-store" });
-  if (!demo.ok) throw new Error(`GET /api/demo-data returned ${demo.status}. Is the app running at ${base} with Nessie configured?`);
-  const { scenario, goal } = await readJson<{
-    scenario: { asOfDate: string; accounts: Array<{ id: string }> };
-    goal: { name: string; costCents: number; bufferCents: number; contributionCents: number | null; preferredDeadline: string | null };
-  }>(demo);
+  const demo = await fetch(`${base}/api/dashboard`, { cache: "no-store" });
+  if (!demo.ok) throw new Error(`GET /api/dashboard returned ${demo.status}. Is the app running at ${base} with Nessie configured?`);
+  const scenario = await readJson<{ asOfDate: string; accounts: Array<{ id: string }> }>(demo);
+  if (!scenario.accounts[0]?.id) throw new Error("The selected Nessie customer has no cash account for the smoke test.");
+  // Hypothetical test inputs, not a goal returned by Nessie or written to browser storage.
+  const goal = { name: "Smoke test laptop", costCents: 120_000, bufferCents: 20_000, contributionCents: null, preferredDeadline: null };
   const results: Result[] = [];
 
   // B: Purchase Advisor explanation.

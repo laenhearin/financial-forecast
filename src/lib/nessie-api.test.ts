@@ -19,6 +19,13 @@ describe("Nessie server helper", () => {
     configure(); vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret test-key", { status: 401 })));
     await expect(getCustomers()).rejects.toThrow("Nessie HTTP 401 (GET). Upstream body withheld to protect credentials.");
   });
+  it("sanitizes a network outage without retrying or returning the secret-bearing URL", async () => {
+    configure();
+    const fetch = vi.fn().mockRejectedValue(new Error("Failed at https://prod-api.nessieisreal.com/customers?key=test-key"));
+    vi.stubGlobal("fetch", fetch);
+    await expect(getCustomers()).rejects.toThrow("Nessie network/timeout/redirect failure.");
+    expect(fetch).toHaveBeenCalledOnce();
+  });
   it("handles empty delete responses", async () => {
     configure(); vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
     await expect(deleteAccount(accountId)).resolves.toBeNull();

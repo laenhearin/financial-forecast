@@ -1,5 +1,6 @@
 import "server-only";
 import { addDays, daysBetween, isISODate } from "@/lib/dates";
+import { parseDollarsToCents } from "@/lib/money";
 import { computeForecast } from "@/features/big-purchase/engine/forecast";
 import { HORIZON_MONTHS, MAX_COST_CENTS } from "@/features/big-purchase/config";
 import { defaultBufferCents } from "@/features/big-purchase/state/goalStore";
@@ -118,17 +119,20 @@ const HANDLERS: Record<string, Handler> = {
     const result = computeForecast(context.scenario, { costCents, bufferCents, contributionCents });
     if (!result.ok) return { error: result.message };
     const { forecast } = result;
+    const shortfall = forecast.plan.violations.find(violation => violation.kind === "negative");
     return toPromptFacts({
       costCents,
       reserveKeptCents: bufferCents,
       affordableNow: forecast.plan.affordableNow,
-      affordableDate: forecast.plan.affordableDate,
+      affordableDate: shortfall ? null : forecast.plan.affordableDate,
+      cashShortfall: shortfall ? { date: shortfall.date, shortfallCents: shortfall.shortfallCents } : null,
       contributionPerPaycheckCents: forecast.plan.contributionCents,
       suggestedContributionPerPaycheckCents: forecast.suggestedContributionCents,
       largestSafeContributionPerPaycheckCents: forecast.limitContributionCents,
       paychecksNeeded: forecast.plan.paycheckCount,
       searchedThrough: forecast.horizonEndDate,
-      note: forecast.plan.affordableDate === null && !forecast.plan.affordableNow ? `Not affordable within the ${HORIZON_MONTHS}-month horizon at this contribution.` : undefined,
+      note: shortfall ? "This plan goes below zero. No feasible purchase date is supported; the earmark alone is not affordability."
+        : forecast.plan.affordableDate === null && !forecast.plan.affordableNow ? `Not affordable within the ${HORIZON_MONTHS}-month horizon at this contribution.` : undefined,
     });
   },
 
@@ -190,8 +194,8 @@ function windowDate(value: unknown, context: FinanceContext): string | null {
 /** Positive dollars with at most two decimals, as cents. */
 function dollars(value: unknown, maxCents: number): number | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
-  const cents = Math.round(value * 100);
-  return Number.isSafeInteger(cents) && cents <= maxCents ? cents : null;
+  const cents = parseDollarsToCents(String(value));
+  return cents !== null && cents > 0 && cents <= maxCents ? cents : null;
 }
 
 function item(entry: CalendarEntry) {

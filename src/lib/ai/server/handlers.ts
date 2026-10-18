@@ -67,6 +67,8 @@ export async function handleGoalSummary(request: Request, deps: HandlerDeps): Pr
   if (!context) return json({ status: "error", message: LOAD_FAILED }, 503);
   const facts = buildGoalSummaryFacts(context.scenario, input);
   if (!facts) return json({ status: "error", message: "This goal has no forecast yet." }, 422);
+  // A funding date alone does not make an overdrawn plan affordable. Keep this warning deterministic.
+  if (facts.cashShortfall) return json({ summary: goalSummaryTemplate(facts), meta: { source: "template", latencyMs: 0 } } satisfies GoalSummaryResponse);
 
   const result = await generateStructured({
     surface: "goal-summary",

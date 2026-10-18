@@ -94,6 +94,8 @@ export interface GoalSummaryFacts {
   contributionPerPaycheckCents: Cents;
   affordableNow: boolean;
   affordableDate: ISODate | null;
+  /** Existing or contribution-induced shortfall: the funding date is not a feasible purchase date. */
+  cashShortfall?: DatedCents | null;
   horizonEndDate: ISODate;
   deadline: ISODate | null;
   /** Null when no advice was requested. */

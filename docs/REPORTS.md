@@ -14,6 +14,8 @@ Open **Reports** from the sidebar (`/reports`). Last month and six essential sec
 
 ## Sections and current data gaps
 
+The [demo readiness audit](SWAMPHACKS_AUDIT.md) records current verification. Savings goals whose plans go below zero do not receive an estimated completion date in exports; a mechanical earmark date is not presented as feasible affordability.
+
 All upstream modules exist, so all sections remain selectable. An empty module renders an explanatory empty state. The forecast toggle is unavailable for fully past ranges.
 
 | Section | What it can show now |

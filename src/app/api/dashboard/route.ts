@@ -15,7 +15,7 @@ export async function GET() {
       nessie: { ...status, connected: true },
       customer: profile.customer,
       asOfDate: profile.asOfDate,
-      accounts: profile.scenario.accounts.map(({ nickname, type, balanceCents }) => ({ nickname, type, balanceCents })),
+      accounts: profile.scenario.accounts.map(({ id, nickname, type, balanceCents }) => ({ id, nickname, type, balanceCents })),
       ownedCardIds: profile.cashBack.ownedCardIds,
     }, { headers: NO_STORE });
   } catch (error) {

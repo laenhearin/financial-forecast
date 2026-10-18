@@ -136,11 +136,13 @@ export function PurchaseAdvisorApp({ scenario }: { scenario: Scenario }) {
                 <div><p className="text-micro text-secondary">Lowest balance with it</p><p className={`mt-1 text-body font-semibold ${balanceLevel(previewLowAfterDate!.cents, criticalBalanceCents) >= 4 ? "text-neg" : "text-primary"}`}>{formatUSD(previewLowAfterDate!.cents)} <span className="text-caption font-normal text-secondary">· {BALANCE_LABELS[balanceLevel(previewLowAfterDate!.cents, criticalBalanceCents)]} · {formatDate(previewLowAfterDate!.date, "short")}</span></p></div>
               </div>
               {check && scenario.accounts.length > 1 && (
-                <p className={`mt-3 rounded-item px-3.5 py-3 text-caption text-primary ${needsTransfer(check) ? "bg-rain-soft" : "bg-secondary"}`}>
+                <p className={`mt-3 rounded-item px-3.5 py-3 text-caption text-primary ${check.payingAccount.lowest.cents < 0 ? "bg-rain-soft" : "bg-secondary"}`}>
                   <span className="font-semibold">Paying from {payingAccountName}: </span>
                   {needsTransfer(check)
                     ? `your total cash covers this, but ${payingAccountName} alone would drop to ${formatUSD(check.payingAccount.lowest.cents)} on ${formatDate(check.payingAccount.lowest.date, "short")}. Move money into it first, or pay from another account.`
-                    : `that account stays at or above ${formatUSD(check.payingAccount.lowest.cents)} (lowest on ${formatDate(check.payingAccount.lowest.date, "short")}), so it can cover the payment on its own.`}
+                    : check.payingAccount.lowest.cents < 0
+                      ? `that account would fall to ${formatUSD(check.payingAccount.lowest.cents)} on ${formatDate(check.payingAccount.lowest.date, "short")}. Total cash also falls below zero; this forecast does not support the purchase.`
+                      : `that account stays at or above ${formatUSD(check.payingAccount.lowest.cents)} (lowest on ${formatDate(check.payingAccount.lowest.date, "short")}), so it can cover the payment on its own.`}
                 </p>
               )}
               {recommendation && <div className={`mt-3 rounded-item px-3.5 py-3 ${recommendation.tone}`}>

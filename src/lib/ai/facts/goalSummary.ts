@@ -6,13 +6,15 @@ import type { GoalSummaryFacts, GoalSummaryRequest, ISODate } from "../types";
 /** Facts for the Big Purchase summary, straight from the forecast and advice engines. */
 export function goalSummaryFacts(goalName: string, costCents: number, bufferCents: number, deadline: ISODate | null, forecast: Forecast, advice: AdviceResult | null): GoalSummaryFacts {
   const { plan } = forecast;
+  const shortfall = plan.violations.find(violation => violation.kind === "negative");
   return {
     goalName,
     costCents,
     bufferCents,
     contributionPerPaycheckCents: plan.contributionCents,
     affordableNow: plan.affordableNow,
-    affordableDate: plan.affordableDate,
+    affordableDate: shortfall ? null : plan.affordableDate,
+    cashShortfall: shortfall ? { date: shortfall.date, cents: shortfall.shortfallCents } : null,
     horizonEndDate: forecast.horizonEndDate,
     deadline,
     onTrack: advice ? advice.onTrack : null,

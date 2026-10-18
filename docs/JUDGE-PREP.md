@@ -1,5 +1,7 @@
 # Judge prep
 
+For the latest audit, use [the expanded judging preparation](SWAMPHACKS_JUDGING_PREP.md), [verified demo runbook](SWAMPHACKS_DEMO_RUNBOOK.md), and [verification/remaining risks](SWAMPHACKS_AUDIT.md). They supersede the older streaming, one-deposit income and savings-shortfall descriptions below.
+
 Answers to likely judging questions, checked against the code on 2026-10-18. Every number here comes from the repo or from a run that day. If you change the code, re-check the matching answer.
 
 ## The one-line pitch

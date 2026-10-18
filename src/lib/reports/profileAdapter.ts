@@ -132,7 +132,7 @@ export function reportFromProfile(
               savedCents: null,
               pct: null,
               asOfDate: profile.asOfDate,
-              ...(forecast.ok && forecast.forecast.plan.affordableDate
+              ...(forecast.ok && forecast.forecast.plan.tier !== "alert" && forecast.forecast.plan.affordableDate
                 ? { estimatedCompletion: forecast.forecast.plan.affordableDate }
                 : {}),
             };

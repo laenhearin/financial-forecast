@@ -254,6 +254,17 @@ describe("Nessie customer profile", () => {
 describe("review scenarios: bills that have not started, income detection, transfers, and history coverage", () => {
   const paid = (id: string, date: string, amount: number, description: string) => deposit(id, date, amount, description);
 
+  it.each(["Gift", "Reimbursement", "Store refund", "Deposit", "One-time bonus"])("does not turn a lone %s into monthly payroll", (label) => {
+    expect(buildCustomerProfile(raw({ deposits: [paid("once", "2026-10-15", 5000, label)] }), TODAY).scenario.income).toEqual([]);
+  });
+
+  it("does not project repeated refunds or zero-value deposits as income", () => {
+    expect(buildCustomerProfile(raw({ deposits: [
+      paid("r1", "2026-09-15", 50, "Store refund"), paid("r2", "2026-10-15", 50, "Store refund"),
+      paid("zero", "2026-10-16", 0, "Payroll"),
+    ] }), TODAY).scenario.income).toEqual([]);
+  });
+
   it("does not charge a recurring bill before its first payment date", () => {
     const { scenario } = buildCustomerProfile(raw({ bills: [
       bill("lease", { nickname: "Apartment rent", payment_date: "2026-12-01", recurring_date: 1, payment_amount: 1200 }),
@@ -269,6 +280,19 @@ describe("review scenarios: bills that have not started, income detection, trans
     const change = (date: string) => base.find(d => d.date === date)!.baseCents - base.find(d => d.date === addDaysLocal(date, -1))!.baseCents;
     expect(change("2026-11-01")).toBeGreaterThan(-120_000);
     expect(change("2026-12-01")).toBeLessThanOrEqual(-120_000);
+  });
+
+  it.each([
+    ["2026-11-17", "2026-11-17"],
+    ["2026-12-17", "2026-12-17"],
+    [TODAY, "2026-11-17"],
+    ["2026-09-17", "2026-11-17"],
+  ])("forecasts the first new bill event for a %s start on %s", (paymentDate, expectedFirst) => {
+    const { scenario } = buildCustomerProfile(raw({ deposits: [], withdrawals: [], bills: [
+      bill("date-case", { nickname: "Rent", payment_date: paymentDate, recurring_date: 17, payment_amount: 100 }),
+    ] }), TODAY);
+    const projection = projectBase(scenario);
+    expect(projection.days.find(day => day.baseCents < projection.startingCashCents)?.date).toBe(expectedFirst);
   });
 
   it("picks the paycheck, not the latest small deposit, when nothing repeats (review example)", () => {

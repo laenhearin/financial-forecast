@@ -10,6 +10,13 @@ describe("cents helpers", () => {
     expect(() => dollarsToCents(1e20)).toThrow();
   });
 
+  it("accumulates repeated decimal prices and 1.5% rewards in integer cents", () => {
+    expect(Array.from({ length: 1000 }, () => dollarsToCents(1.99)).reduce((sum, cents) => sum + cents, 0)).toBe(199_000);
+    expect(percentOfCents(10_000, 1.5)).toBe(150);
+    expect(dollarsToCents(0)).toBe(0);
+    expect(dollarsToCents(-12.34)).toBe(-1234);
+  });
+
   it("parses typed dollars without floating-point math", () => {
     expect(parseDollarsToCents("1800")).toBe(180000);
     expect(parseDollarsToCents("$1,800.5")).toBe(180050);

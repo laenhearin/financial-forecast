@@ -47,9 +47,10 @@ async function one(index: number, asOfDate: string, accountId: string): Promise<
 
 async function main() {
   console.warn(`WARNING: this sends ${count} ${surface} requests that consume shared Gemini free-tier quota.\n`);
-  const demo = await fetch(`${base}/api/demo-data`, { cache: "no-store" });
-  if (!demo.ok) throw new Error(`GET /api/demo-data returned ${demo.status}. Is the app running at ${base}?`);
-  const { scenario } = await demo.json() as { scenario: { asOfDate: string; accounts: Array<{ id: string }> } };
+  const demo = await fetch(`${base}/api/dashboard`, { cache: "no-store" });
+  if (!demo.ok) throw new Error(`GET /api/dashboard returned ${demo.status}. Is the app running at ${base} with Nessie configured?`);
+  const scenario = await demo.json() as { asOfDate: string; accounts: Array<{ id: string }> };
+  if (!scenario.accounts[0]?.id) throw new Error("The selected Nessie customer has no cash account for the burst test.");
 
   // Small concurrent batches keep the window short without opening hundreds of sockets at once.
   const results: Awaited<ReturnType<typeof one>>[] = [];

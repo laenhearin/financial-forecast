@@ -102,6 +102,30 @@ describe("requiredContribution", () => {
 });
 
 describe("computeForecast", () => {
+  it("flags an existing cash shortfall even when the suggested contribution is zero", () => {
+    const short = makeScenario({ balanceCents: 5_000, income: [paycheck(10_000, "2026-01-09")], bills: [monthlyBill("rent", 20_000, 5)] });
+    const result = computeForecast(short, { ...goal, contributionCents: null });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.forecast.suggestedContributionCents).toBe(0);
+    expect(result.forecast.plan.tier).toBe("alert");
+    expect(result.forecast.plan.violations[0]).toEqual({ date: "2026-01-05", kind: "negative", shortfallCents: 15_000 });
+  });
+
+  it("does not suggest a contribution when cash is negative before the first payday", () => {
+    const recovering = makeScenario({ balanceCents: -100, income: [paycheck(100_000, "2026-01-02")] });
+    const result = computeForecast(recovering, { ...goal, contributionCents: null });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.forecast.suggestedContributionCents).toBe(0);
+    expect(result.forecast.limitContributionCents).toBe(0);
+    expect(result.forecast.plan.tier).toBe("alert");
+  });
+
+  it("recognizes an already affordable goal even without future paychecks", () => {
+    const result = computeForecast(makeScenario({ balanceCents: 100_000 }), { ...goal, contributionCents: null });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.forecast.plan).toMatchObject({ affordableNow: true, affordableDate: "2026-01-01", contributionCents: 0 });
+  });
+
   it("asks for a cost when it is zero", () => {
     expect(computeForecast(tiny, { costCents: 0, bufferCents: 20_000, contributionCents: null })).toMatchObject({ ok: false, issue: "missing-cost" });
   });
@@ -128,8 +152,8 @@ describe("computeForecast", () => {
     expect(result.forecast.plan.violations[0]).toMatchObject({ date: "2026-01-02", kind: "negative" });
   });
 
-  it("reports an error state, not a crash, without paycheck income", () => {
-    expect(computeForecast(makeScenario(), { ...goal, contributionCents: null })).toMatchObject({ ok: false, issue: "no-paycheck" });
+  it("reports an error state, not a crash, without enough cash or paycheck income", () => {
+    expect(computeForecast(makeScenario({ balanceCents: 0 }), { ...goal, contributionCents: null })).toMatchObject({ ok: false, issue: "no-paycheck" });
   });
 
   it("uses the suggested amount when no contribution is typed, capped at 20% of the paycheck", () => {

@@ -1,14 +1,14 @@
 # AI layer (Gemini)
 
-The forecast engine computes every number. The model only explains, advises and converses. Every
-dollar figure, date and balance level a user sees comes from deterministic TypeScript; the model
-gets those facts as JSON and writes the words around them.
+The forecast engine computes financial results. The model explains those facts and converses; it
+receives JSON from deterministic TypeScript rather than calculating balances itself. Validation and
+fallbacks reduce unsupported output, but do not prove every date, number or sentence in model prose correct.
 
 ## Surfaces
 
 | Surface | Where | Route | Model (env) | Output |
 | --- | --- | --- | --- | --- |
-| Ask box | Home page | `POST /api/ai/ask` | `GEMINI_MODEL_MAIN` | Read-only tool calls, then streamed text (NDJSON) |
+| Ask box | Home page | `POST /api/ai/ask` | `GEMINI_MODEL_MAIN` | Read-only tool progress, then an audited answer (NDJSON) |
 | Nimbus chat | Sidebar mascot, every page (1024px+) | `POST /api/ai/ask` with `source: "mascot"` | `GEMINI_MODEL_MAIN` | Same as the ask box; the browser shows the reply once complete |
 | Purchase explanation | Purchase Advisor | `POST /api/ai/advisor` | `GEMINI_MODEL_FAST` | Structured JSON: headline, explanation, alternative |
 | Goal summary | Big Purchase, "Help me get there" | `POST /api/ai/goal-summary` | `GEMINI_MODEL_FAST` | Structured JSON: summary |
@@ -19,7 +19,8 @@ The browser sends **inputs only** (a purchase, goal fields, the critical balance
 in localStorage). The server reloads the active demo profile and recomputes the facts with the same
 engine functions the pages use, so the model never sees client-made numbers. The ask box's
 `checkPurchase` tool and the Purchase Advisor page both call `checkPurchase()` in
-`src/features/calendar/engine/purchaseCheck.ts`, so their verdicts always agree.
+`src/features/calendar/engine/purchaseCheck.ts`, so the tool's numerical verdict matches the page.
+Model wording can still misinterpret it; the deterministic verdict remains authoritative.
 
 Nimbus (`src/features/nimbus/`) reuses the ask route rather than a second pipeline. `source: "mascot"`
 appends its persona (`src/lib/ai/prompts/system-mascot.ts`) to the ask instructions, keeps up to 19
@@ -57,9 +58,13 @@ error. Each response carries `meta: { source, model, latencyMs, fallbackReason?,
 
 **Number audit** (`src/lib/ai/audit.ts`): every money amount in model text ("$1,234.56", "$15k",
 "1,234 dollars", "USD 1,234") must match a number in the facts (within $0.50). For the Advisor and goal
-summary, a failed audit swaps in the template. For the streamed ask answer, text already shown can't be
-retracted, so flags go to `done.meta.auditFlags` and the server log, and the ask card and Nimbus show
-"Some dollar figures here didn't match your forecast" under that answer.
+summary and the ask answer, a failed audit swaps in the template. Ask/Nimbus tool progress streams
+immediately, but answer text is held until its audit passes; rejected or partial model answers are
+never displayed or cached. Ask cache keys include the full customer's financial context and saved
+purchases, so a matching short baseline cannot reuse another customer's or an outdated later forecast's answer.
+
+Savings plans with a negative cash day use a deterministic goal-summary warning without calling the
+model. The goal timeline tool returns no affordable date for such plans and includes the first shortfall.
 
 What it does not do: it does not check percentages, day counts, or dates, and it only checks that a
 figure exists somewhere in the facts, not that it is attached to the right thing (calling the $1,800

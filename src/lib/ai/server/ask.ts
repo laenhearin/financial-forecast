@@ -22,9 +22,8 @@ const RETRYABLE = new Set<AiFallbackReason>(["rate_limited", "unavailable", "bad
 
 /**
  * Answers one ask-box question as a stream of events: tool hints, text deltas, then done.
- * Tool rounds call the engine; the final answer streams. Failures before any text retry once
- * (fallback model, or the same model after a short delay); otherwise the stream ends with a
- * friendly error and a template overview, so the panel is never empty.
+ * Tool progress streams immediately. Answer text is held until its number audit passes; failed or
+ * unsupported answers never reach the browser. Provider failures retry once, then use a template.
  */
 export async function runAsk(request: AskRequest, context: FinanceContext, runtime: AiRuntime, emit: (event: AskStreamEvent) => void, signal?: AbortSignal): Promise<void> {
   const started = runtime.now();
@@ -43,7 +42,9 @@ export async function runAsk(request: AskRequest, context: FinanceContext, runti
   const main = runtime.config.models.main;
   // Nimbus answers in its own voice, so its answers are cached apart from the ask box's.
   const mascot = request.source === "mascot";
-  const key = cacheKey(mascot ? "ask-mascot" : "ask", main, { baseline, history: request.history }, request.question);
+  // Tools see the full horizon and account distribution, not just the compact two-week baseline.
+  // Include that context so switching customers or changing a later purchase cannot reuse an answer.
+  const key = cacheKey(mascot ? "ask-mascot" : "ask", main, { context, history: request.history }, request.question);
   const hit = runtime.cache.get(key) as { text: string; model: string } | undefined;
   if (hit) {
     emit({ type: "text", delta: hit.text });
@@ -60,7 +61,6 @@ export async function runAsk(request: AskRequest, context: FinanceContext, runti
   for (const [index, model] of attempts.entries()) {
     if (index > 0 && model === attempts[index - 1]) await runtime.sleep(retryDelayMs());
     const toolResults: unknown[] = [];
-    let sentText = false;
     try {
       const { text } = await runtime.client.runTools({
         model,
@@ -75,10 +75,7 @@ export async function runAsk(request: AskRequest, context: FinanceContext, runti
         // Tool rounds plus the answer: allow two request timeouts in total.
         signal: timeoutSignal(runtime.config.timeoutMs * 2, signal),
         onToolCall: (name) => emit({ type: "tool", name }),
-        onText: (delta) => {
-          sentText = true;
-          emit({ type: "text", delta });
-        },
+        // The client returns the complete answer below. Do not expose unaudited partial text.
         toolHandler: async (name, args) => {
           console.debug(`[ai ${id}] ask tool ${describeToolCall(name, args)}`);
           const result = dispatchTool(name, args, context);
@@ -86,18 +83,21 @@ export async function runAsk(request: AskRequest, context: FinanceContext, runti
           return result;
         },
       });
-      // Text already streamed can't be retracted, so the audit flags rather than replaces it.
       const audit = auditNumbers(text, [baseline, ...toolResults]);
-      const meta: AiMeta = { source: "model", model, latencyMs: elapsed(), ...(audit.ok ? {} : { auditFlags: audit.flags }) };
-      if (audit.ok) runtime.cache.set(key, { text, model });
-      else console.warn(`[ai ${id}] ask audit flagged ${model}: ${audit.flags.join("; ")}`);
+      if (!audit.ok) {
+        console.warn(`[ai ${id}] ask audit rejected ${model}`);
+        return finishWithTemplate("audit", false);
+      }
+      const meta: AiMeta = { source: "model", model, latencyMs: elapsed() };
+      runtime.cache.set(key, { text, model });
+      emit({ type: "text", delta: text });
       emit({ type: "done", meta });
       return;
     } catch (error) {
       const failure = normalizeLlmError(error, signal);
       reason = failure.kind;
       logFailure(id, "ask", model, failure);
-      if (sentText || !RETRYABLE.has(failure.kind)) break;
+      if (!RETRYABLE.has(failure.kind)) break;
     }
   }
   finishWithTemplate(reason, true);

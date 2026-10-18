@@ -32,6 +32,16 @@ describe("checkPurchase tool", () => {
       expect(dispatchTool("checkPurchase", args, context)).toHaveProperty("error");
     }
   });
+
+  it.each([0.001, 1.999, NaN, Infinity])("rejects invalid or sub-cent tool amounts: %s", (amount) => {
+    expect(dispatchTool("checkPurchase", { amount }, context)).toHaveProperty("error");
+    expect(dispatchTool("getGoalTimeline", { cost: amount }, context)).toHaveProperty("error");
+    expect(dispatchTool("getGoalTimeline", { cost: 1200, contributionPerPaycheck: amount }, context)).toHaveProperty("error");
+  });
+
+  it("preserves a decimal purchase amount to the cent", () => {
+    expect(dispatchTool("checkPurchase", { amount: 1.99 }, context)).toMatchObject({ purchase: { amount: 1.99 } });
+  });
 });
 
 describe("other tools", () => {
@@ -56,6 +66,14 @@ describe("other tools", () => {
     expect(result).toMatchObject({ cost: 1800, contributionPerPaycheck: 300, affordableNow: false });
     expect(result.affordableDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(dispatchTool("getGoalTimeline", { cost: 0 }, context)).toHaveProperty("error");
+  });
+
+  it("does not call an overdrawn funding plan an affordable purchase date", () => {
+    expect(dispatchTool("getGoalTimeline", { cost: 5000, contributionPerPaycheck: 5000 }, context)).toMatchObject({
+      affordableDate: null,
+      cashShortfall: { date: "2026-01-09", shortfall: 1700 },
+      note: expect.stringContaining("No feasible purchase date"),
+    });
   });
 
   it("rejects unknown tools and non-object arguments", () => {

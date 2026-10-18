@@ -36,6 +36,9 @@ function advisorAlternative(facts: AdvisorFacts): string | null {
 
 /** The Big Purchase summary. Matches the original template narrator's wording. */
 export function goalSummaryTemplate(facts: GoalSummaryFacts): string {
+  if (facts.cashShortfall) {
+    return `This plan would leave cash ${formatUSD(facts.cashShortfall.cents)} below zero on ${formatDate(facts.cashShortfall.date, "long")}. A feasible purchase date is not supported at this contribution. Review income, bills, and the contribution before committing.`;
+  }
   const item = friendlyName(facts.goalName);
   const contribution = formatUSD(facts.contributionPerPaycheckCents);
   const sentences: string[] = [];

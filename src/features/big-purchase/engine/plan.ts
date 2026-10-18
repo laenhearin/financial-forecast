@@ -28,6 +28,8 @@ export function satisfiesInvariant(base: BaseDay[], paydays: ISODate[], costCent
   const paydaySet = new Set(paydays);
   let earmark = 0;
   for (const day of base) {
+    // An existing cash shortfall cannot support a "never negative" savings recommendation.
+    if (day.baseCents < 0) return false;
     if (earmark < costCents && paydaySet.has(day.date)) earmark += Math.min(contributionCents, costCents - earmark);
     if (earmark > Math.max(0, day.baseCents - floorCents)) return false;
   }
@@ -64,7 +66,7 @@ export function simulatePlan(base: BaseDay[], paydays: ISODate[], goal: PlanGoal
     }
     const committedCents = earmark; // the earmark before P, the full cost from P on
     const spendableCents = baseCents - committedCents;
-    if (committedCents > Math.max(0, baseCents - floorCents)) {
+    if (spendableCents < 0 || committedCents > Math.max(0, baseCents - floorCents)) {
       violations.push(spendableCents < 0
         ? { date, kind: "negative", shortfallCents: -spendableCents }
         : { date, kind: "below-buffer", shortfallCents: floorCents - spendableCents });

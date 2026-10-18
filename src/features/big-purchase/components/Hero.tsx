@@ -13,6 +13,11 @@ function heroText(goal: Goal, valid: boolean, result: ForecastResult | null): He
   if (!valid || !result) return { headline: "Enter a name and cost to see your forecast", tone: "empty" };
   if (!result.ok) return { headline: result.message, tone: "warning" };
   const { plan } = result.forecast;
+  if (plan.tier === "alert") return {
+    headline: "This plan would leave cash below $0",
+    detail: `The lowest projected cash is ${formatUSD(plan.lowestSpendableCents)} on ${formatDate(plan.lowestSpendableDate, "full")}. Review income, bills, and your contribution before committing.`,
+    tone: "warning",
+  };
   if (plan.affordableNow) return { headline: "You can afford this right now", detail: `Your cash stays above your ${formatUSD(goal.bufferCents)} buffer.`, tone: "normal" };
   if (!plan.affordableDate) return { headline: "Not within the next 5 years at this budget", detail: "Try Help me get there for changes that could bring it within reach.", tone: "warning" };
   return {

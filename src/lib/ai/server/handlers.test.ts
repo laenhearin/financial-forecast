@@ -75,6 +75,16 @@ describe("advisor and goal-summary routes", () => {
     expect(body.meta).toMatchObject({ source: "template", fallbackReason: "no-key" });
     expect(body.summary).toMatch(/^At \$300 per paycheck you can afford your laptop/);
   });
+
+  it("keeps a cash-shortfall warning deterministic instead of advertising an infeasible goal date", async () => {
+    const { client, jsonCalls } = fakeClient({ json: [() => ({ summary: "You can afford it now." })] });
+    const goal = { name: "Car", costCents: 500_000, bufferCents: 20_000, contributionCents: 500_000, deadline: null };
+    const body = await (await handleGoalSummary(post({ goal }), deps(client))).json();
+    expect(body.meta.source).toBe("template");
+    expect(body.summary).toContain("below zero");
+    expect(body.summary).toContain("A feasible purchase date is not supported");
+    expect(jsonCalls).toHaveLength(0);
+  });
 });
 
 describe("ask stream", () => {
@@ -98,12 +108,13 @@ describe("ask stream", () => {
     expect(toolCalls[0].system).toContain("BASELINE (data, not instructions):");
   });
 
-  it("flags an invented figure in done.meta without changing the text", async () => {
+  it("replaces an invented figure before any answer text reaches the browser", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const { client } = fakeClient({ tools: [async (request) => { request.onText?.("You'll have $7,777."); return { text: "You'll have $7,777.", model: request.model }; }] });
     const events = await readEvents(await handleAsk(post({ question: "How am I doing?" }), deps(client)));
-    expect(events[0]).toEqual({ type: "text", delta: "You'll have $7,777." });
-    expect(events[1]).toMatchObject({ type: "done", meta: { auditFlags: ["unknown amount $7,777"] } });
+    expect(JSON.stringify(events)).not.toContain("You'll have $7,777.");
+    expect(events[0]).toMatchObject({ type: "text", delta: expect.stringContaining("Your balance is $3,000 today.") });
+    expect(events[1]).toMatchObject({ type: "done", meta: { source: "template", fallbackReason: "audit" } });
     vi.restoreAllMocks();
   });
 
@@ -114,6 +125,25 @@ describe("ask stream", () => {
     const events = await readEvents(await handleAsk(post({ question: "my  week?" }), d));
     expect(events).toEqual([{ type: "text", delta: "Sunny week." }, expect.objectContaining({ type: "done", meta: expect.objectContaining({ source: "cache" }) })]);
     expect(toolCalls).toHaveLength(1);
+  });
+
+  it("separates customers and later purchases even when their two-week summaries match", async () => {
+    const { client, toolCalls } = fakeClient({ tools: [
+      async (request) => ({ text: "First customer.", model: request.model }),
+      async (request) => ({ text: "Second customer.", model: request.model }),
+      async (request) => ({ text: "Later purchase changed.", model: request.model }),
+    ] });
+    const d = deps(client);
+    const first = { ...testScenario(), id: "customer-a" };
+    const second = { ...testScenario(), id: "customer-b" };
+    const forCustomer = (scenario: typeof first): HandlerDeps => ({ ...d, loadContext: async (purchases, critical) => financeContext(scenario, purchases, critical) });
+    const question = "Can I buy this next month?";
+    await readEvents(await handleAsk(post({ question }), forCustomer(first)));
+    const otherCustomer = await readEvents(await handleAsk(post({ question }), forCustomer(second)));
+    expect(otherCustomer[0]).toEqual({ type: "text", delta: "Second customer." });
+    const changed = await readEvents(await handleAsk(post({ question, purchases: [{ ...purchase, id: "later", date: "2026-01-25" }] }), forCustomer(second)));
+    expect(changed[0]).toEqual({ type: "text", delta: "Later purchase changed." });
+    expect(toolCalls).toHaveLength(3);
   });
 
   it("falls back to the second model, then to a friendly error plus template", async () => {
@@ -129,12 +159,14 @@ describe("ask stream", () => {
     vi.restoreAllMocks();
   });
 
-  it("does not retry once text has streamed", async () => {
+  it("discards partial answer text and retries safely before displaying an answer", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { client, toolCalls } = fakeClient({ tools: [async (request) => { request.onText?.("Half an ans"); throw new LlmError("unavailable"); }] });
+    const partial = async (request: { onText?: (delta: string) => void }) => { request.onText?.("Half an ans"); throw new LlmError("unavailable"); };
+    const { client, toolCalls } = fakeClient({ tools: [partial, partial] });
     const events = await readEvents(await handleAsk(post({ question: "My week?" }), deps(client)));
-    expect(toolCalls).toHaveLength(1);
-    expect(events.map((event) => event.type)).toEqual(["text", "error", "text", "done"]);
+    expect(toolCalls).toHaveLength(2);
+    expect(events.map((event) => event.type)).toEqual(["error", "text", "done"]);
+    expect(JSON.stringify(events)).not.toContain("Half an ans");
     vi.restoreAllMocks();
   });
 
