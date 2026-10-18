@@ -5,6 +5,9 @@ import { categorizeByKeyword } from "@/features/cash-back/engine/categorize";
 import { buildReportData } from "./buildReportData";
 import { computeForecast } from "@/features/big-purchase/engine/forecast";
 import type { Goal } from "@/features/big-purchase/types";
+import { balanceLevel, BALANCE_LABELS } from "@/features/calendar/engine/balanceThresholds";
+import { inRange } from "./aggregations";
+import { buildFallbackSummary } from "./fallbackSummary";
 import { safeLabel } from "./masking";
 import type { ReportConfig } from "./types";
 
@@ -21,6 +24,25 @@ export function reportFromProfile(profile: CustomerProfile, config: ReportConfig
     forecast: [...model.balances].map(([date, balance]) => ({ date, balanceCents: balance.totalCents, isForecast: date > profile.asOfDate })),
   });
   data.notes.push("Recorded activity is completed deposits and withdrawals. Categories are keyword estimates. Transfers, matched bill payments and savings contributions are not provided by the current feed; zero means none identified, not confirmed absent.");
+  if (data.includedSections.includes("billsPaychecks")) {
+    data.bills = model.entries.filter(row => row.kind === "bill" && inRange(row.date, config.range)).map(row => ({ date: row.date, name: safeLabel(row.label), amountCents: row.amountCents, status: "upcoming" }));
+    data.paychecks = [
+      ...history.filter(row => row.kind === "deposit" && inRange(row.date, config.range)).map(row => ({ date: row.date, name: safeLabel(row.label), amountCents: row.amountCents, status: "received" as const })),
+      ...model.entries.filter(row => row.kind === "income" && inRange(row.date, config.range)).map(row => ({ date: row.date, name: safeLabel(row.label), amountCents: row.amountCents, status: "expected" as const })),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+  }
+  if (data.forecastWindow) {
+    const weather = [...model.balances].filter(([date]) => inRange(date, data.forecastWindow!)).map(([date, balance]) => {
+      const level = balanceLevel(balance.totalCents, criticalCents);
+      return { date, level, label: BALANCE_LABELS[level], endBalanceCents: balance.totalCents };
+    });
+    if (data.includedSections.includes("forecastCalendar")) data.weatherDays = weather;
+    if (data.summaryStats && weather.length) {
+      const low = weather.reduce((a, b) => a.endBalanceCents <= b.endBalanceCents ? a : b);
+      data.summaryStats.forecast = { lowestBalanceCents: low.endBalanceCents, lowestBalanceDate: low.date, worstWeather: low.label, stormDays: weather.filter(d => d.level >= 4).length };
+      data.summary = { text: buildFallbackSummary(data.summaryStats), source: "fallback" };
+    }
+  }
   if (data.includedSections.includes("chartGoals")) {
     data.goals = config.range.end < profile.asOfDate ? [] : goals.map(goal => {
       const forecast = computeForecast(scenario, goal);
