@@ -114,8 +114,7 @@ export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarApp
       <StatsRow model={model} viewName={viewName} criticalBalanceCents={criticalBalanceCents} />
       <DebtSummary scenario={scenario} />
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)] xl:items-start">
-        <div className="flex min-w-0 flex-col gap-5">
+      <div className="mt-5 mb-5 grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)]">
           <div className="flex justify-end gap-1" role="group" aria-label="Calendar display">
             <button type="button" aria-pressed={calendarView === "calendar"} onClick={() => setCalendarView("calendar")} className="inline-flex min-h-10 items-center gap-2 rounded-item border border-app bg-card px-3 text-caption text-secondary aria-pressed:border-accent-line aria-pressed:bg-nav-active aria-pressed:text-accent">
               <CalendarDays aria-hidden className="size-4" /> Calendar
@@ -124,6 +123,9 @@ export function CalendarApp({ scenario, pastPayments, initialDate }: CalendarApp
               <List aria-hidden className="size-4" /> List
             </button>
           </div>
+      </div>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)] xl:items-start">
+        <div className="flex min-w-0 flex-col gap-5">
           {calendarView === "calendar" ? (
             <MoneyCalendar model={model} month={month} selected={selected} viewName={viewName} criticalBalanceCents={criticalBalanceCents} onMonthChange={setMonth} onSelect={selectDay} onToday={goToday} />
           ) : (

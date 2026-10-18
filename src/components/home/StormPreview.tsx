@@ -17,7 +17,7 @@ export function StormPreview({ homeData, scenario }: { homeData: HomeData; scena
     .sort((a, b) => a.day - b.day);
 
   return (
-    <section aria-labelledby="storm-preview-title" className="flex min-w-0 flex-col gap-2 rounded-panel border border-app bg-card p-3">
+    <section aria-labelledby="storm-preview-title" className="flex min-h-0 min-w-0 flex-col gap-2 rounded-panel border border-app bg-card p-3">
       <div className="flex items-center justify-between">
         <h3 id="storm-preview-title" className="text-caption font-medium text-secondary"><Link href={ROUTES.stormSolver} className="hover:text-primary hover:underline">Storm solver</Link></h3>
       </div>
@@ -26,7 +26,7 @@ export function StormPreview({ homeData, scenario }: { homeData: HomeData; scena
         <span className="rounded-full bg-rain-soft px-2 py-0.5 text-micro text-secondary">{criticalDays.length}</span>
       </div>
       {criticalDays.length ? (
-        <ul aria-label="All upcoming critical forecast dates" className="max-h-36 space-y-1.5 overflow-y-auto pr-1">
+        <ul aria-label="All upcoming critical forecast dates" className="min-h-24 flex-1 basis-0 space-y-1.5 overflow-y-auto pr-1">
           {criticalDays.map(day => {
             const date = addDays(homeData.asOfDate, day.day);
             const bills = homeData.markers.filter(marker => marker.day === day.day);

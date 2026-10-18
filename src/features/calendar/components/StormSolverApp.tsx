@@ -39,8 +39,8 @@ export function StormSolverApp({ scenario }: { scenario: Scenario }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-300 px-5 py-12 md:px-10">
-      <header className="mb-7">
+    <div className="mx-auto w-full max-w-400 px-5 py-6 md:px-8">
+      <header className="mb-4">
         <h1 className="text-display font-medium text-primary">Storm Solver</h1>
         <p className="mt-1.5 text-caption text-secondary">Review upcoming bills, your projected balance, and ways to prepare for tight spots.</p>
         <p className="mt-2 flex items-start gap-1.5 text-caption text-secondary">
@@ -49,7 +49,7 @@ export function StormSolverApp({ scenario }: { scenario: Scenario }) {
         </p>
       </header>
       <DebtSummary scenario={scenario} />
-      <div className="max-w-3xl">
+      <div className="mt-4">
         <StormSolverPanel storm={storm} onAnalyze={analyze} />
       </div>
     </div>

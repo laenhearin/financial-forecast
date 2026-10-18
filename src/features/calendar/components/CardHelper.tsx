@@ -52,7 +52,8 @@ export function CardHelper() {
         Enter your card details to compare APR, utilization, available credit, and rewards. The recommendation is an estimate, not a guarantee of approval or savings.
       </p>
 
-      <form onSubmit={addCard} noValidate className="flex flex-col gap-3">
+      <div className="grid items-start gap-5 md:grid-cols-2">
+      <form onSubmit={addCard} noValidate className="grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="card-name" className={labelClass}>
             Card name
@@ -88,12 +89,13 @@ export function CardHelper() {
             {error}
           </p>
         )}
-        <button type="submit" className={primaryButtonClass}>
+        <button type="submit" className={`${primaryButtonClass} self-end`}>
           + Add my card
         </button>
       </form>
 
-      <ul className="my-3 flex flex-col gap-2">
+      <div>
+      <ul className="mb-3 flex flex-col gap-2">
         {cards.length === 0 ? (
           <li className="py-3 text-caption text-secondary">No cards added yet. Enter each card&apos;s APR, balance, and limit above to compare them.</li>
         ) : (
@@ -124,6 +126,8 @@ export function CardHelper() {
       </button>
       <div aria-live="polite">
         <AdviceList items={advice} />
+      </div>
+      </div>
       </div>
       <p className={noteClass}>
         General guidance only. Interest rates, fees, statement closing dates, promotional terms, and issuer rules can change the best choice. If you carry a balance, paying it down and avoiding new interest-bearing debt is usually more important than earning rewards.
