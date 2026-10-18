@@ -1,5 +1,6 @@
 import type { Cents, ISODate } from "../types";
-import { weekDates } from "./grid";
+import { addDays, dateParts, daysInMonth } from "../../../lib/dates";
+import { monthStartOf, weekDates } from "./grid";
 import type { CalendarModel } from "./model";
 
 export interface WeekDaySpending {
@@ -9,7 +10,18 @@ export interface WeekDaySpending {
 
 /** Money going out each day of the selected week: bills, planned costs, estimates and purchases. */
 export function weeklySpending(model: CalendarModel, date: ISODate): WeekDaySpending[] {
-  return weekDates(date).map((day) => ({
+  return spendingOnDates(model, weekDates(date));
+}
+
+/** All calendar days of the displayed month, including short months and leap years. */
+export function monthlySpending(model: CalendarModel, date: ISODate): WeekDaySpending[] {
+  const { year, month } = dateParts(date);
+  const first = monthStartOf(date);
+  return spendingOnDates(model, Array.from({ length: daysInMonth(year, month) }, (_, i) => addDays(first, i)));
+}
+
+function spendingOnDates(model: CalendarModel, dates: readonly ISODate[]): WeekDaySpending[] {
+  return dates.map((day) => ({
     date: day,
     spendingCents: (model.entriesByDate.get(day) ?? []).filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0),
   }));
