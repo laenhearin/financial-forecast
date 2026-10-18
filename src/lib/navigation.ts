@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Home, CalendarDays, ShoppingCart, Target, Umbrella, CreditCard } from "lucide-react";
+import { Home, CalendarDays, ShoppingCart, Target, Umbrella, CreditCard, FileText } from "lucide-react";
 
 /** Every in-app route. Link to these instead of writing paths inside components. */
 export const ROUTES = {
@@ -10,6 +10,7 @@ export const ROUTES = {
   bigPurchase: "/big-purchase",
   stormSolver: "/storm-solver",
   cashBack: "/cash-back",
+  reports: "/reports",
 } as const;
 
 export interface NavItem {
@@ -45,6 +46,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Swipe and Shine", href: ROUTES.cashBack, icon: CreditCard,
     description: "Compare cash-back rewards across your cards and find which card earns the most for each spending category.",
   },
+  { label: "Reports", href: ROUTES.reports, icon: FileText, description: "Build and download a financial report with your activity, charts, and upcoming forecast." },
 ];
 
 /** "/" matches only itself; other items also match their sub-pages ("/big-purchase/new"). */
