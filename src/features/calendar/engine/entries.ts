@@ -20,7 +20,7 @@ export function forecastEndDate(asOfDate: ISODate): ISODate {
   return addDays(asOfDate, FORECAST_DAYS);
 }
 
-const KIND_ORDER: Record<CalendarEntry["kind"], number> = { income: 0, bill: 1, planned: 2, purchase: 3, estimate: 4 };
+const KIND_ORDER: Record<CalendarEntry["kind"], number> = { income: 0, bill: 1, planned: 2, purchase: 3, payment: 4, estimate: 5 };
 
 /** By date, then income first within a day. */
 export function sortEntries(entries: CalendarEntry[]): CalendarEntry[] {

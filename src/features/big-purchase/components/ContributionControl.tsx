@@ -48,7 +48,7 @@ export function ContributionControl({ goal, model }: { goal: Goal; model: BigPur
         {affordableNow
           ? "No contributions needed. You can buy this now."
           : forecast
-            ? <span>Suggested up to {formatUSD(forecast.suggestedContributionCents)}, limit {formatUSD(forecast.limitContributionCents)}</span>
+            ? <span>Suggested up to {formatUSD(forecast.suggestedContributionCents)} (max 20% of paycheck); limit {formatUSD(forecast.limitContributionCents)}</span>
             : <span>Enter a cost to see the suggested amount.</span>}
         {goal.contributionCents !== null && forecast && !affordableNow && (
           <Bounce>

@@ -9,6 +9,14 @@ import "@/features/calendar/calendar.css";
 
 export const metadata: Metadata = { title: "Weather Calendar" };
 
+interface RecordedPayment {
+  id: string;
+  accountId: string;
+  date: string;
+  label: string;
+  amountCents: number;
+}
+
 type LoadResult = { ok: true; profile: CustomerProfile } | { ok: false; message: string; details: string[] };
 
 /** Loads the active Nessie customer on the server; the browser never sees the API key. */
@@ -30,9 +38,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const result = await loadProfile();
   if (!result.ok) return <CalendarLoadError message={result.message} details={result.details} />;
   const { customer, scenario } = result.profile;
+  const pastPayments = result.profile.history
+    .filter(transaction => transaction.kind === "withdrawal" && transaction.date <= scenario.asOfDate)
+    .map(({ id, accountId, date, label, amountCents }) => ({ id, accountId, date, label, amountCents }));
   return (
     <ActiveCustomerProvider customer={customer}>
-      <CalendarApp key={`${scenario.id}:${scenario.asOfDate}:${initialDate ?? ""}`} initialDate={initialDate} scenario={scenario} />
+      <CalendarApp key={`${scenario.id}:${scenario.asOfDate}:${initialDate ?? ""}`} initialDate={initialDate} scenario={scenario} pastPayments={pastPayments} />
     </ActiveCustomerProvider>
   );
 }

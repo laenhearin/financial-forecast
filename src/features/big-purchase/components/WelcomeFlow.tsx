@@ -16,7 +16,7 @@ import { cardClass, inputClass, mutedTextClass, primaryButtonClass, secondaryBut
 const STEPS = ["Item name", "Cost", "Buffer"];
 
 /** First-visit flow: name, cost, then buffer. Finishing creates a draft goal. */
-export function WelcomeFlow({ onFinish, disabled }: { onFinish: (fields: { name: string; costCents: Cents; bufferCents: Cents }) => void; disabled: boolean }) {
+export function WelcomeFlow({ onFinish, disabled, title = "Let's plan your next big purchase." }: { onFinish: (fields: { name: string; costCents: Cents; bufferCents: Cents }) => void; disabled: boolean; title?: string }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [costCents, setCostCents] = useState<Cents | null>(null);
@@ -40,7 +40,7 @@ export function WelcomeFlow({ onFinish, disabled }: { onFinish: (fields: { name:
     <FadeRise className={`${cardClass} mx-auto max-w-2xl overflow-hidden`}>
       <div className="bg-(image:--bp-hero-gradient) px-8 pt-8 pb-6">
         <ShoppingBag aria-hidden className="mb-4 size-8 text-(--bp-primary-ink)" />
-        <h2 className="text-2xl font-semibold tracking-tight">Let&apos;s plan your next big purchase.</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
         <p className={`mt-2 ${mutedTextClass}`}>Tell us what you&apos;re saving for and we&apos;ll show you when you can afford it.</p>
       </div>
       <form className="space-y-6 px-8 py-7" onSubmit={event => { event.preventDefault(); next(); }}>
@@ -61,7 +61,7 @@ export function WelcomeFlow({ onFinish, disabled }: { onFinish: (fields: { name:
           <div className="space-y-2">
             <Label htmlFor="bp-welcome-cost" className="text-base font-semibold">How much does it cost?</Label>
             <MoneyInput id="bp-welcome-cost" value={costCents} onChange={setCostCents} placeholder="1800" invalid={costCents !== null && (costCents <= 0 || costCents > MAX_COST_CENTS)} />
-            <p className={`text-sm ${mutedTextClass}`}>Up to $250,000.</p>
+            <p className={`text-sm ${mutedTextClass}`}>Up to $500,000.</p>
           </div>
         )}
         {step === 2 && (

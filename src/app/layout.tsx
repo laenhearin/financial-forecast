@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { AccountMenu } from "@/components/layout/AccountMenu";
 import { ActiveCustomerProvider, ActiveCustomerSync, type ActiveCustomer } from "@/components/layout/ActiveCustomer";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { WeatherStageSync } from "@/components/layout/WeatherStageSync";
@@ -16,7 +15,7 @@ import type { Scenario } from "@/features/big-purchase/types";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: { default: "CloudCash", template: "%s · CloudCash" },
+  title: { default: "Financial Forecast", template: "%s · Financial Forecast" },
   description: "Your money, a little clearer.",
   icons: { icon: "/icon.png", shortcut: "/icon.png", apple: "/icon.png" },
 };
@@ -46,7 +45,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <ActiveCustomerSync customerId={customer?.id ?? null} />
             <WeatherStageSync scenario={scenario} defaultCriticalBalanceCents={criticalBalanceCents} />
             <Sidebar />
-            <AccountMenu />
             <main className="min-h-screen min-w-0 flex-1">{children}</main>
           </ActiveCustomerProvider>
         </ThemeProvider>

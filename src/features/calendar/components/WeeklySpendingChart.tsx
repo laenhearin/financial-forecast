@@ -66,7 +66,7 @@ export function WeeklySpendingChart({ model, selected }: { model: CalendarModel;
         Total spending this week: <strong className="font-semibold text-primary">{formatUSD(totalCents)}</strong>
       </p>
       <p className={noteClass}>
-        Bills, planned costs, estimated everyday spending and your purchases count as spending. Incoming money raises the forecast but is not counted here.
+        Bills, planned costs, estimated everyday spending, purchases and recorded payments count as spending on their dates. Incoming money is not counted here.
       </p>
     </section>
   );

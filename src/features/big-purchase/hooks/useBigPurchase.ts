@@ -25,7 +25,12 @@ export function useBigPurchase(scenario: Scenario) {
   const today = scenario.asOfDate;
 
   const stored = useSyncExternalStore(goalStore.subscribe, () => goalStore.getSnapshot(customerId), goalStore.getServerSnapshot);
-  const goal: Goal | null = stored?.goals[0] ?? null;
+  const goals = stored?.goals ?? [];
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const goal: Goal | null = goals.find(item => item.id === selectedGoalId)
+    ?? goals.find(item => item.id === stored?.activeGoalId)
+    ?? goals[0]
+    ?? null;
   const hydrated = stored !== null;
 
   // Debounce the inputs that drive the forecast while the user types.
@@ -48,6 +53,13 @@ export function useBigPurchase(scenario: Scenario) {
     [scenario, forecastGoal],
   );
   const forecast = forecastResult?.ok ? forecastResult.forecast : null;
+  const activeGoal = goals.find(item => item.id === stored?.activeGoalId && item.status === "active") ?? null;
+  const activeForecastResult = useMemo(() => {
+    if (!activeGoal) return null;
+    if (activeGoal.id === goal?.id) return forecastResult;
+    return computeForecast(scenario, activeGoal);
+  }, [scenario, activeGoal, goal?.id, forecastResult]);
+  const activeForecast = activeForecastResult?.ok ? activeForecastResult.forecast : null;
   const valid = goal ? isGoalValid(goal) : false;
 
   const affordableDate = forecast?.plan.affordableDate ?? null;
@@ -83,7 +95,13 @@ export function useBigPurchase(scenario: Scenario) {
 
   const actions = {
     startGoal(fields: { name: string; costCents: Cents; bufferCents: Cents }) {
-      save(createGoal(newGoalId(), today, fields));
+      const next = createGoal(newGoalId(), today, fields);
+      save(next);
+      setSelectedGoalId(next.id);
+    },
+    selectGoal(id: string) {
+      if (goals.some(item => item.id === id)) setSelectedGoalId(id);
+      setAdvice({ status: "closed" });
     },
     update(patch: GoalPatch) {
       if (!goal) return;
@@ -116,7 +134,10 @@ export function useBigPurchase(scenario: Scenario) {
   return {
     scenario,
     hydrated,
+    goals,
     goal,
+    activeGoal,
+    activeForecast,
     valid,
     forecastResult,
     forecast,

@@ -41,9 +41,9 @@ export function buildBaseline(
     horizonDays: BASELINE_DAYS,
     days: days.map((day) => ({ date: day.date, level: BALANCE_LABELS[day.level], endBalanceCents: day.endBalanceCents })),
     upcoming: model.entries
-      .filter((entry) => entry.date > today && entry.date <= last && entry.kind !== "estimate")
+      .filter((entry) => entry.date > today && entry.date <= last && entry.kind !== "estimate" && entry.kind !== "payment")
       .slice(0, MAX_UPCOMING)
-      .map((entry) => ({ date: entry.date, label: entry.label, amountCents: entry.amountCents, kind: entry.kind as Exclude<CalendarEntry["kind"], "estimate"> })),
+      .map((entry) => ({ date: entry.date, label: entry.label, amountCents: entry.amountCents, kind: entry.kind as Exclude<CalendarEntry["kind"], "estimate" | "payment"> })),
     lowestBalance: low
       ? { date: low.date, cents: low.endBalanceCents, level: BALANCE_LABELS[low.level] }
       : { date: today, cents: currentBalanceCents, level: BALANCE_LABELS[balanceLevel(currentBalanceCents, criticalCents)] },

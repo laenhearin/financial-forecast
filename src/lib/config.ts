@@ -1,4 +1,4 @@
-export const APP_NAME = "CloudCash";
+export const APP_NAME = "Financial Forecast";
 
 /** Theme names as stored by next-themes and written to <html data-theme>. */
 export const THEMES = {

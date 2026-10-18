@@ -26,6 +26,8 @@ function kindText(entry: CalendarEntry): string {
       return `Estimate · ${entry.detail ?? "Everyday spending"}`;
     case "purchase":
       return "Purchase · Added by you";
+    case "payment":
+      return "Payment · Recorded";
   }
 }
 

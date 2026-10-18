@@ -57,7 +57,7 @@ export function validateGoal(goal: Goal): GoalErrors {
   if (!name) errors.name = "Enter a name.";
   else if (name.length > GOAL_NAME_MAX_LENGTH) errors.name = `Use ${GOAL_NAME_MAX_LENGTH} characters or fewer.`;
   if (!isCents(goal.costCents) || goal.costCents <= 0) errors.cost = "Enter a cost above $0.";
-  else if (goal.costCents > MAX_COST_CENTS) errors.cost = "Keep the cost at or under $250,000.";
+  else if (goal.costCents > MAX_COST_CENTS) errors.cost = "Keep the cost at or under $500,000.";
   if (!isCents(goal.bufferCents) || goal.bufferCents < 0) errors.buffer = "Enter a buffer of $0 or more.";
   if (goal.contributionCents !== null && (!isCents(goal.contributionCents) || goal.contributionCents < 0)) errors.contribution = "Enter $0 or more.";
   return errors;
@@ -92,9 +92,16 @@ export function emptyState(): StoredState {
   return { version: 1, goals: [], activeGoalId: null, queue: [] };
 }
 
-/** Replaces the first goal (the only one the UI shows) and keeps activeGoalId in sync. */
+/** Adds or updates a goal without discarding any other saved goals. */
 export function withGoal(state: StoredState, goal: Goal): StoredState {
-  const goals = [goal, ...state.goals.filter(existing => existing.id !== goal.id).slice(1)];
+  let goals = state.goals.some(existing => existing.id === goal.id)
+    ? state.goals.map(existing => existing.id === goal.id ? goal : existing)
+    : [...state.goals, goal];
+  if (goal.status === "active") {
+    goals = goals.map(existing => existing.id !== goal.id && existing.status === "active"
+      ? { ...existing, status: "draft" }
+      : existing);
+  }
   const activeGoalId = goal.status === "active" ? goal.id : state.activeGoalId === goal.id ? null : state.activeGoalId;
   return { ...state, goals, activeGoalId };
 }

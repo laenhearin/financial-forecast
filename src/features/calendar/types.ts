@@ -8,7 +8,7 @@ export type BillPriority = "essential" | "important" | "optional";
  * income, bill and planned (one-off expenses) are scheduled; estimate is the scenario's
  * everyday spending; purchase is something the user added on this page.
  */
-export type EntryKind = "income" | "bill" | "planned" | "estimate" | "purchase";
+export type EntryKind = "income" | "bill" | "planned" | "estimate" | "purchase" | "payment";
 
 export interface CalendarEntry {
   id: string;
