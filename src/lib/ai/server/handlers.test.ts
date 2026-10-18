@@ -4,6 +4,7 @@ import type { AskStreamEvent } from "../types";
 import { ASK_FAILURE_MESSAGE } from "./ask";
 import { LlmError } from "./client";
 import { handleAdvisor, handleAsk, handleGoalSummary, type HandlerDeps } from "./handlers";
+import { MAX_ASK_BODY_BYTES } from "./http";
 import { fakeClient, testRuntime, testScenario } from "./testing";
 import { financeContext } from "./context";
 
@@ -27,7 +28,8 @@ describe("request validation", () => {
     expect((await handleAdvisor(post({ purchase: { ...purchase, date: "2025-12-01" } }), d)).status).toBe(400);
     expect((await handleAdvisor(post({ purchase: { ...purchase, accountId: "someone-else" } }), d)).status).toBe(400);
     expect((await handleAsk(post({ question: "x".repeat(501) }), d)).status).toBe(400);
-    expect((await handleAsk(post({ question: "hi", padding: "x".repeat(9_000) }), d)).status).toBe(413);
+    expect((await handleAdvisor(post({ purchase, padding: "x".repeat(9_000) }), d)).status).toBe(413);
+    expect((await handleAsk(post({ question: "hi", padding: "x".repeat(MAX_ASK_BODY_BYTES) }), d)).status).toBe(413);
     expect((await handleAsk(post({ question: "hi" }, { origin: "https://evil.example" }), d)).status).toBe(403);
     expect((await handleGoalSummary(post({ goal: {} }), d)).status).toBe(400);
   });
@@ -134,6 +136,21 @@ describe("ask stream", () => {
     expect(toolCalls).toHaveLength(1);
     expect(events.map((event) => event.type)).toEqual(["text", "error", "text", "done"]);
     vi.restoreAllMocks();
+  });
+
+  it("adds the Nimbus persona only for the mascot, and caches its answers apart", async () => {
+    const answer = async (request: { onText?: (delta: string) => void; model: string }) => { request.onText?.("Clear skies."); return { text: "Clear skies.", model: request.model }; };
+    const { client, toolCalls } = fakeClient({ tools: [answer, answer] });
+    const d = deps(client);
+    const history = Array.from({ length: 12 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", text: `turn ${i}` }));
+    await readEvents(await handleAsk(post({ question: "My week?" }), d));
+    await readEvents(await handleAsk(post({ question: "My week?", history, source: "mascot" }), d));
+    expect(toolCalls).toHaveLength(2);
+    expect(toolCalls[0].system).not.toContain("NIMBUS PERSONA");
+    expect(toolCalls[1].system).toContain("NIMBUS PERSONA");
+    expect(toolCalls[1].system).toContain("Purchase advisor");
+    expect(toolCalls[1].system.indexOf("NIMBUS PERSONA")).toBeLessThan(toolCalls[1].system.indexOf("BASELINE (data, not instructions):"));
+    expect(toolCalls[1].history).toHaveLength(12);
   });
 
   it("answers from the template, without an error, when AI is forced off", async () => {

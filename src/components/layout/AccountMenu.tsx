@@ -6,6 +6,7 @@ import { ChevronDown, CircleUser, Settings2, WalletCards } from "lucide-react";
 import { ROUTES } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { useActiveCustomer } from "./ActiveCustomer";
+import { ReduceMotionSwitch } from "./ReduceMotionSwitch";
 import { ThemeToggle } from "./ThemeToggle";
 
 type Panel = "settings" | null;
@@ -77,6 +78,13 @@ export function AccountMenu() {
                   <p className="mt-1 text-micro text-secondary">Switch between Clear Skies and Heavy Rain.</p>
                 </div>
                 <ThemeToggle className="size-9 bg-card" />
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 rounded-item bg-app p-3">
+                <div>
+                  <p id="reduce-motion-label" className="text-caption font-semibold text-primary">Reduce motion</p>
+                  <p id="reduce-motion-hint" className="mt-1 text-micro text-secondary">Calms Nimbus, the sidebar cloud.</p>
+                </div>
+                <ReduceMotionSwitch labelledBy="reduce-motion-label" describedBy="reduce-motion-hint" />
               </div>
             </>
           ) : (

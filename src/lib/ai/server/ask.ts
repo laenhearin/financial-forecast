@@ -4,6 +4,7 @@ import { buildBaseline } from "../facts/baseline";
 import { askTemplate } from "../fallbacks";
 import { toPromptFacts } from "../promptJson";
 import { askSystemPrompt } from "../prompts/system-ask";
+import { MASCOT_PERSONA } from "../prompts/system-mascot";
 import type { AiFallbackReason, AiMeta, AskRequest, AskStreamEvent } from "../types";
 import { cacheKey } from "./cache";
 import { normalizeLlmError } from "./client";
@@ -40,7 +41,9 @@ export async function runAsk(request: AskRequest, context: FinanceContext, runti
   if (off || !runtime.client) return finishWithTemplate(off ?? "no-key", false);
 
   const main = runtime.config.models.main;
-  const key = cacheKey("ask", main, { baseline, history: request.history }, request.question);
+  // Nimbus answers in its own voice, so its answers are cached apart from the ask box's.
+  const mascot = request.source === "mascot";
+  const key = cacheKey(mascot ? "ask-mascot" : "ask", main, { baseline, history: request.history }, request.question);
   const hit = runtime.cache.get(key) as { text: string; model: string } | undefined;
   if (hit) {
     emit({ type: "text", delta: hit.text });
@@ -51,7 +54,7 @@ export async function runAsk(request: AskRequest, context: FinanceContext, runti
   const fallback = runtime.config.models.fallback;
   const attempts = [main, fallback !== main ? fallback : main];
   const id = runtime.requestId();
-  const system = askSystemPrompt(JSON.stringify(baseline));
+  const system = askSystemPrompt(JSON.stringify(baseline), mascot ? MASCOT_PERSONA : undefined);
   let reason: AiFallbackReason = "other";
 
   for (const [index, model] of attempts.entries()) {

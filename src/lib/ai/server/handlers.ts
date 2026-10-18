@@ -12,7 +12,7 @@ import { forecastEndDate } from "@/features/calendar/engine/entries";
 import { runAsk } from "./ask";
 import type { FinanceContext } from "./context";
 import { generateStructured } from "./generate";
-import { json, rateLimited, readJsonBody } from "./http";
+import { json, MAX_ASK_BODY_BYTES, rateLimited, readJsonBody } from "./http";
 import type { AiRuntime } from "./runtime";
 
 /** Route logic, separate from route.ts so tests can inject a runtime and a context loader. */
@@ -88,10 +88,10 @@ export async function handleGoalSummary(request: Request, deps: HandlerDeps): Pr
 export async function handleAsk(request: Request, deps: HandlerDeps): Promise<Response> {
   const limited = rateLimited(request, deps.runtime.limiter);
   if (limited) return limited;
-  const body = await readJsonBody(request);
+  const body = await readJsonBody(request, MAX_ASK_BODY_BYTES);
   if (!body.ok) return body.response;
   const input = parseAskRequest(body.value);
-  if (!input) return json({ status: "error", message: "Send { question } (1 to 500 characters) with optional history, criticalBalanceCents and purchases." }, 400);
+  if (!input) return json({ status: "error", message: "Send { question } (1 to 500 characters) with optional history, criticalBalanceCents, purchases and source." }, 400);
 
   const context = await loadOrNull(deps, input.purchases, input.criticalBalanceCents);
   if (!context) return json({ status: "error", message: LOAD_FAILED }, 503);

@@ -9,6 +9,7 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import { APP_NAME } from "@/lib/config";
 import { getActiveHref, NAV_ITEMS, ROUTES } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { NimbusMascot } from "@/features/nimbus/components/NimbusMascot";
 import { useActiveCustomer } from "./ActiveCustomer";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -131,7 +132,10 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        <div className="mt-auto border-t border-app pt-4">
+        {/* Desktop only. Its auto top margin is the spacer that keeps Nimbus just above the settings block. */}
+        <NimbusMascot className="mt-auto hidden pb-3 lg:flex" />
+
+        <div className="mt-auto border-t border-app pt-4 lg:mt-0">
           <div className="mb-3 flex items-center gap-2 rounded-panel bg-app p-2.5 md:max-lg:justify-center md:max-lg:bg-transparent md:max-lg:p-0">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
               <CircleUser aria-hidden className="size-5" strokeWidth={1.75} />
