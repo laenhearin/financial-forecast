@@ -15,7 +15,7 @@ import type { Scenario } from "@/features/big-purchase/types";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: { default: "CloudCash", template: "%s · CloudCash" },
+  title: { default: "Financial Forecast", template: "%s · Financial Forecast" },
   description: "Your money, a little clearer.",
   icons: { icon: "/icon.png", shortcut: "/icon.png", apple: "/icon.png" },
 };

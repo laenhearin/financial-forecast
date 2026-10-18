@@ -33,7 +33,7 @@ export default async function HomePage() {
     home = await loadHome();
   } catch (error) {
     const message = error instanceof Error ? error.message : "The Nessie customer could not be loaded.";
-    return <div role="alert" className="mx-auto max-w-180 px-5 py-16 text-body text-neg">CloudCash could not load Nessie data: {message}</div>;
+    return <div role="alert" className="mx-auto max-w-180 px-5 py-16 text-body text-neg">Financial Forecast could not load Nessie data: {message}</div>;
   }
 
   const { scenario, asOfDate, cashBack, customer, homeData, defaultCriticalCents, billEntries, monthlyTotals, todayNetCents } = home;

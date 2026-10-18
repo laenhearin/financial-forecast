@@ -78,7 +78,7 @@ export function ProfileView({ customers, active, accounts }: { customers: Active
     <div className="mx-auto w-full max-w-180 px-5 py-12 md:px-10">
       <header className="mb-7">
         <h1 className="text-display font-medium text-primary">Profile</h1>
-        <p className="mt-2 text-body text-secondary">The Nessie customer every CloudCash page reads from.</p>
+        <p className="mt-2 text-body text-secondary">The Nessie customer every Financial Forecast page reads from.</p>
       </header>
 
       <section aria-label="Profile details" className="rounded-panel border border-app bg-card p-5 md:p-6">
@@ -132,7 +132,7 @@ export function ProfileView({ customers, active, accounts }: { customers: Active
           </label>
           <button
             type="button"
-            onClick={() => setNotice("CloudCash has no sign-in yet. Choose another Nessie customer above to switch.")}
+            onClick={() => setNotice("Financial Forecast has no sign-in yet. Choose another Nessie customer above to switch.")}
             className="ui-transition inline-flex min-h-11 items-center justify-center gap-2 rounded-chip border border-app px-3 py-2 text-caption font-medium text-secondary hover:border-neg hover:bg-neg-soft hover:text-neg"
           >
             <LogOut aria-hidden className="size-4" />
@@ -153,7 +153,7 @@ export function ProfileView({ customers, active, accounts }: { customers: Active
       {accounts.ok && (
         <section aria-labelledby="settings-title" className="mt-5 rounded-panel border border-app bg-card p-5 md:p-6">
           <h2 id="settings-title" className="text-lead font-semibold text-primary">Settings</h2>
-          <p className="mt-1.5 text-caption text-secondary">Set the balance CloudCash treats as critical. By default, that is this customer&apos;s housing bill from Nessie.</p>
+          <p className="mt-1.5 text-caption text-secondary">Set the balance Financial Forecast treats as critical. By default, that is this customer&apos;s housing bill from Nessie.</p>
           <form onSubmit={saveCriticalBalance} className="mt-5 max-w-xl">
             <label htmlFor="critical-balance" className="mb-1.5 block text-caption font-medium text-secondary">Critical balance ($)</label>
             <div className="flex flex-wrap gap-3">
